@@ -18,6 +18,7 @@ from src.models.network import NetworkStatus, InterfaceStats
 from src.utils.errors import SystemManagerError, ErrorCategory
 from src.auth.token_auth import require_scopes
 from src.utils.retry import retry_with_backoff
+from src.tools import stack_tools as stack_tools_module
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -476,6 +477,22 @@ async def list_directory(path: str = "/", recursive: bool = False) -> Dict:
         logger.error(f"Error listing directory {path}: {e}")
         return {"success": False, "error": str(e)}
 
+
+    @require_scopes(["monitor"])
+    @mcp.tool()
+    async def get_stack_network_info(host: str, stack_name: str) -> Dict:
+        """MCP-exposed wrapper for stack network inspection.
+
+        Delegates to `src.tools.stack_tools.get_stack_network_info` and returns
+        a standardized MCP tool response.
+        """
+        try:
+            res = await stack_tools_module.get_stack_network_info(host, stack_name)
+            return {"success": True, "data": res}
+        except Exception as e:
+            logger.error(f"Error in get_stack_network_info: {e}")
+            return {"success": False, "error": str(e)}
+
 @require_scopes(["monitor"] )
 @mcp.tool()
 async def get_network_status(interface: Optional[str] = None) -> Dict:
@@ -513,6 +530,29 @@ async def get_network_status(interface: Optional[str] = None) -> Dict:
     except Exception as e:
         logger.error(f"Error getting network status: {e}")
         return {"success": False, "error": str(e)}
+
+
+try:
+    # Register a lightweight Tool descriptor for compatibility listing
+    _server_instance.server._tools.append(
+        types.Tool(
+            name="get_stack_network_info",
+            description="Inspect stack network exposure and port bindings",
+            inputSchema={
+                "type": "object",
+                "properties": {"host": {"type": "string"}, "stack_name": {"type": "string"}, "format": {"type": "string", "enum": ["json","toon"]}},
+                "required": ["host","stack_name"],
+            },
+        )
+    )
+except Exception:
+    pass
+
+# For compatibility wrapper: expose an implementation method on the server instance
+try:
+    setattr(_server_instance, "_get_stack_network_info", get_stack_network_info)
+except Exception:
+    pass
 
 @require_scopes(["monitor"] )
 @mcp.tool()

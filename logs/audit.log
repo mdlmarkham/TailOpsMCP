@@ -13,3 +13,9 @@
 {"timestamp":"2025-11-15T21:31:23.967385Z","tool":"get_system_status","subject":null,"args":{},"result_status":"error","error":"name 'os' is not defined","truncated":false,"dry_run":false}
 {"timestamp":"2025-11-15T21:31:23.970566Z","tool":"get_container_list","subject":null,"args":{},"result_status":"error","error":"name 'os' is not defined","truncated":false,"dry_run":false}
 {"timestamp":"2025-11-15T21:31:23.975712Z","tool":"get_network_status","subject":null,"args":{},"result_status":"error","error":"name 'os' is not defined","truncated":false,"dry_run":false}
+{"timestamp":"2025-11-15T21:32:32.550480Z","tool":"get_stack_network_info","subject":null,"args":{"host":"node-1","stack_name":"webapp"},"result_status":"success","error":null,"truncated":false,"dry_run":false}
+{"timestamp":"2025-11-15T21:32:32.555434Z","tool":"get_stack_network_info","subject":null,"args":{"host":"node-1","stack_name":"webapp"},"result_status":"success","error":null,"truncated":false,"dry_run":false}
+{"timestamp":"2025-11-15T21:33:43.707347Z","tool":"get_stack_network_info","subject":null,"args":{"host":"node-1","stack_name":"webapp"},"result_status":"error","error":"docker unavailable","truncated":false,"dry_run":false}
+{"timestamp":"2025-11-15T21:33:43.804141Z","tool":"get_stack_network_info","subject":null,"args":{"host":"node-1","stack_name":"webapp"},"result_status":"error","error":"docker unavailable","truncated":false,"dry_run":false}
+{"timestamp":"2025-11-15T21:34:00.518979Z","tool":"get_stack_network_info","subject":null,"args":{"host":"node-1","stack_name":"webapp"},"result_status":"success","error":null,"truncated":false,"dry_run":false}
+{"timestamp":"2025-11-15T21:34:00.522690Z","tool":"get_stack_network_info","subject":null,"args":{"host":"node-1","stack_name":"webapp"},"result_status":"success","error":null,"truncated":false,"dry_run":false}
