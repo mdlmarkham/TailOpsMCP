@@ -7,8 +7,8 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
 import json
-from mcp.server import Server
-from mcp.server.models import InitializationOptions
+from fastmcp import FastMCP
+from fastmcp.server import ServerStream
 import mcp.types as types
 
 from src.models.system import SystemStatus, MemoryUsage, DiskUsage
@@ -24,187 +24,159 @@ from src.tools import stack_tools as stack_tools_module
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class SystemManagerMCPServer:
-    """Main MCP server for SystemManager."""
-    
-    def __init__(self):
-        self.server = Server("SystemManager")
-        self._setup_tools()
-    
-    def _setup_tools(self):
-        """Register all MCP tools."""
-        
-        tools_list = [
-            types.Tool(
-                name="get_system_status",
-                description="Get comprehensive system status including CPU, memory, disk, and network",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "format": {"type": "string", "enum": ["json", "toon"], "description": "Response format"}
-                    },
-                    "required": []
-                },
-            ),
-            types.Tool(
-                name="get_container_list",
-                description="List all Docker containers with their status",
-                inputSchema={
-                    "type": "object",
-                    "properties": {"all_containers": {"type": "boolean"}, "format": {"type": "string", "enum": ["json","toon"]}},
-                    "required": []
-                },
-            ),
-            types.Tool(
-                name="list_directory",
-                description="List contents of a directory",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "path": {"type": "string", "description": "Directory path to list"},
-                        "recursive": {"type": "boolean"},
-                        "format": {"type": "string", "enum": ["json","toon"]}
-                    },
-                    "required": ["path"],
-                },
-            ),
-            types.Tool(
-                name="get_network_status",
-                description="Get network interface status and statistics",
-                inputSchema={
-                    "type": "object",
-                    "properties": {"interface": {"type": "string"}, "format": {"type": "string", "enum": ["json","toon"]}},
-                    "required": []
-                },
-            ),
-            types.Tool(
-                name="search_files",
-                description="Search for files by name pattern",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "pattern": {"type": "string", "description": "File name pattern to search for"},
-                        "directory": {"type": "string", "description": "Directory to search in (default: current directory)"},
-                        "max_results": {"type": "integer"},
-                        "format": {"type": "string", "enum": ["json","toon"]}
-                    },
-                    "required": ["pattern"],
-                },
-            ),
-        ]
+# Create FastMCP server instance
+mcp = FastMCP("SystemManager")
 
-        # Store tools on the server instance for backward compatibility/access
-        self.server._tools = tools_list
+@mcp.tool()
+async def get_system_status(format: str = "json") -> dict:
+    """Get comprehensive system status including CPU, memory, disk, and network."""
+    import psutil
+    
+    # Get CPU usage (non-blocking)
+    cpu_percent = psutil.cpu_percent(interval=None)
+    
+    # Get memory usage
+    memory = psutil.virtual_memory()
+    memory_usage = {
+        "total": memory.total,
+        "available": memory.available,
+        "used": memory.used,
+        "percent": memory.percent
+    }
+    
+    # Get disk usage
+    disk = psutil.disk_usage('/')
+    disk_usage = {
+        "total": disk.total,
+        "used": disk.used,
+        "free": disk.free,
+        "percent": disk.percent
+    }
+    
+    # Get system uptime
+    boot_time = psutil.boot_time()
+    uptime = int(datetime.now().timestamp() - boot_time)
+    
+    result = {
+        "cpu_percent": cpu_percent,
+        "memory_usage": memory_usage,
+        "disk_usage": disk_usage,
+        "uptime": uptime,
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    return result
 
-        @self.server.list_tools()
-        async def handle_list_tools() -> List[types.Tool]:
-            """List available tools."""
-            return tools_list
+@mcp.tool()
+async def get_container_list(all_containers: bool = False) -> dict:
+    """List all Docker containers with their status."""
+    try:
+        import docker
+        client = docker.from_env()
+        containers = client.containers.list(all=all_containers)
         
-        @self.server.call_tool()
-        async def handle_call_tool(
-            name: str,
-            arguments: Dict[str, Any]
-        ) -> List[types.TextContent]:
-            """Handle tool execution requests."""
+        result = []
+        for container in containers:
+            result.append({
+                "id": container.id[:12],
+                "name": container.name,
+                "status": container.status,
+                "image": container.image.tags[0] if container.image.tags else "unknown"
+            })
+        
+        return {"containers": result, "count": len(result)}
+    except Exception as e:
+        logger.error(f"Docker error: {e}")
+        return {"error": str(e), "containers": []}
+
+@mcp.tool()
+async def list_directory(path: str, recursive: bool = False) -> dict:
+    """List contents of a directory."""
+    import os
+    
+    try:
+        result = {"path": path, "files": [], "directories": []}
+        
+        for item in os.listdir(path):
+            full_path = os.path.join(path, item)
+            if os.path.isdir(full_path):
+                result["directories"].append(item)
+            else:
+                result["files"].append(item)
+        
+        return result
+    except Exception as e:
+        logger.error(f"Directory list error: {e}")
+        return {"error": str(e), "path": path, "files": [], "directories": []}
+
+@mcp.tool()
+async def get_network_status(interface: str = None) -> dict:
+    """Get network interface status and statistics."""
+    import psutil
+    
+    try:
+        result = {"interfaces": []}
+        
+        interfaces = psutil.net_if_stats()
+        for name, stats in interfaces.items():
+            if interface and name != interface:
+                continue
             
-            try:
-                if name == "get_system_status":
-                    result = await self._get_system_status()
-                elif name == "get_container_list":
-                    result = await self._get_container_list()
-                elif name == "list_directory":
-                    result = await self._list_directory(arguments["path"])
-                elif name == "get_network_status":
-                    result = await self._get_network_status()
-                elif name == "search_files":
-                    directory = arguments.get("directory", ".")
-                    result = await self._search_files(arguments["pattern"], directory)
-                else:
-                    raise SystemManagerError(
-                        f"Unknown tool: {name}",
-                        ErrorCategory.VALIDATION
-                    )
-                
-                return [types.TextContent(type="text", text=str(result))]
-                
-            except SystemManagerError as e:
-                logger.error(f"Tool error: {e}")
-                raise
-            except Exception as e:
-                logger.error(f"Unexpected error: {e}")
-                raise SystemManagerError(
-                    f"Internal server error: {str(e)}",
-                    ErrorCategory.SYSTEM
-                )
-    
-    @retry_with_backoff(max_retries=3)
-    async def _get_system_status(self) -> SystemStatus:
-        """Get comprehensive system status."""
-        import psutil
+            result["interfaces"].append({
+                "name": name,
+                "isup": stats.isup,
+                "speed": stats.speed,
+                "mtu": stats.mtu,
+                "bytes_sent": stats.bytes_sent,
+                "bytes_recv": stats.bytes_recv,
+                "packets_sent": stats.packets_sent,
+                "packets_recv": stats.packets_recv
+            })
         
-        # Get CPU usage
-        cpu_percent = psutil.cpu_percent(interval=1)
+        result["timestamp"] = datetime.now().isoformat()
+        return result
+    except Exception as e:
+        logger.error(f"Network status error: {e}")
+        return {"error": str(e), "interfaces": []}
+
+@mcp.tool()
+async def search_files(pattern: str, directory: str = ".", max_results: int = 100) -> dict:
+    """Search for files by name pattern."""
+    import os
+    import fnmatch
+    
+    try:
+        result = {"pattern": pattern, "directory": directory, "files": []}
         
-        # Get memory usage
-        memory = psutil.virtual_memory()
-        memory_usage = MemoryUsage(
-            total=memory.total,
-            available=memory.available,
-            used=memory.used,
-            percent=memory.percent
-        )
+        count = 0
+        for root, dirs, files in os.walk(directory):
+            for filename in files:
+                if fnmatch.fnmatch(filename, pattern):
+                    result["files"].append(os.path.join(root, filename))
+                    count += 1
+                    if count >= max_results:
+                        return result
         
-        # Get disk usage
-        disk = psutil.disk_usage('/')
-        disk_usage = DiskUsage(
-            total=disk.total,
-            used=disk.used,
-            free=disk.free,
-            percent=disk.percent
-        )
-        
-        # Get system uptime
-        boot_time = psutil.boot_time()
-        uptime = int(datetime.now().timestamp() - boot_time)
-        
-        return SystemStatus(
-            cpu_percent=cpu_percent,
-            memory_usage=memory_usage,
-            disk_usage=disk_usage,
-            uptime=uptime,
-            timestamp=datetime.now()
-        )
-    
-    async def _get_container_list(self) -> List[ContainerInfo]:
-        """Get list of Docker containers."""
-        # Placeholder implementation - will be implemented in Phase 3
-        return []
-    
-    async def _list_directory(self, path: str) -> DirectoryListing:
-        """List directory contents."""
-        # Placeholder implementation - will be implemented in Phase 3
-        return DirectoryListing(path=path, files=[], directories=[])
-    
-    async def _get_network_status(self) -> NetworkStatus:
-        """Get network interface status."""
-        # Placeholder implementation - will be implemented in Phase 3
-        return NetworkStatus(interfaces=[], timestamp=datetime.now())
-    
-    async def _search_files(self, pattern: str, directory: str) -> List[FileInfo]:
-        """Search for files by pattern."""
-        # Placeholder implementation - will be implemented in Phase 3
-        return []
-    
-    async def run(self, transport: str = "stdio"):
-        """Run the MCP server."""
-        async with self.server.run(transport) as session:
-            await session.wait_for_disconnect()
+        return result
+    except Exception as e:
+        logger.error(f"Search error: {e}")
+        return {"error": str(e), "pattern": pattern, "files": []}
 
 async def main():
-    """Main entry point."""
-    server = SystemManagerMCPServer()
-    await server.run()
+    """Main entry point - run the FastMCP server with HTTP transport."""
+    import uvicorn
+    
+    logger.info("Starting SystemManager MCP server on http://0.0.0.0:8080")
+    
+    # Run with uvicorn HTTP server
+    config = uvicorn.Config(
+        mcp.app,
+        host="0.0.0.0",
+        port=8080,
+        log_level="info"
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
 
 if __name__ == "__main__":
     asyncio.run(main())
