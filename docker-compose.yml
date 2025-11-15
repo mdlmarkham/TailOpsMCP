@@ -1,0 +1,87 @@
+version: "3.8"
+
+services:
+  systemmanager-mcp:
+    build: .
+    container_name: systemmanager-mcp
+    hostname: systemmanager-mcp
+    
+    # Security
+    user: "1000:1000"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits
+    restart: unless-stopped
+    
+    # Volumes
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config:/etc/systemmanager:ro
+      - ./logs:/var/log/systemmanager
+    
+    # Ports
+    ports:
+      - "8080:8080"
+    
+    # Environment
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    
+    # Labels
+    labels:
+      - "systemmanager.mcp.server=true"
+      - "systemmanager.version=0.1.0"
+
+  # Optional: Tailscale sidecar for secure connectivity
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: systemmanager-tailscale
+    hostname: systemmanager-tailscale
+    
+    # Security
+    privileged: true
+    pid: host
+    network_mode: "host"
+    
+    # Volumes
+    volumes:
+      - ./tailscale:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    
+    # Environment
+    environment:
+      - TS_HOSTNAME=systemmanager-mcp
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_AUTH_KEY=${TAILSCALE_AUTH_KEY:-}
+    
+    # Health check
+    healthcheck:
+      test: ["tailscale", "status", "--peers=false"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    
+    # Labels
+    labels:
+      - "systemmanager.tailscale.sidecar=true"
+    
+    # Dependencies
+    depends_on:
+      systemmanager-mcp:
+        condition: service_healthy
+
+networks:
+  default:
+    name: systemmanager
+    driver: bridge

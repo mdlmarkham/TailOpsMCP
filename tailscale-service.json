@@ -1,0 +1,11 @@
+{
+  "version": "1",
+  "services": {
+    "svc:systemmanager-mcp": {
+      "endpoints": {
+        "tcp:8080": "localhost:8080"
+      },
+      "description": "SystemManager MCP Server - Remote system management and monitoring"
+    }
+  }
+}

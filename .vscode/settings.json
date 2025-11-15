@@ -9,6 +9,7 @@
     "chat.tools.terminal.autoApprove": {
         ".specify/scripts/bash/": true,
         ".specify/scripts/powershell/": true
-    }
+    },
+    "github.copilot.chat.byok.ollamaEndpoint": "http://100.111.84.5:11434"
 }
 

@@ -1,0 +1,34 @@
+[Unit]
+Description=SystemManager MCP Server
+Documentation=https://github.com/your-org/systemmanager-mcp-server
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=systemmanager
+Group=systemmanager
+WorkingDirectory=/opt/systemmanager
+ExecStart=/usr/local/bin/python -m src.mcp_server
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+# Security
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/log/systemmanager /etc/systemmanager
+
+# Resource limits
+LimitNOFILE=65536
+MemoryLimit=100M
+CPUQuota=50%
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=LOG_LEVEL=INFO
+
+[Install]
+WantedBy=multi-user.target
