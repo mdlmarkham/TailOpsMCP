@@ -170,6 +170,12 @@ Please ensure all changes adhere to the project constitution and include appropr
 
 MIT License - see LICENSE file for details.
 
+## Documentation
+
+- Tool Registry: `docs/tool_registry.md` — detailed tool catalog and schemas.
+- LLM Prompt Templates: `docs/prompts.md` — prompt templates, decision rules, and examples.
+- Integration & Deployment: `docs/integration.md` — multi-host Tailscale deployment, tokens, and hardening.
+
 ## Support
 
 - Documentation: [docs.systemmanager.local](https://docs.systemmanager.local)

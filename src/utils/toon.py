@@ -13,9 +13,13 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from src.models.system import SystemStatus, MemoryUsage, DiskUsage
+from src.models.containers import ContainerInfo
+from src.models.files import DirectoryListing, FileInfo
+from src.models.network import NetworkStatus, InterfaceStats
+import json
 
 
 # Short key maps to reduce size. Keep stable for deterministic encoding.
@@ -108,5 +112,133 @@ def model_to_toon(obj: Any) -> str:
     """Generic helper: dispatch to specific converters for known model types."""
     if isinstance(obj, SystemStatus):
         return system_status_to_toon(obj)
-    # Add more dispatches when we implement other models
+    if isinstance(obj, ContainerInfo):
+        return container_to_toon(obj)
+    if isinstance(obj, DirectoryListing):
+        return directory_to_toon(obj)
+    if isinstance(obj, NetworkStatus):
+        return network_to_toon(obj)
+
+    # If it's a list of models, try element-wise conversion to compact JSON
+    if isinstance(obj, list):
+        # Attempt to convert list of models to list of compact dicts then JSON
+        try:
+            compact = [json.loads(model_to_toon(x)) for x in obj]
+            return json.dumps(compact, separators=(",",":"), ensure_ascii=False)
+        except Exception:
+            pass
+
     raise TypeError(f"No TOON converter for {type(obj)}")
+
+
+def container_to_toon(ci: ContainerInfo) -> str:
+    # short keys: id=i, name=n, status=s
+    out = {"i": ci.id, "n": ci.name or "", "s": ci.status or ""}
+    return json.dumps(out, separators=(",",":"), ensure_ascii=False)
+
+
+def directory_to_toon(dl: DirectoryListing) -> str:
+    # short keys: path=p, files=f, dirs=d
+    files: List[Dict[str, Any]] = []
+    for fi in dl.files:
+        files.append({"n": fi.name, "p": fi.path, "s": fi.size or 0, "d": bool(fi.is_dir)})
+    out = {"p": dl.path, "f": files, "d": dl.directories}
+    return json.dumps(out, separators=(",",":"), ensure_ascii=False)
+
+
+def network_to_toon(ns: NetworkStatus) -> str:
+    # short keys: interfaces=i, each interface: n=name,a=addresses,u=up,bs=bytes_sent,br=bytes_recv
+    ifaces: List[Dict[str, Any]] = []
+    for iface in ns.interfaces:
+        ifaces.append({
+            "n": iface.name,
+            "a": iface.addresses or [],
+            "u": bool(iface.is_up) if iface.is_up is not None else None,
+            "bs": iface.bytes_sent or 0,
+            "br": iface.bytes_recv or 0,
+        })
+    out = {"i": ifaces, "t": ns.timestamp.isoformat()}
+    return json.dumps(out, separators=(",",":"), ensure_ascii=False)
+
+
+def _to_obj(s_or_obj):
+    """Ensure we have a dict/list object from either a JSON string or an object."""
+    if isinstance(s_or_obj, str):
+        try:
+            return json.loads(s_or_obj)
+        except Exception:
+            # not JSON; return as-is
+            return s_or_obj
+    return s_or_obj
+
+
+def compute_delta(old, new):
+    """Compute a minimal delta from `old` -> `new` for JSON-serializable dicts.
+
+    - If a key is added or changed, include the new value.
+    - If a key is removed, include `{ "__deleted": true }` marker.
+    - For nested dicts, compute recursively.
+    - For lists and primitives, replace when different.
+
+    This is intentionally simple and deterministic.
+    """
+    o = _to_obj(old) or {}
+    n = _to_obj(new) or {}
+
+    if not isinstance(o, dict) or not isinstance(n, dict):
+        # Non-dict types: if equal -> empty delta, else delta is new value
+        return {} if o == n else n
+
+    delta = {}
+    # keys present in either
+    keys = set(o.keys()) | set(n.keys())
+    for k in keys:
+        if k in o and k not in n:
+            delta[k] = {"__deleted": True}
+        elif k not in o and k in n:
+            delta[k] = n[k]
+        else:
+            # both present
+            if isinstance(o[k], dict) and isinstance(n[k], dict):
+                sub = compute_delta(o[k], n[k])
+                if sub:
+                    delta[k] = sub
+            else:
+                if o[k] != n[k]:
+                    delta[k] = n[k]
+    return delta
+
+
+def apply_delta(base, delta):
+    """Apply a delta produced by `compute_delta` onto `base` and return new object."""
+    b = _to_obj(base) or {}
+    d = _to_obj(delta) or {}
+    if not isinstance(b, dict) or not isinstance(d, dict):
+        # Non-dict replacement
+        return d if d != {} else b
+
+    out = dict(b)
+    for k, v in d.items():
+        if isinstance(v, dict) and v.get("__deleted"):
+            out.pop(k, None)
+        elif isinstance(v, dict) and k in out and isinstance(out[k], dict):
+            out[k] = apply_delta(out.get(k, {}), v)
+        else:
+            out[k] = v
+    return out
+
+
+def toon_delta(prev_toon: str, new_toon: str) -> str:
+    """Return a compact JSON string representing the delta between two TOON payloads."""
+    prev = _to_obj(prev_toon)
+    new = _to_obj(new_toon)
+    delta = compute_delta(prev, new)
+    return json.dumps(delta, separators=(",",":"), ensure_ascii=False)
+
+
+def apply_toon_delta(prev_toon: str, delta_toon: str) -> str:
+    """Apply a TOON delta (JSON string) to a previous TOON payload and return the reconstructed TOON string."""
+    prev = _to_obj(prev_toon)
+    delta = _to_obj(delta_toon)
+    new = apply_delta(prev, delta)
+    return json.dumps(new, separators=(",",":"), ensure_ascii=False)

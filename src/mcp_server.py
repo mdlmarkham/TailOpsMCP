@@ -6,6 +6,7 @@ import asyncio
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
+import json
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
 import mcp.types as types
@@ -38,28 +39,42 @@ class SystemManagerMCPServer:
                 description="Get comprehensive system status including CPU, memory, disk, and network",
                 inputSchema={
                     "type": "object",
-                    "properties": {},
+                    "properties": {
+                        "format": {"type": "string", "enum": ["json", "toon"], "description": "Response format"}
+                    },
                     "required": []
                 },
             ),
             types.Tool(
                 name="get_container_list",
                 description="List all Docker containers with their status",
-                inputSchema={"type": "object", "properties": {}, "required": []},
+                inputSchema={
+                    "type": "object",
+                    "properties": {"all_containers": {"type": "boolean"}, "format": {"type": "string", "enum": ["json","toon"]}},
+                    "required": []
+                },
             ),
             types.Tool(
                 name="list_directory",
                 description="List contents of a directory",
                 inputSchema={
                     "type": "object",
-                    "properties": {"path": {"type": "string", "description": "Directory path to list"}},
+                    "properties": {
+                        "path": {"type": "string", "description": "Directory path to list"},
+                        "recursive": {"type": "boolean"},
+                        "format": {"type": "string", "enum": ["json","toon"]}
+                    },
                     "required": ["path"],
                 },
             ),
             types.Tool(
                 name="get_network_status",
                 description="Get network interface status and statistics",
-                inputSchema={"type": "object", "properties": {}, "required": []},
+                inputSchema={
+                    "type": "object",
+                    "properties": {"interface": {"type": "string"}, "format": {"type": "string", "enum": ["json","toon"]}},
+                    "required": []
+                },
             ),
             types.Tool(
                 name="search_files",
@@ -69,6 +84,8 @@ class SystemManagerMCPServer:
                     "properties": {
                         "pattern": {"type": "string", "description": "File name pattern to search for"},
                         "directory": {"type": "string", "description": "Directory to search in (default: current directory)"},
+                        "max_results": {"type": "integer"},
+                        "format": {"type": "string", "enum": ["json","toon"]}
                     },
                     "required": ["pattern"],
                 },
@@ -236,12 +253,53 @@ class _MCPCompat:
                         return {"success": False, "error": f"Tool implementation for {self.name} not available"}
 
                     try:
+                        # Prepare audit and sandbox helpers
+                        from src.utils.audit import AuditLogger
+                        from src.utils import sandbox
+
+                        audit = AuditLogger()
+
+                        # Extract token-subject if present
+                        subject = None
+                        if "_token_claims" in kwargs:
+                            try:
+                                subject = getattr(kwargs["_token_claims"], "agent", None)
+                            except Exception:
+                                subject = None
+
+                        # Validate path-like kwargs against allowed paths
+                        path_keys = [k for k in kwargs.keys() if any(x in k.lower() for x in ("path", "file", "dir", "directory"))]
+                        try:
+                            for pk in path_keys:
+                                val = kwargs.get(pk)
+                                if isinstance(val, str) and val:
+                                    if not sandbox.is_path_allowed(val):
+                                        return {"success": False, "error": f"Access to path not allowed: {val}"}
+                        except PermissionError as e:
+                            return {"success": False, "error": str(e)}
+
+                        # Non-root enforcement
+                        enforce_nonroot = os.getenv("SYSTEMMANAGER_ENFORCE_NON_ROOT", "false").lower() in ("1","true","yes")
+                        if enforce_nonroot and sandbox.is_running_as_root():
+                            return {"success": False, "error": "Execution as root is disallowed by server policy"}
+
+                        # Pop format param so underlying impl doesn't receive unexpected kwargs
+                        fmt = kwargs.pop("format", kwargs.pop("_format", None))
+
+                        # Default monitoring tools to TOON for token efficiency when client
+                        # did not explicitly request a format.
+                        monitoring_defaults = {"get_system_status", "get_container_list", "list_directory", "get_network_status", "search_files"}
+                        if fmt is None and self.name in monitoring_defaults:
+                            fmt = "toon"
+
                         if asyncio.iscoroutinefunction(impl):
                             impl_result = await impl(**kwargs)
                         else:
                             impl_result = impl(**kwargs)
                         # Normalize Pydantic models to dicts or compact TOON if requested
-                        fmt = kwargs.get("format") or kwargs.get("_format")
+                        # restore fmt var for conversion logic
+                        # (if fmt was popped above, it's already captured; else keep None)
+                        # fmt variable is already set above
                         # Prefer model-based TOON if available
                         try:
                             from src.utils.toon import model_to_toon
@@ -255,8 +313,13 @@ class _MCPCompat:
                                 try:
                                     return model_to_toon(res)
                                 except Exception:
-                                    # fallback to compact JSON
-                                    pass
+                                    # fallback to compact JSON (for dict/list results)
+                                    try:
+                                        # If it's already a dict/list, dump compact JSON
+                                        if isinstance(res, (dict, list)):
+                                            return json.dumps(res, separators=(",",":"), ensure_ascii=False)
+                                    except Exception:
+                                        pass
 
                             # If Pydantic v2 style
                             if hasattr(res, "model_dump"):
@@ -265,13 +328,72 @@ class _MCPCompat:
                             if hasattr(res, "dict"):
                                 return res.dict()
                             # Already a primitive/dict/list
+                            # If TOON requested, compact it
+                            if fmt == "toon":
+                                try:
+                                    return json.dumps(res, separators=(",",":"), ensure_ascii=False)
+                                except Exception:
+                                    return res
+
                             return res
 
                         data = _convert_result(impl_result)
 
-                        # If TOON produced a compact string, put it under `data` so callers remain compatible
-                        return {"success": True, "data": data}
+                        # Enforce output caps: bytes and optional line limits
+                        max_bytes = int(os.getenv("SYSTEMMANAGER_MAX_OUTPUT_BYTES", "65536"))
+                        max_lines = os.getenv("SYSTEMMANAGER_MAX_OUTPUT_LINES")
+                        max_lines = int(max_lines) if max_lines and max_lines.isdigit() else None
+
+                        truncated = False
+                        # If data is not a string, serialize compactly for truncation check
+                        if not isinstance(data, str):
+                            try:
+                                compact = json.dumps(data, separators=(",",":"), ensure_ascii=False)
+                            except Exception:
+                                compact = str(data)
+                        else:
+                            compact = data
+
+                        # Truncate by bytes
+                        compact_bytes = compact.encode("utf-8")
+                        if len(compact_bytes) > max_bytes:
+                            # Truncate safely on utf-8 boundary
+                            truncated = True
+                            compact = compact_bytes[:max_bytes].decode("utf-8", errors="ignore")
+
+                        # If max_lines set, truncate to that many lines
+                        if max_lines is not None:
+                            lines = compact.splitlines(True)
+                            if len(lines) > max_lines:
+                                truncated = True
+                                compact = "".join(lines[:max_lines])
+
+                        # Build final result; if original expected structured data and format!=toon, attempt to return parsed JSON
+                        final_data = compact
+                        if fmt != "toon":
+                            # Try to rehydrate JSON back to object if we serialized above and it fits
+                            try:
+                                parsed = json.loads(compact)
+                                final_data = parsed
+                            except Exception:
+                                final_data = compact
+
+                        result = {"success": True, "data": final_data}
+
+                        # Audit the call
+                        try:
+                            audit.log(self.name, kwargs, result, subject=subject, truncated=truncated)
+                        except Exception:
+                            # swallow audit errors
+                            pass
+
+                        return result
                     except Exception as e:
+                        # Audit error
+                        try:
+                            audit.log(self.name, kwargs, {"success": False, "error": str(e)}, subject=subject, truncated=False)
+                        except Exception:
+                            pass
                         return {"success": False, "error": str(e)}
 
                 self.function = _callable
