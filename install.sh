@@ -32,19 +32,21 @@ echo "Installing system dependencies..."
 if [[ "$OS" == "ubuntu" ]] || [[ "$OS" == "debian" ]]; then
     apt-get update
     apt-get install -y \
-        python3.11 \
-        python3.11-venv \
+        python3 \
+        python3-venv \
         python3-pip \
         git \
         curl \
         build-essential
+    PYTHON_CMD="python3"
 elif [[ "$OS" == "centos" ]] || [[ "$OS" == "rhel" ]] || [[ "$OS" == "fedora" ]]; then
     yum install -y \
-        python3.11 \
+        python3 \
         python3-pip \
         git \
         curl \
         gcc
+    PYTHON_CMD="python3"
 else
     echo "Unsupported OS: $OS"
     exit 1
@@ -80,7 +82,7 @@ fi
 # Setup Python virtual environment
 echo "Setting up Python virtual environment..."
 cd /opt/systemmanager
-sudo -u systemmanager python3.11 -m venv venv
+sudo -u systemmanager $PYTHON_CMD -m venv venv
 sudo -u systemmanager venv/bin/pip install --upgrade pip
 sudo -u systemmanager venv/bin/pip install -r requirements.txt
 
