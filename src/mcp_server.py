@@ -198,7 +198,7 @@ class SystemManagerMCPServer:
     
     async def run(self, transport: str = "stdio"):
         """Run the MCP server."""
-        async with self.server.run(transport=transport) as session:
+        async with self.server.run(transport) as session:
             await session.wait_for_disconnect()
 
 async def main():
@@ -601,6 +601,6 @@ async def search_files(pattern: str, path: str = "/", max_results: int = 100) ->
         return {"success": False, "error": str(e)}
 
 
-if __name__ == "__main__":
-    # Run the MCP server
-    mcp.run(transport="stdio")
+# The module-level entrypoint uses `asyncio.run(main())` above.
+# Remove duplicate synchronous `mcp.run(...)` invocation which passes
+# an unexpected keyword to `Server.run()` in some SDK versions.
