@@ -33,7 +33,7 @@ AUTH_MODE = os.getenv("SYSTEMMANAGER_AUTH_MODE", "token").lower()
 
 # Create FastMCP instance
 if AUTH_MODE == "oidc":
-    # TSIDP OIDC Authentication using JWT Verifier
+    # TSIDP OIDC Authentication using Token Introspection
     tsidp_url = os.getenv("TSIDP_URL", "https://tsidp.tailf9480.ts.net")
     base_url = os.getenv("SYSTEMMANAGER_BASE_URL", "http://localhost:8080")
     client_id = os.getenv("TSIDP_CLIENT_ID")
@@ -45,14 +45,16 @@ if AUTH_MODE == "oidc":
     logger.info(f"Configuring OIDC authentication with TSIDP: {tsidp_url}")
     
     from fastmcp.server.auth import RemoteAuthProvider
-    from fastmcp.server.auth.providers.jwt import JWTVerifier
     from pydantic import AnyHttpUrl
+    from src.auth.tsidp_introspection import TSIDPIntrospectionVerifier
     
-    # TSIDP JWT verification using JWKS
-    token_verifier = JWTVerifier(
-        jwks_uri=f"{tsidp_url}/.well-known/jwks.json",
-        issuer=tsidp_url,
-        audience=client_id  # TSIDP issues tokens for the client_id
+    # TSIDP token verification using RFC 7662 introspection
+    # TSIDP issues opaque access tokens, not JWTs
+    token_verifier = TSIDPIntrospectionVerifier(
+        introspection_endpoint=f"{tsidp_url}/introspect",
+        client_id=client_id,
+        client_secret=client_secret,
+        audience=base_url + "/mcp",  # Expected resource identifier
     )
     
     auth = RemoteAuthProvider(
@@ -62,6 +64,7 @@ if AUTH_MODE == "oidc":
     )
     mcp = FastMCP("SystemManager", auth=auth)
     logger.info("OIDC authentication enabled - users will authenticate via Tailscale")
+    logger.info(f"Token introspection endpoint: {tsidp_url}/introspect")
 else:
     # Token-based authentication (default)
     mcp = FastMCP("SystemManager")
