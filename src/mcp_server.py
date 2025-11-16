@@ -532,6 +532,8 @@ async def ping_host(host: str, count: int = 4, format: Literal["json", "toon"] =
                 }
         
         return format_response(stats, format)
+    except Exception as e:
+        return format_error(e, "ping_host")
 
 @mcp.tool()
 async def test_tcp_port(host: str, port: int, timeout: int = 5) -> dict:
