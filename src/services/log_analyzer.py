@@ -13,26 +13,26 @@ logger = logging.getLogger(__name__)
 class LogAnalyzer:
     """Service for intelligent analysis of logs using AI sampling."""
     
-    def __init__(self, mcp_client=None):
-        """Initialize log analyzer with optional MCP client for sampling.
-        
-        Args:
-            mcp_client: MCP client instance that supports sampling (create_message)
-        """
-        self.mcp_client = mcp_client
+    def __init__(self):
+        """Initialize log analyzer."""
+        pass
         
     async def analyze_container_logs(
         self,
         container_name: str,
         logs: str,
-        context: Optional[str] = None
+        analysis_context: Optional[str] = None,
+        use_ai: bool = True,
+        mcp_context = None
     ) -> Dict[str, Any]:
         """Analyze container logs using AI to extract insights.
         
         Args:
             container_name: Name of the container
             logs: Raw log content
-            context: Optional context about what to look for
+            analysis_context: Optional context about what to look for
+            use_ai: Whether to use AI analysis
+            mcp_context: FastMCP Context object for sampling
             
         Returns:
             Dictionary with analysis results including:
@@ -42,25 +42,23 @@ class LogAnalyzer:
             - insights: AI-generated insights
             - recommendations: Suggested actions
         """
-        if not self.mcp_client:
+        if not use_ai or not mcp_context or not hasattr(mcp_context, 'sample'):
             # Fallback to basic analysis without AI
             return self._basic_analysis(container_name, logs)
         
         try:
             # Build analysis prompt
-            prompt = self._build_analysis_prompt(container_name, logs, context)
+            prompt = self._build_analysis_prompt(container_name, logs, analysis_context)
             
-            # Use MCP sampling to get AI analysis
-            response = await self.mcp_client.create_message(
-                messages=[{
-                    "role": "user",
-                    "content": prompt
-                }],
+            # Use MCP sampling to get AI analysis via Context.sample()
+            response = await mcp_context.sample(
+                messages=prompt,
+                temperature=0.3,
                 max_tokens=2000
             )
             
-            # Parse AI response
-            analysis = self._parse_ai_response(response)
+            # Parse AI response - response.text contains the LLM's response
+            analysis = self._parse_ai_response(response.text)
             
             # Add basic stats
             analysis["stats"] = self._extract_stats(logs)
@@ -119,23 +117,20 @@ Format your response as JSON:
         
         return prompt
     
-    def _parse_ai_response(self, response: Any) -> Dict[str, Any]:
+    def _parse_ai_response(self, response_text: str) -> Dict[str, Any]:
         """Parse AI response into structured analysis."""
         import json
         
         try:
-            # Extract content from MCP response
-            content = response.content[0].text if hasattr(response, 'content') else str(response)
-            
             # Try to parse as JSON
             # Look for JSON block in response
-            json_match = re.search(r'\{[\s\S]*\}', content)
+            json_match = re.search(r'\{[\s\S]*\}', response_text)
             if json_match:
                 return json.loads(json_match.group(0))
             
             # Fallback: structure the text response
             return {
-                "summary": content[:500],
+                "summary": response_text[:500],
                 "errors": [],
                 "root_cause": None,
                 "performance_issues": [],
@@ -268,19 +263,23 @@ Format your response as JSON:
 async def analyze_logs_with_ai(
     container_name: str,
     logs: str,
-    mcp_client=None,
-    context: Optional[str] = None
+    mcp_context=None,
+    analysis_context: Optional[str] = None,
+    use_ai: bool = True
 ) -> Dict[str, Any]:
     """Convenience function to analyze logs.
     
     Args:
         container_name: Name of the container
         logs: Raw log content
-        mcp_client: MCP client instance for AI sampling
-        context: Optional analysis context
+        mcp_context: MCP Context instance for AI sampling
+        analysis_context: Optional analysis context
+        use_ai: Whether to use AI analysis
         
     Returns:
         Analysis results dictionary
     """
-    analyzer = LogAnalyzer(mcp_client)
-    return await analyzer.analyze_container_logs(container_name, logs, context)
+    analyzer = LogAnalyzer()
+    return await analyzer.analyze_container_logs(
+        container_name, logs, analysis_context, use_ai, mcp_context
+    )

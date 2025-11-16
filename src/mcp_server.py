@@ -7,7 +7,7 @@ import functools
 import time
 from datetime import datetime
 from typing import Optional, Literal, Union, Any, Dict
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from src.utils.toon import model_to_toon
 from src.services.package_manager import PackageManager
 from src.auth.middleware import secure_tool
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 mcp = FastMCP("SystemManager")
 
-# Initialize log analyzer (will be configured with sampling client later)
+# Initialize log analyzer
 log_analyzer = LogAnalyzer()
 
 # Initialize services
@@ -227,8 +227,9 @@ async def manage_container(action: Literal["start", "stop", "restart", "logs"], 
 @secure_tool("analyze_container_logs")
 async def analyze_container_logs(
     name_or_id: str,
+    ctx: Context,
     lines: int = 200,
-    context: Optional[str] = None,
+    analysis_context: Optional[str] = None,
     use_ai: bool = True
 ) -> dict:
     """Analyze Docker container logs using AI to extract insights and identify issues.
@@ -242,8 +243,9 @@ async def analyze_container_logs(
     
     Args:
         name_or_id: Container name or ID to analyze
+        ctx: FastMCP Context object (automatically injected)
         lines: Number of recent log lines to analyze (default: 200)
-        context: Optional context about what to look for (e.g., "why did it crash?")
+        analysis_context: Optional context about what to look for (e.g., "why did it crash?")
         use_ai: Use AI analysis if available, otherwise fallback to pattern matching
     
     Returns:
@@ -255,16 +257,13 @@ async def analyze_container_logs(
         container = client.containers.get(name_or_id)
         logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
         
-        # Configure log analyzer with MCP client if AI is requested
-        if use_ai and hasattr(mcp, '_request_ctx'):
-            # Access MCP's sampling capability
-            log_analyzer.mcp_client = mcp._request_ctx
-        
-        # Perform intelligent analysis
+        # Perform intelligent analysis - pass Context for AI sampling
         analysis = await log_analyzer.analyze_container_logs(
             container_name=container.name,
             logs=logs,
-            context=context
+            analysis_context=analysis_context,
+            use_ai=use_ai,
+            mcp_context=ctx
         )
         
         return analysis
