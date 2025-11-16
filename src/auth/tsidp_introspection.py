@@ -17,6 +17,7 @@ class TSIDPIntrospectionVerifier:
         client_id: str,
         client_secret: str,
         audience: Optional[str] = None,
+        required_scopes: Optional[list[str]] = None,
     ):
         """Initialize the introspection verifier.
         
@@ -25,11 +26,13 @@ class TSIDPIntrospectionVerifier:
             client_id: OAuth client ID for authentication
             client_secret: OAuth client secret for authentication
             audience: Expected audience (resource server URL)
+            required_scopes: List of required OAuth scopes
         """
         self.introspection_endpoint = introspection_endpoint
         self.client_id = client_id
         self.client_secret = client_secret
         self.audience = audience
+        self.required_scopes = required_scopes or []
     
     def verify(self, token: str) -> dict:
         """Verify an access token using TSIDP introspection.
