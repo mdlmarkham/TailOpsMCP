@@ -40,9 +40,9 @@ if AUTH_MODE == "oauth":
     
     # FastMCP will auto-discover and register with TSIDP
     # See: https://fastmcp.wiki/en/servers/auth/authentication
-    from fastmcp.server.auth import RemoteOAuthProvider
+    from fastmcp.server.auth import RemoteAuthProvider
     
-    auth = RemoteOAuthProvider(
+    auth = RemoteAuthProvider(
         authorization_server_url=auth_server,
         client_name=os.getenv("SYSTEMMANAGER_CLIENT_NAME", "SystemManager MCP"),
         required_scopes=os.getenv("SYSTEMMANAGER_REQUIRED_SCOPES", "email profile").split(),
