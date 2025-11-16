@@ -7,6 +7,7 @@ using RFC 7662 token introspection instead of JWT signature verification.
 import asyncio
 import requests
 from typing import Optional
+from fastmcp.server.auth import AccessToken
 
 
 class TSIDPIntrospectionVerifier:
@@ -35,14 +36,14 @@ class TSIDPIntrospectionVerifier:
         self.audience = audience
         self.required_scopes = required_scopes or []
     
-    async def verify_token(self, token: str) -> dict:
+    async def verify_token(self, token: str) -> AccessToken | None:
         """Verify an access token using TSIDP introspection (async wrapper).
         
         Args:
             token: The opaque access token from the Authorization header
             
         Returns:
-            dict: The introspection response with token claims
+            AccessToken object with token claims, or None if invalid
             
         Raises:
             ValueError: If the token is invalid or inactive
@@ -51,7 +52,7 @@ class TSIDPIntrospectionVerifier:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, self._verify_sync, token)
     
-    def _verify_sync(self, token: str) -> dict:
+    def _verify_sync(self, token: str) -> AccessToken | None:
         """Synchronous token verification implementation.
         
         Args:
@@ -85,7 +86,7 @@ class TSIDPIntrospectionVerifier:
         
         # RFC 7662: Check if token is active
         if not introspection_result.get("active", False):
-            raise ValueError("Token is not active (expired, revoked, or invalid)")
+            return None  # Token is not active
         
         # Validate audience if specified
         if self.audience:
@@ -98,6 +99,16 @@ class TSIDPIntrospectionVerifier:
                     f"Audience mismatch: expected {self.audience}, got {token_aud}"
                 )
         
-        # Return the full introspection response
-        # Contains: sub, scope, aud, exp, iat, client_id, etc.
-        return introspection_result
+        # Convert introspection response to AccessToken
+        # RFC 7662 fields: active, scope, client_id, username, token_type, exp, iat, nbf, sub, aud, iss, jti
+        scopes_str = introspection_result.get("scope", "")
+        scopes = scopes_str.split() if scopes_str else []
+        
+        return AccessToken(
+            token=token,
+            client_id=introspection_result.get("client_id", ""),
+            scopes=scopes,
+            expires_at=introspection_result.get("exp"),  # Unix timestamp
+            resource=self.audience,
+            claims=introspection_result,  # Store full introspection response
+        )
