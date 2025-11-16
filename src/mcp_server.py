@@ -357,15 +357,85 @@ async def get_top_processes(limit: int = 10, sort_by: str = "cpu") -> dict:
 @mcp.tool()
 async def get_system_overview() -> dict:
     """Get comprehensive system overview (system stats, containers, network) in one call."""
+    import psutil
+    import os
+    
     try:
-        system = await get_system_status()
-        containers = await get_container_list()
-        network = await get_network_status()
-        processes = await get_top_processes(limit=5)
+        # Inline system status
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        memory = psutil.virtual_memory()
+        boot_time = psutil.boot_time()
+        uptime = int(datetime.now().timestamp() - boot_time)
+        
+        disk_info = []
+        for partition in psutil.disk_partitions(all=False):
+            try:
+                usage = psutil.disk_usage(partition.mountpoint)
+                disk_info.append({
+                    "mountpoint": partition.mountpoint,
+                    "total": usage.total,
+                    "used": usage.used,
+                    "free": usage.free,
+                    "percent": usage.percent
+                })
+            except (PermissionError, OSError):
+                continue
+        
+        load_avg = {}
+        if hasattr(os, 'getloadavg'):
+            load_avg = {"1m": os.getloadavg()[0], "5m": os.getloadavg()[1], "15m": os.getloadavg()[2]}
+        
+        system = {
+            "cpu_percent": cpu_percent,
+            "load_average": load_avg,
+            "memory_usage": {"total": memory.total, "available": memory.available, "used": memory.used, "percent": memory.percent},
+            "disk_usage": disk_info,
+            "uptime": uptime
+        }
+        
+        # Inline container list
+        containers_result = {"containers": [], "count": 0}
+        try:
+            import docker
+            client = docker.from_env()
+            containers = client.containers.list(all=True)
+            for container in containers:
+                image_name = container.image.tags[0] if container.image.tags else "unknown"
+                containers_result["containers"].append({
+                    "id": container.id[:12],
+                    "name": container.name,
+                    "status": container.status,
+                    "image": image_name
+                })
+            containers_result["count"] = len(containers_result["containers"])
+        except:
+            pass
+        
+        # Inline network status
+        network = {"interfaces": []}
+        try:
+            stats = psutil.net_if_stats()
+            for name, stat in stats.items():
+                network["interfaces"].append({"name": name, "isup": stat.isup, "speed": stat.speed})
+        except:
+            pass
+        
+        # Inline top processes
+        processes = []
+        try:
+            for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
+                try:
+                    processes.append(proc.info)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+            processes.sort(key=lambda p: p.get('cpu_percent', 0), reverse=True)
+            processes = processes[:5]
+        except:
+            pass
         
         return {
             "system": system,
-            "containers": containers,
+            "containers": containers_result,
             "network": network,
             "top_processes": processes,
             "timestamp": datetime.now().isoformat()
