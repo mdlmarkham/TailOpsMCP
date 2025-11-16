@@ -28,6 +28,7 @@ Perfect for **home lab enthusiasts**, **self-hosters**, and **DevOps engineers**
 
 ### 🚀 **Current Capabilities**
 
+- ✅ **MCP Prompts** - Pre-configured workflows for common tasks (security audit, health check, troubleshooting)
 - ✅ **Docker Compose Stack Management** - Deploy GitOps-style stacks from repos (like Portainer/Komodo)
 - ✅ **Proxmox LXC Detection** - Automatic virtualization environment detection
 - ✅ **AI-Powered Log Analysis** - Root cause detection with actionable recommendations
