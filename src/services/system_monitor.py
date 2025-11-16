@@ -4,12 +4,58 @@ System monitoring service for SystemManager MCP Server
 
 import psutil
 import os
+import subprocess
 from datetime import datetime
 from typing import Dict, Optional
 
 
 class SystemMonitor:
     """Service for monitoring system health and performance."""
+    
+    def _detect_virtualization(self) -> Dict[str, str]:
+        """Detect if running in a virtualized environment (LXC, Docker, KVM, etc).
+        
+        Returns:
+            Dict with 'type' (lxc, docker, kvm, none) and 'method' (how detected)
+        """
+        # Method 1: systemd-detect-virt (most reliable)
+        try:
+            result = subprocess.run(
+                ['systemd-detect-virt'],
+                capture_output=True,
+                text=True,
+                timeout=2
+            )
+            if result.returncode == 0:
+                virt_type = result.stdout.strip()
+                if virt_type and virt_type != 'none':
+                    return {
+                        'type': virt_type,
+                        'method': 'systemd-detect-virt'
+                    }
+        except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+            pass
+        
+        # Method 2: Check /proc/1/cgroup for container signatures
+        try:
+            with open('/proc/1/cgroup', 'r') as f:
+                cgroup_content = f.read()
+                if 'lxc' in cgroup_content.lower():
+                    return {'type': 'lxc', 'method': '/proc/1/cgroup'}
+                elif 'docker' in cgroup_content.lower():
+                    return {'type': 'docker', 'method': '/proc/1/cgroup'}
+        except (FileNotFoundError, PermissionError):
+            pass
+        
+        # Method 3: Check /.dockerenv
+        if os.path.exists('/.dockerenv'):
+            return {'type': 'docker', 'method': '/.dockerenv'}
+        
+        # Method 4: Check /proc/vz for OpenVZ
+        if os.path.exists('/proc/vz') and not os.path.exists('/proc/bc'):
+            return {'type': 'openvz', 'method': '/proc/vz'}
+        
+        return {'type': 'none', 'method': 'no indicators found'}
     
     async def get_status(self, detailed: bool = False) -> Dict:
         """Get current system health metrics."""
@@ -45,6 +91,9 @@ class SystemMonitor:
             # Network I/O
             net_io = psutil.net_io_counters()
             
+            # Virtualization detection
+            virt_info = self._detect_virtualization()
+            
             status = {
                 "cpu_percent": cpu_percent,
                 "memory": {
@@ -63,6 +112,7 @@ class SystemMonitor:
                     "bytes_sent": net_io.bytes_sent,
                     "bytes_recv": net_io.bytes_recv
                 },
+                "virtualization": virt_info,
                 "uptime": int((datetime.now() - datetime.fromtimestamp(psutil.boot_time())).total_seconds()),
                 "timestamp": datetime.now().isoformat()
             }
