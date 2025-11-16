@@ -2,13 +2,19 @@
 
 A secure Model Context Protocol (MCP) server for remote system management and monitoring. Provides AI agents with tools to monitor system health, manage Docker containers, explore file systems, and check network status.
 
+**Security Model**: Designed for **Tailscale-only deployment** with defense-in-depth security. Tailscale ACLs provide network-level security, while application-level authorization (bearer tokens + scopes) and audit logging provide additional protection. See [Security Documentation](docs/SECURITY.md) for details.
+
 ## Features
 
 - **System Monitoring**: Real-time CPU, memory, disk, and network metrics
 - **Docker Management**: Container lifecycle operations and status monitoring
 - **File System Exploration**: Directory listing and file search capabilities
 - **Network Status**: Interface monitoring and connectivity testing
-- **Security First**: Authentication, authorization, and audit logging
+- **Defense-in-Depth Security**: 
+  - **Network Layer**: Tailscale ACLs control WHO can reach server
+  - **Application Layer**: Bearer tokens + scopes control WHAT they can do
+  - **Audit Layer**: Comprehensive logging tracks WHO did WHAT with Tailscale identity
+  - **Approval Gates**: Critical operations require interactive approval
 - **Multiple Transports**: stdio and HTTP SSE protocol support
 - **Tailscale Integration**: Native Tailscale Services deployment support
 
@@ -98,6 +104,61 @@ logging:
   level: "INFO"
 ```
 
+**⚠️ IMPORTANT SECURITY NOTE**: 
+This configuration shows basic settings. For production deployments:
+1. **Always deploy behind Tailscale** - Never expose directly to internet
+2. **Enable authentication** - Set `SYSTEMMANAGER_REQUIRE_AUTH=true`
+3. **Use scoped tokens** - Grant minimum required privileges
+4. **Enable audit logging** - Track who did what
+5. **See [Security Documentation](docs/SECURITY.md)** for complete security model
+
+## Security
+
+SystemManager implements **defense-in-depth** for tailnet deployments:
+
+```
+Network Layer (Tailscale ACLs)
+  ↓ Controls WHO can reach server
+Application Layer (Bearer Tokens + Scopes)
+  ↓ Controls WHAT they can do
+Approval Layer (Interactive Gates)
+  ↓ Prevents unauthorized critical operations
+Audit Layer (Tailscale Identity Logging)
+  ↓ Tracks WHO did WHAT for forensics
+```
+
+### Quick Security Setup
+
+```bash
+# 1. Deploy behind Tailscale (REQUIRED)
+tailscale up --advertise-tags=tag:systemmanager-server
+
+# 2. Generate authentication secret
+export SYSTEMMANAGER_SHARED_SECRET="$(openssl rand -hex 32)"
+
+# 3. Enable authentication
+export SYSTEMMANAGER_REQUIRE_AUTH=true
+
+# 4. Generate scoped tokens
+python scripts/mint_token.py --agent "monitoring" --scopes "readonly" --ttl 30d
+python scripts/mint_token.py --agent "admin" --scopes "admin" --ttl 24h
+```
+
+### Token Scopes
+
+| Scope | Permissions | Use Case |
+|-------|------------|----------|
+| `readonly` | View metrics, containers, logs | Monitoring, observability |
+| `container:write` | Start/stop/restart containers | Container orchestration |
+| `container:admin` | Update containers, pull images | Deployment automation |
+| `system:admin` | Install packages, update system | Patch management |
+| `admin` | All permissions | Emergency access only |
+
+**Documentation**: 
+- [Complete Security Model](docs/SECURITY.md)
+- [Token Generation Examples](docs/security-configs/example-tokens.md)
+- [Security Configurations](docs/security-configs/)
+
 ## Usage
 
 ### MCP Client Connection
@@ -119,60 +180,64 @@ async def main():
 asyncio.run(main())
 ```
 
-### Available MCP Tools
+### Available MCP Tools (22 Total)
 
-### System Monitoring (6 tools)
+**Note**: Tool access controlled by scopes. See [Security Documentation](docs/SECURITY.md) for authorization requirements.
+
+#### System Monitoring (5 tools) - Scope: `system:read`
 - `get_system_status` — CPU, memory, disk, uptime, load average
-- `get_system_overview` — Comprehensive system + containers + network snapshot
-- `get_top_processes` — Top processes by CPU/memory (supports `format=\"toon\"`)
+- `get_top_processes` — Top processes by CPU/memory (supports `format="toon"`)
 - `get_network_status` — Network interfaces with addresses and stats
 - `get_network_io_counters` — Network I/O statistics summary
-- `health_check` — Server health status
+- `health_check` — Server health status (no auth required)
 
-### Docker Management (5 tools)
-- `get_container_list` — List all containers with status (supports `format=\"toon\"`)
-- `start_container` — Start a container by name/ID
-- `stop_container` — Stop a container gracefully
-- `restart_container` — Restart a container
-- `get_container_logs` — Retrieve recent container logs
+#### Docker Management (5 tools)
+- `get_container_list` — List containers (scope: `container:read`, supports `format="toon"`)
+- `manage_container` — Start/stop/restart/logs (scope: `container:write`, **HIGH RISK**)
+- `list_docker_images` — List images (scope: `container:read`)
+- `update_docker_container` — Update with latest image (scope: `container:admin`, **CRITICAL**, requires approval)
+- `pull_docker_image` — Pull from registry (scope: `docker:admin`, **CRITICAL**, requires approval)
 
-### File Operations (5 tools)
-- `list_directory` — List directory contents
-- `get_file_info` — Get file metadata and stats
-- `read_file` — Read file contents with line limits
-- `tail_file` — Get last N lines from file (for logs)
-- `search_files` — Search for files by pattern (wildcards)
+#### File Operations (1 consolidated tool) - Scope: `file:read`
+- `file_operations` — List/read/tail/search files (**HIGH RISK** - path restrictions apply)
 
-### Network Diagnostics (11 tools)
-- `ping_host` — Ping with latency stats (supports `format=\"toon\"`)
-- `test_tcp_port` — TCP connectivity test with latency
-- `dns_lookup` — DNS resolution (A, AAAA, MX, TXT, CNAME)
-- `check_ssl_certificate` — SSL cert validation and expiry
-- `http_request_test` — HTTP request performance testing
-- `get_active_connections` — Network connections summary (supports `format=\"toon\"`)
-- `check_open_ports` — Port scanning on localhost
-- `get_docker_networks` — Docker network inspection
-- `traceroute` — Network route tracing (requires traceroute binary)
+#### Network Diagnostics (8 tools)
+- `ping_host` — Ping with latency (scope: `network:diag`, supports `format="toon"`)
+- `test_port_connectivity` — TCP connectivity (scope: `network:diag`)
+- `dns_lookup` — DNS resolution (scope: `network:diag`)
+- `check_ssl_certificate` — SSL cert validation (scope: `network:diag`)
+- `http_request_test` — HTTP testing (scope: `network:diag`, **HIGH RISK**, requires approval)
+- `get_active_connections` — Network connections (scope: `network:read`, supports `format="toon"`)
+- `get_docker_networks` — Docker networks (scope: `container:read`)
+- `traceroute` — Route tracing (scope: `network:diag`)
 
-**All tools support optional `format` parameter**: `\"json\"` (default) or `\"toon\"` (token-efficient)
+#### System Administration (3 tools) - Scope: `system:admin`
+- `check_system_updates` — Check for updates (scope: `system:read`)
+- `update_system_packages` — Update all packages (**CRITICAL**, requires approval)
+- `install_package` — Install packages (**CRITICAL**, requires approval)
 
-- `get_system_status` - System health metrics
-- `get_container_list` - Docker container information
-- `list_directory` - File system directory listing
-- `search_files` - File search by pattern
-- `get_network_status` - Network interface status
+**Risk Levels**:
+- 🟢 **Low**: Read-only operations, safe for monitoring
+- 🟡 **Moderate**: Network diagnostics, limited impact
+- 🟠 **High**: Write operations, requires scoped access
+- 🔴 **Critical**: Destructive operations, requires approval + scoped access
 
-## Security
+## Deployment
 
-- **Authentication**: Bearer token authentication
-- **Authorization**: Role-based access control
-- **Audit Logging**: Comprehensive operation logging
-- **Resource Limits**: Rate limiting and operation constraints
-- **TLS Support**: Encrypted communication for HTTP transport
+### Security Checklist
 
-## Deployment Options
+Before deploying to production:
 
-### Standard Linux Deployment
+- [ ] ✅ **Deploy behind Tailscale** (NEVER expose to public internet)
+- [ ] ✅ **Configure Tailscale ACLs** to limit access to tagged devices
+- [ ] ✅ **Enable authentication** (`SYSTEMMANAGER_REQUIRE_AUTH=true`)
+- [ ] ✅ **Generate scoped tokens** with appropriate TTLs
+- [ ] ✅ **Enable audit logging** to track operations
+- [ ] ✅ **Review [Security Documentation](docs/SECURITY.md)**
+
+### Deployment Options
+
+#### Standard Linux Deployment
 
 ```bash
 # Systemd service
@@ -261,10 +326,16 @@ MIT License - see LICENSE file for details.
 
 ### Core Documentation
 - **Getting Started**: This README
+- **🔒 Security Model**: [docs/SECURITY.md](./docs/SECURITY.md) — **READ THIS FIRST** for tailnet deployments
 - **Installation**: [install.sh](./install.sh) — Automated Linux deployment
 - **API Reference**: [docs/tool_registry.md](./docs/tool_registry.md) — Complete MCP tool catalog
-- **Integration Guide**: [docs/integration.md](./docs/integration.md) — Multi-host deployment & security
-- **LLM Prompts**: [docs/prompts.md](./docs/prompts.md) — Prompt templates and decision rules
+- **Integration Guide**: [docs/integration.md](./docs/integration.md) — Multi-host deployment
+
+### Security & Configuration
+- **Security Documentation**: [docs/SECURITY.md](./docs/SECURITY.md) — Defense-in-depth model, threat scenarios
+- **Configuration Examples**: [docs/security-configs/](./docs/security-configs/) — Minimal, production, maximum security configs
+- **Token Generation**: [docs/security-configs/example-tokens.md](./docs/security-configs/example-tokens.md) — Token examples by use case
+- **Tailscale ACLs**: [docs/security-configs/tailscale-acl.production.jsonc](./docs/security-configs/tailscale-acl.production.jsonc) — Production ACL template
 
 ### Advanced Features
 - **TOON Format**: [TOON_INTEGRATION.md](./TOON_INTEGRATION.md) — 15-40% token savings guide

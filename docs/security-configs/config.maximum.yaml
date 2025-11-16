@@ -1,0 +1,122 @@
+# Maximum Security Configuration (Critical Infrastructure)
+
+# This configuration enables all security features including approval gates
+# for high-risk operations.
+# Suitable for: Critical infrastructure, regulated environments, high-security needs
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  transport: "http-sse"
+  
+security:
+  # AUTHENTICATION REQUIRED
+  auth_required: true
+  
+  # APPROVAL GATES ENABLED
+  approval_required: true
+  
+  # Token configuration - REPLACE WITH YOUR SECRET
+  token_type: "jwt"  # JWT for better token introspection
+  
+  # Aggressive rate limiting
+  rate_limit: 50  # requests per minute per token
+  max_file_size: 1048576  # 1MB (reduced for security)
+  
+  # Token rotation enforcement
+  max_token_age_hours: 24  # Force rotation every 24 hours
+
+logging:
+  level: "WARNING"  # Reduce noise in production
+  file: "/var/log/systemmanager/mcp.log"
+  
+  # Structured logging for SIEM integration
+  format: "json"
+  
+audit:
+  enabled: true
+  file: "/var/log/systemmanager/audit.log"
+  
+  # Send audit logs to SIEM
+  syslog:
+    enabled: true
+    host: "siem.example.com"
+    port: 514
+    protocol: "tcp"
+  
+  # Include full Tailscale context
+  include_tailscale_identity: true
+  
+  # Log even health checks (for anomaly detection)
+  log_health_checks: false
+
+docker:
+  socket_path: "/var/run/docker.sock"
+  
+  # Additional Docker security
+  read_only_root_fs: true
+  no_new_privileges: true
+
+filesystem:
+  # Minimal allowed paths
+  allowed_paths:
+    - "/var/log/systemmanager"
+    - "/var/log/containers"
+  
+  # Extensive deny list
+  denied_patterns:
+    - "**/.ssh/**"
+    - "**/.aws/**"
+    - "**/.config/**"
+    - "**/.kube/**"
+    - "**/id_*"
+    - "**/*_rsa*"
+    - "**/*.pem"
+    - "**/*.key"
+    - "**/secrets/**"
+    - "**/credentials/**"
+  
+  # Maximum file read size
+  max_read_size: 102400  # 100KB
+
+approval:
+  # Webhook for approval requests
+  webhook_url: "https://approval.example.com/approve"
+  webhook_timeout: 300  # 5 minutes
+  
+  # Require approval for these operations
+  required_for:
+    - "install_package"
+    - "update_system_packages"
+    - "pull_docker_image"
+    - "update_docker_container"
+    - "http_request_test"  # SSRF risk
+  
+  # Auto-deny without approval
+  default_action: "deny"
+
+# Environment variables required:
+# - SYSTEMMANAGER_JWT_SECRET=<your-secret>
+# - SYSTEMMANAGER_REQUIRE_AUTH=true
+# - SYSTEMMANAGER_ENABLE_APPROVAL=true
+# - SYSTEMMANAGER_APPROVAL_WEBHOOK=https://approval.example.com/approve
+
+# Token requirements:
+# - Separate token per user/agent (no sharing)
+# - TTL ≤ 24 hours
+# - Scopes: minimum required only
+# - Rotate daily
+# - Store in secrets manager (never in config/code)
+
+# Monitoring requirements:
+# - Alert on any critical operation
+# - Alert on authorization failures
+# - Alert on approval denials
+# - Correlate with Tailscale flow logs
+# - Review audit trail weekly
+
+# Incident response:
+# - Revoke token: update SYSTEMMANAGER_JWT_SECRET
+# - Restart service to apply new secret
+# - Review audit logs for compromise scope
+# - Check Tailscale flow logs for lateral movement

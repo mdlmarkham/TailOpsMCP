@@ -1,0 +1,97 @@
+// Production Tailscale ACL with Service Discovery
+// Suitable for: Production deployments, multi-user/multi-team environments
+
+{
+  // Define tag owners
+  // Only these users/groups can apply tags to devices
+  "tagOwners": {
+    // Server tag - only ops team can tag servers
+    "tag:systemmanager-server": ["group:ops", "group:admins"],
+    
+    // Client tags - who can tag clients
+    "tag:systemmanager-client-readonly": ["group:ops", "group:devs", "group:sre"],
+    "tag:systemmanager-client-admin": ["group:ops"],
+    
+    // Other organizational tags
+    "tag:prod": ["group:ops"],
+    "tag:staging": ["group:ops", "group:devs"],
+  },
+  
+  "groups": {
+    "group:ops": ["alice@example.com", "bob@example.com"],
+    "group:admins": ["alice@example.com"],
+    "group:devs": ["charlie@example.com", "diana@example.com"],
+    "group:sre": ["eve@example.com"],
+  },
+  
+  "acls": [
+    // Read-only clients can connect to server
+    {
+      "action": "accept",
+      "src": ["tag:systemmanager-client-readonly"],
+      "dst": ["tag:systemmanager-server:8080"],
+    },
+    
+    // Admin clients can connect to server
+    {
+      "action": "accept",
+      "src": ["tag:systemmanager-client-admin"],
+      "dst": ["tag:systemmanager-server:8080"],
+    },
+    
+    // Deny everyone else
+    {
+      "action": "deny",
+      "src": ["*"],
+      "dst": ["tag:systemmanager-server:*"],
+    },
+    
+    // Allow SSH for ops (optional - for debugging)
+    {
+      "action": "accept",
+      "src": ["group:ops"],
+      "dst": ["tag:systemmanager-server:22"],
+    },
+  ],
+  
+  // Tailscale Services for high availability
+  "services": {
+    "svc:systemmanager-mcp": {
+      "protocol": "tcp",
+      "port": 8080,
+      "tags": ["tag:systemmanager-server"],
+      
+      // Who can access the service
+      "allowedGroups": ["group:ops", "group:devs", "group:sre"],
+      "allowedTags": [
+        "tag:systemmanager-client-readonly",
+        "tag:systemmanager-client-admin"
+      ],
+    },
+  },
+  
+  // SSH configuration (optional)
+  "ssh": [
+    {
+      "action": "accept",
+      "src": ["group:ops"],
+      "dst": ["tag:systemmanager-server"],
+      "users": ["root", "systemmanager"],
+    },
+  ],
+}
+
+// USAGE:
+// 1. Apply this ACL in Tailscale admin console
+// 2. Tag your SystemManager server:
+//    tailscale up --advertise-tags=tag:systemmanager-server
+// 3. Tag your clients appropriately:
+//    - Monitoring tools: tag:systemmanager-client-readonly
+//    - Admin tools: tag:systemmanager-client-admin
+// 4. Access via: http://systemmanager-mcp.<tailnet>.ts.net:8080
+
+// SECURITY NOTES:
+// - Network access != application access (still need bearer tokens)
+// - Compromise of client-readonly tag != admin privileges
+// - Review tag ownership regularly
+// - Audit who can tag devices

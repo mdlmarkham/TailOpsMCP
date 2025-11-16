@@ -1,0 +1,25 @@
+// Minimal Tailscale ACL
+// Suitable for: Development, small tailnets, trusted users
+
+{
+  "acls": [
+    // Allow all tailnet members to access SystemManager
+    // WARNING: This is permissive! Use only in trusted environments.
+    {
+      "action": "accept",
+      "src": ["autogroup:member"],
+      "dst": ["*:8080"],
+    },
+  ],
+  
+  // No tag-based controls
+  // Relies on tailnet membership alone
+}
+
+// SECURITY WARNINGS:
+// - Any tailnet member can access the MCP server
+// - Compromised device = full access to SystemManager
+// - No granular control over who can do what
+// - Suitable ONLY for small, fully-trusted tailnets
+
+// RECOMMENDED: Upgrade to production ACL as soon as possible

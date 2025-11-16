@@ -1,0 +1,42 @@
+# Minimal Security Configuration (Development/Testing)
+
+# This configuration relies solely on Tailscale for network-level security.
+# Suitable for: Development, testing, trusted tailnets
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  transport: "http-sse"
+  
+security:
+  # Authentication OPTIONAL in minimal config
+  # Relies on Tailscale network isolation
+  auth_required: false
+  rate_limit: 100
+  max_file_size: 10485760  # 10MB
+
+logging:
+  level: "INFO"
+  file: "/var/log/systemmanager/mcp.log"
+  
+# Audit logging disabled for minimal config
+# audit:
+#   enabled: false
+
+docker:
+  socket_path: "/var/run/docker.sock"
+
+filesystem:
+  # Allow read access to common log locations
+  allowed_paths:
+    - "/var/log"
+    - "/tmp"
+
+# No scope enforcement
+# All operations allowed if you can reach the server via Tailscale
+
+# WARNINGS:
+# - Anyone on your tailnet can perform ANY operation
+# - No audit trail of who did what
+# - Suitable ONLY for trusted environments
+# - Use Tailscale ACLs to limit who can connect
