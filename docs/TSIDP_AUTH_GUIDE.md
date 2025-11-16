@@ -6,7 +6,7 @@ SystemManager now supports OAuth 2.1 authentication using your existing Tailscal
 
 ## Prerequisites
 
-- **TSIDP Server**: Running on your Tailnet (e.g., `https://idp.yourtailnet.ts.net`)
+- **TSIDP Server**: Running on your Tailnet (e.g., `https://tsidp.tailf9480.ts.net`)
 - **Tailscale**: Installed and authenticated on the server
 - **FastMCP 1.0+**: Built-in OAuth 2.1 support with Dynamic Client Registration
 
@@ -28,7 +28,7 @@ Uses OAuth 2.1 with automatic Dynamic Client Registration (RFC 7591).
 **Setup:**
 ```bash
 export SYSTEMMANAGER_AUTH_MODE=oauth
-export SYSTEMMANAGER_AUTH_SERVER=https://idp.yourtailnet.ts.net
+export SYSTEMMANAGER_AUTH_SERVER=https://tsidp.tailf9480.ts.net
 ```
 
 ### 2. HMAC Token Authentication (Legacy)
@@ -96,7 +96,7 @@ The MCP client will:
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
 | `SYSTEMMANAGER_AUTH_MODE` | Authentication mode | `token` | `oauth` |
-| `SYSTEMMANAGER_AUTH_SERVER` | TSIDP server URL | - | `https://idp.tailf9480.ts.net` |
+| `SYSTEMMANAGER_AUTH_SERVER` | TSIDP server URL | - | `https://tsidp.tailf9480.ts.net` |
 | `SYSTEMMANAGER_CLIENT_NAME` | OAuth client name | `SystemManager MCP` | `MyCompany SystemManager` |
 | `SYSTEMMANAGER_REQUIRED_SCOPES` | Required OAuth scopes | `email,profile` | `email,profile,openid` |
 
@@ -112,7 +112,7 @@ Example discovery response:
 {
   "resource": "https://systemmanager.yourtailnet.ts.net",
   "authorization_servers": [
-    "https://idp.yourtailnet.ts.net"
+    "https://tsidp.tailf9480.ts.net"
   ],
   "bearer_methods_supported": ["header"],
   "scopes_supported": ["email", "profile"]

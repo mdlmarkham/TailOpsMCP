@@ -27,7 +27,7 @@ sudo pkill -f "python -m src.mcp_server"
 
 # Start with OAuth
 export SYSTEMMANAGER_AUTH_MODE=oauth
-export SYSTEMMANAGER_AUTH_SERVER=https://idp.tailf9480.ts.net
+export SYSTEMMANAGER_AUTH_SERVER=https://tsidp.tailf9480.ts.net
 
 ./venv/bin/python -m src.mcp_server
 ```
@@ -55,7 +55,7 @@ export SYSTEMMANAGER_AUTH_SERVER=https://idp.tailf9480.ts.net
 ### Check TSIDP is Running
 
 ```bash
-curl https://idp.tailf9480.ts.net/.well-known/openid-configuration
+curl https://tsidp.tailf9480.ts.net/.well-known/openid-configuration
 ```
 
 Should return TSIDP metadata with endpoints.

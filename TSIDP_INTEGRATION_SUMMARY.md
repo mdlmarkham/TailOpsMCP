@@ -27,7 +27,7 @@
 **New Environment Variables:**
 ```bash
 SYSTEMMANAGER_AUTH_MODE=oauth           # Enable OAuth mode
-SYSTEMMANAGER_AUTH_SERVER=https://...  # Your TSIDP URL
+SYSTEMMANAGER_AUTH_SERVER=https://tsidp.tailf9480.ts.net  # Your TSIDP URL
 SYSTEMMANAGER_CLIENT_NAME=...          # Optional client name
 SYSTEMMANAGER_REQUIRED_SCOPES=...      # Optional scopes
 ```
@@ -128,7 +128,7 @@ Both authentication modes work:
    git pull
    pip install -r requirements.txt
    export SYSTEMMANAGER_AUTH_MODE=oauth
-   export SYSTEMMANAGER_AUTH_SERVER=https://idp.tailf9480.ts.net
+   export SYSTEMMANAGER_AUTH_SERVER=https://tsidp.tailf9480.ts.net
    python -m src.mcp_server
    ```
 
