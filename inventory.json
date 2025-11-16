@@ -1,1 +1,0 @@
-{"hosts": {}, "stacks": {"webapp": {"stack_name": "webapp", "host": "node-1", "path": "/srv/webapp", "services": ["web"]}}}

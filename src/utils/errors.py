@@ -5,6 +5,9 @@ class ErrorCategory(str, Enum):
     SYSTEM = "system"
     VALIDATION = "validation"
     PERMISSION = "permission"
+    UNAUTHORIZED = "unauthorized"
+    FORBIDDEN = "forbidden"
+    CONFIGURATION = "configuration"
 
 
 class SystemManagerError(Exception):
