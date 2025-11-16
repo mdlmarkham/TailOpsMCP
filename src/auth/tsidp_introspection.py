@@ -4,6 +4,7 @@ TSIDP issues opaque OAuth access tokens (not JWTs), so we must validate them
 using RFC 7662 token introspection instead of JWT signature verification.
 """
 
+import asyncio
 import requests
 from typing import Optional
 
@@ -34,8 +35,24 @@ class TSIDPIntrospectionVerifier:
         self.audience = audience
         self.required_scopes = required_scopes or []
     
-    def verify(self, token: str) -> dict:
-        """Verify an access token using TSIDP introspection.
+    async def verify_token(self, token: str) -> dict:
+        """Verify an access token using TSIDP introspection (async wrapper).
+        
+        Args:
+            token: The opaque access token from the Authorization header
+            
+        Returns:
+            dict: The introspection response with token claims
+            
+        Raises:
+            ValueError: If the token is invalid or inactive
+        """
+        # Run the blocking HTTP call in a thread pool
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._verify_sync, token)
+    
+    def _verify_sync(self, token: str) -> dict:
+        """Synchronous token verification implementation.
         
         Args:
             token: The opaque access token from the Authorization header
