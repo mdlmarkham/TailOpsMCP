@@ -6,8 +6,9 @@ import logging
 import functools
 import time
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal, Union
 from fastmcp import FastMCP
+from src.utils.toon import model_to_toon
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -43,10 +44,28 @@ def format_error(e: Exception, tool_name: str) -> dict:
         "tool": tool_name
     }
 
+def format_response(data: dict, format: str = "json") -> Union[dict, str]:
+    """Format response as JSON (default) or TOON.
+    
+    Args:
+        data: Response dictionary
+        format: 'json' for standard JSON, 'toon' for compact TOON format
+    
+    Returns:
+        dict for json format, str for toon format
+    """
+    if format == "toon":
+        return model_to_toon(data)
+    return data
+
 @mcp.tool()
 @cached(ttl_seconds=5)
-async def get_system_status() -> dict:
-    """Get comprehensive system status with CPU, memory, disk, and uptime."""
+async def get_system_status(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+    """Get comprehensive system status with CPU, memory, disk, and uptime.
+    
+    Args:
+        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+    """
     import psutil
     import os
     
@@ -84,7 +103,7 @@ async def get_system_status() -> dict:
         else:
             load_avg = {"note": "Not available on this platform"}
         
-        return {
+        result = {
             "cpu_percent": cpu_percent,
             "load_average": load_avg,
             "memory_usage": {
@@ -97,12 +116,17 @@ async def get_system_status() -> dict:
             "uptime": uptime,
             "timestamp": datetime.now().isoformat()
         }
+        return format_response(result, format)
     except Exception as e:
         return format_error(e, "get_system_status")
 
 @mcp.tool()
-async def get_container_list() -> dict:
-    """List all Docker containers with status and image information."""
+async def get_container_list(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+    """List all Docker containers with status and image information.
+    
+    Args:
+        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+    """
     try:
         import docker
         client = docker.from_env()
@@ -120,7 +144,7 @@ async def get_container_list() -> dict:
                 "ports": container.ports
             })
         
-        return {"containers": result, "count": len(result)}
+        return format_response({"containers": result, "count": len(result)}, format)
     except Exception as e:
         return format_error(e, "get_container_list")
 
@@ -273,8 +297,12 @@ async def tail_file(path: str, lines: int = 100) -> dict:
         return format_error(e, "tail_file")
 
 @mcp.tool()
-async def get_network_status() -> dict:
-    """Get network interface status with addresses and statistics."""
+async def get_network_status(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+    """Get network interface status with addresses and statistics.
+    
+    Args:
+        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+    """
     import psutil
     
     try:
@@ -303,7 +331,7 @@ async def get_network_status() -> dict:
             result["interfaces"].append(interface_info)
         
         result["timestamp"] = datetime.now().isoformat()
-        return result
+        return format_response(result, format)
     except Exception as e:
         return format_error(e, "get_network_status")
 
@@ -327,8 +355,14 @@ async def search_files(pattern: str, directory: str = "/tmp") -> dict:
         return format_error(e, "search_files")
 
 @mcp.tool()
-async def get_top_processes(limit: int = 10, sort_by: str = "cpu") -> dict:
-    """Get top processes by CPU or memory usage."""
+async def get_top_processes(limit: int = 10, sort_by: str = "cpu", format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+    """Get top processes by CPU or memory usage.
+    
+    Args:
+        limit: Number of processes to return
+        sort_by: Sort by 'cpu' or 'memory'
+        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+    """
     import psutil
     
     try:
@@ -345,12 +379,13 @@ async def get_top_processes(limit: int = 10, sort_by: str = "cpu") -> dict:
         else:  # default to cpu
             processes.sort(key=lambda p: p.get('cpu_percent', 0), reverse=True)
         
-        return {
+        result = {
             "processes": processes[:limit],
             "sort_by": sort_by,
             "total_processes": len(processes),
             "timestamp": datetime.now().isoformat()
         }
+        return format_response(result, format)
     except Exception as e:
         return format_error(e, "get_top_processes")
 
@@ -453,13 +488,19 @@ async def health_check() -> dict:
 # ============================================================================
 
 @mcp.tool()
-async def ping_host(host: str, count: int = 4) -> dict:
-    """Ping a host and return latency statistics (min/avg/max/loss)."""
+async def ping_host(host: str, count: int = 4, format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+    """Ping a host and return latency statistics (min/avg/max/loss).
+    
+    Args:
+        host: Hostname or IP address to ping
+        count: Number of ping packets to send
+        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+    """
     import subprocess
     import re
     
     try:
-        # Use system ping command
+        # Linux/Unix ping command
         result = subprocess.run(
             ['ping', '-c', str(count), host],
             capture_output=True,
@@ -486,9 +527,7 @@ async def ping_host(host: str, count: int = 4) -> dict:
                     "max": float(rtt_match.group(3))
                 }
         
-        return stats
-    except Exception as e:
-        return format_error(e, "ping_host")
+        return format_response(stats, format)
 
 @mcp.tool()
 async def test_tcp_port(host: str, port: int, timeout: int = 5) -> dict:
@@ -564,8 +603,13 @@ async def get_network_io_counters() -> dict:
         return format_error(e, "get_network_io_counters")
 
 @mcp.tool()
-async def get_active_connections(limit: int = 20) -> dict:
-    """Get active network connections (limited to 'limit' for token efficiency)."""
+async def get_active_connections(limit: int = 20, format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+    """Get active network connections (limited to 'limit' for token efficiency).
+    
+    Args:
+        limit: Maximum number of connections to return
+        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+    """
     import psutil
     
     try:
@@ -587,12 +631,13 @@ async def get_active_connections(limit: int = 20) -> dict:
                     "pid": conn.pid
                 })
         
-        return {
+        result = {
             "total": len(conns),
             "summary": summary,
             "connections": detailed,
             "truncated": len(conns) > limit
         }
+        return format_response(result, format)
     except Exception as e:
         return format_error(e, "get_active_connections")
 

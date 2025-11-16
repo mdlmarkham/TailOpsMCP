@@ -118,6 +118,10 @@ def model_to_toon(obj: Any) -> str:
         return directory_to_toon(obj)
     if isinstance(obj, NetworkStatus):
         return network_to_toon(obj)
+    
+    # Handle dicts (most common MCP response type)
+    if isinstance(obj, dict):
+        return dict_to_toon(obj)
 
     # If it's a list of models, try element-wise conversion to compact JSON
     if isinstance(obj, list):
@@ -128,7 +132,8 @@ def model_to_toon(obj: Any) -> str:
         except Exception:
             pass
 
-    raise TypeError(f"No TOON converter for {type(obj)}")
+    # Fallback to compact JSON
+    return json.dumps(obj, separators=(",",":"), ensure_ascii=False, default=str)
 
 
 def container_to_toon(ci: ContainerInfo) -> str:
@@ -159,6 +164,99 @@ def network_to_toon(ns: NetworkStatus) -> str:
         })
     out = {"i": ifaces, "t": ns.timestamp.isoformat()}
     return json.dumps(out, separators=(",",":"), ensure_ascii=False)
+
+
+def dict_to_toon(data: Dict[str, Any]) -> str:
+    """Convert a dictionary to compact TOON-like JSON.
+    
+    This is the generic converter for dict responses from MCP tools.
+    Uses tabular format for uniform arrays of dicts.
+    """
+    return _compact_json(data)
+
+
+def _compact_json(obj: Any) -> str:
+    """Recursively compact a JSON-serializable object using TOON principles.
+    
+    - Arrays of uniform dicts become TOON tabular format: [k1,k2,...][v1,v2,...][...]
+    - Nested dicts are compacted recursively
+    - Everything else uses minimal JSON
+    """
+    if isinstance(obj, dict):
+        # Check if this dict contains arrays that can be tabularized
+        compact = {}
+        for k, v in obj.items():
+            if isinstance(v, list) and len(v) > 0 and all(isinstance(x, dict) for x in v):
+                # Try TOON tabular format
+                tabular = _to_toon_tabular(v)
+                if tabular is not None:
+                    # Use TOON tabular string representation
+                    compact[k] = tabular
+                else:
+                    compact[k] = v
+            elif isinstance(v, (dict, list)):
+                # Recurse
+                result = _compact_json(v)
+                compact[k] = json.loads(result) if isinstance(result, str) else result
+            else:
+                compact[k] = v
+        return json.dumps(compact, separators=(",",":"), ensure_ascii=False)
+    elif isinstance(obj, list):
+        if len(obj) > 0 and all(isinstance(x, dict) for x in obj):
+            # Try TOON tabular format
+            tabular = _to_toon_tabular(obj)
+            if tabular is not None:
+                return tabular
+        # Mixed or primitive array
+        return json.dumps(obj, separators=(",",":"), ensure_ascii=False)
+    else:
+        return json.dumps(obj, separators=(",",":"), ensure_ascii=False)
+
+
+def _to_toon_tabular(arr: List[Dict[str, Any]]) -> Optional[str]:
+    """Convert array of uniform dicts to TOON tabular format.
+    
+    Format: [key1,key2,key3][val1,val2,val3][val1,val2,val3]...
+    Only works if all dicts have same keys and all values are primitives.
+    
+    Returns None if not suitable for tabular format.
+    """
+    if not arr:
+        return None
+    
+    # Check if all dicts have same keys
+    first_keys = list(arr[0].keys())
+    if not all(list(d.keys()) == first_keys for d in arr):
+        return None
+    
+    # Check if all values are primitives (not nested)
+    for d in arr:
+        for v in d.values():
+            if isinstance(v, (dict, list)):
+                return None
+    
+    # Build TOON tabular format
+    # Header: [key1,key2,key3]
+    header = "[" + ",".join(first_keys) + "]"
+    
+    # Rows: [val1,val2,val3]
+    rows = []
+    for d in arr:
+        values = []
+        for k in first_keys:
+            v = d[k]
+            if v is None:
+                values.append("null")
+            elif isinstance(v, bool):
+                values.append("true" if v else "false")
+            elif isinstance(v, str):
+                # Escape and quote strings
+                values.append(json.dumps(v))
+            else:
+                values.append(str(v))
+        rows.append("[" + ",".join(values) + "]")
+    
+    return header + "".join(rows)
 
 
 def _to_obj(s_or_obj):
