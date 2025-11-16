@@ -1,8 +1,13 @@
 """
 SystemManager MCP Server - FastMCP with HTTP Transport
 
-Authentication: HMAC Token-based authentication
-For TSIDP OAuth integration, see docs/TSIDP_AUTH_GUIDE.md (requires FastMCP Pro features)
+Supports two authentication modes:
+1. TSIDP OIDC - Uses Tailscale Identity Provider for zero-trust SSO
+2. HMAC Token - Legacy token-based authentication
+
+Set SYSTEMMANAGER_AUTH_MODE environment variable:
+- "oidc" - Use TSIDP as OIDC provider (recommended)
+- "token" - Use HMAC token authentication (default)
 """
 
 import logging
@@ -21,7 +26,33 @@ from src.services.log_analyzer import LogAnalyzer
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-mcp = FastMCP("SystemManager")
+# Determine authentication mode
+AUTH_MODE = os.getenv("SYSTEMMANAGER_AUTH_MODE", "token").lower()
+
+# Create FastMCP instance
+if AUTH_MODE == "oidc":
+    # TSIDP OIDC Authentication
+    tsidp_url = os.getenv("TSIDP_URL", "https://tsidp.tailf9480.ts.net")
+    base_url = os.getenv("SYSTEMMANAGER_BASE_URL", "http://localhost:8080")
+    
+    logger.info(f"Configuring OIDC authentication with TSIDP: {tsidp_url}")
+    
+    from fastmcp.server.auth.providers.oidc import OIDCProvider
+    
+    # TSIDP configuration - standard OIDC discovery
+    auth = OIDCProvider(
+        config_url=f"{tsidp_url}/.well-known/openid-configuration",
+        client_id=os.getenv("TSIDP_CLIENT_ID"),  # From TSIDP admin UI
+        client_secret=os.getenv("TSIDP_CLIENT_SECRET"),  # From TSIDP admin UI
+        base_url=base_url,
+        redirect_path="/auth/callback"
+    )
+    mcp = FastMCP("SystemManager", auth=auth)
+    logger.info("OIDC authentication enabled - users will authenticate via Tailscale")
+else:
+    # Token-based authentication (default)
+    mcp = FastMCP("SystemManager")
+    logger.info("Token-based authentication enabled")
 
 # Initialize log analyzer
 log_analyzer = LogAnalyzer()
@@ -972,11 +1003,16 @@ async def list_docker_images(format: Literal["json", "toon"] = "json") -> Union[
 
 if __name__ == "__main__":
     logger.info("Starting SystemManager MCP Server on http://0.0.0.0:8080")
-    logger.info("Authentication: HMAC Token-based")
-    logger.info("Intelligent log analysis with AI sampling enabled")
+    logger.info(f"Authentication mode: {AUTH_MODE}")
     
-    # Note: FastMCP automatically provides sampling capability to tools
-    # The log_analyzer will access it through Context when available
+    if AUTH_MODE == "oidc":
+        logger.info("OIDC authentication via TSIDP")
+        logger.info("Users will authenticate with their Tailscale identity")
+        logger.info(f"OIDC Issuer: {os.getenv('TSIDP_URL', 'https://tsidp.tailf9480.ts.net')}")
+    else:
+        logger.info("Token-based authentication")
+    
+    logger.info("Intelligent log analysis with AI sampling enabled")
     
     mcp.run(transport="sse", host="0.0.0.0", port=8080)
 
