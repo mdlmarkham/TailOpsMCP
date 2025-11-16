@@ -1,13 +1,8 @@
 """
 SystemManager MCP Server - FastMCP with HTTP Transport
 
-Supports two authentication modes:
-1. TSIDP OAuth 2.1 - Uses Tailscale Identity Provider with token introspection
-2. HMAC Token Authentication - Legacy token-based auth for backwards compatibility
-
-Set SYSTEMMANAGER_AUTH_MODE environment variable:
-- "oauth" - Use TSIDP OAuth 2.1 with introspection (recommended)
-- "token" - Use HMAC token authentication (default for backwards compatibility)
+Authentication: HMAC Token-based authentication
+For TSIDP OAuth integration, see docs/TSIDP_AUTH_GUIDE.md (requires FastMCP Pro features)
 """
 
 import logging
@@ -26,39 +21,7 @@ from src.services.log_analyzer import LogAnalyzer
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Determine authentication mode
-AUTH_MODE = os.getenv("SYSTEMMANAGER_AUTH_MODE", "token").lower()
-
-# Create FastMCP instance with optional OAuth
-if AUTH_MODE == "oauth":
-    auth_server = os.getenv("SYSTEMMANAGER_AUTH_SERVER")
-    if not auth_server:
-        logger.error("SYSTEMMANAGER_AUTH_SERVER required for OAuth mode")
-        raise ValueError("SYSTEMMANAGER_AUTH_SERVER environment variable required for OAuth mode")
-    
-    logger.info(f"Configuring OAuth authentication with TSIDP: {auth_server}")
-    
-    # Use RemoteAuthProvider with TSIDP token introspection
-    from fastmcp.server.auth import RemoteAuthProvider
-    from fastmcp.server.auth.verifiers.introspection import IntrospectionVerifier
-    from pydantic import AnyHttpUrl
-    
-    # TSIDP introspection endpoint
-    introspection_endpoint = f"{auth_server.rstrip('/')}/introspect"
-    
-    token_verifier = IntrospectionVerifier(
-        introspection_endpoint=introspection_endpoint,
-    )
-    
-    auth = RemoteAuthProvider(
-        token_verifier=token_verifier,
-        authorization_servers=[AnyHttpUrl(auth_server)],
-        base_url=os.getenv("SYSTEMMANAGER_BASE_URL", "http://localhost:8080"),
-    )
-    mcp = FastMCP("SystemManager", auth=auth)
-else:
-    # Legacy token mode
-    mcp = FastMCP("SystemManager")
+mcp = FastMCP("SystemManager")
 
 # Initialize log analyzer
 log_analyzer = LogAnalyzer()
@@ -1009,24 +972,11 @@ async def list_docker_images(format: Literal["json", "toon"] = "json") -> Union[
 
 if __name__ == "__main__":
     logger.info("Starting SystemManager MCP Server on http://0.0.0.0:8080")
-    logger.info(f"Authentication mode: {AUTH_MODE}")
-    
-    if AUTH_MODE == "oauth":
-        logger.info("Using TSIDP OAuth 2.1 authentication")
-        logger.info(f"Authorization Server: {os.getenv('SYSTEMMANAGER_AUTH_SERVER')}")
-        logger.info("OAuth features enabled:")
-        logger.info("  - Dynamic Client Registration (RFC 7591)")
-        logger.info("  - Token Introspection (RFC 7662)")
-        logger.info("  - Protected Resource Metadata (RFC 9728)")
-    else:
-        logger.info("Using HMAC token authentication (legacy)")
-        logger.info("Expecting Authorization: Bearer header with HMAC token")
-        # Token middleware is already applied via @secure_tool decorators
-    
+    logger.info("Authentication: HMAC Token-based")
     logger.info("Intelligent log analysis with AI sampling enabled")
     
     # Note: FastMCP automatically provides sampling capability to tools
-    # The log_analyzer will access it through mcp._request_ctx when available
+    # The log_analyzer will access it through Context when available
     
     mcp.run(transport="sse", host="0.0.0.0", port=8080)
 
