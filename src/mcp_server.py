@@ -235,10 +235,11 @@ async def file_operations(
     try:
         # SECURITY: Validate and sanitize path
         clean_path = filesec.sanitize_path(path)
-        if not filesec.is_path_allowed(clean_path):
+        path_allowed, reason = filesec.is_path_allowed(clean_path)
+        if not path_allowed:
             return {
                 "success": False,
-                "error": f"Access denied: {path} is not in allowed paths or matches deny pattern",
+                "error": f"Access denied: {reason}",
                 "allowed_paths": filesec.DEFAULT_ALLOWED_PATHS
             }
         
@@ -443,10 +444,12 @@ async def ping_host(host: str, count: int = 4, format: Literal["json", "toon"] =
     
     try:
         # SECURITY: Validate host to prevent SSRF
-        if not netsec.is_host_allowed(host):
+        host_allowed, reason = netsec.is_host_allowed(host)
+        if not host_allowed:
             return format_response({
                 "success": False,
-                "error": f"Access denied: {host} is not allowed (private IP or metadata service blocked)"
+                "error": f"Access denied: {reason}",
+                "host": host
             }, format)
         
         # Linux/Unix ping command
@@ -501,25 +504,35 @@ async def test_port_connectivity(host: str, port: int = None, ports: list[int] =
     
     try:
         # SECURITY: Validate host and ports
-        if not netsec.is_host_allowed(host):
+        host_allowed, host_reason = netsec.is_host_allowed(host)
+        if not host_allowed:
             return {
                 "success": False,
-                "error": f"Access denied: {host} is not allowed (private IP or metadata service blocked)"
+                "error": f"Access denied: {host_reason}",
             }
         
         # Determine which ports to test
         test_ports = []
         if port:
-            if not netsec.is_port_allowed(port):
-                return {"success": False, "error": f"Port {port} is not allowed"}
+            port_allowed, reason = netsec.is_port_allowed(port)
+            if not port_allowed:
+                return {"success": False, "error": f"Port {port} is not allowed: {reason}"}
             test_ports = [port]
         elif ports:
-            test_ports = [p for p in ports if netsec.is_port_allowed(p)]
+            filtered_ports = []
+            for p in ports:
+                allowed, _reason = netsec.is_port_allowed(p)
+                if allowed:
+                    filtered_ports.append(p)
+            test_ports = filtered_ports
             if not test_ports:
                 return {"success": False, "error": "No allowed ports in request"}
         else:
-            # Default common ports for localhost
-            test_ports = [22, 80, 443, 3306, 5432, 6379, 8080]
+            # Default common ports for localhost (filtered through allowlist)
+            default_ports = [22, 80, 443, 3306, 5432, 6379, 8080]
+            test_ports = [p for p in default_ports if netsec.is_port_allowed(p)[0]]
+            if not test_ports:
+                return {"success": False, "error": "No default ports are permitted by the allowlist"}
         
         results = []
         open_count = 0
@@ -652,10 +665,12 @@ async def http_request_test(url: str, method: str = "GET", timeout: int = 10) ->
     
     try:
         # SECURITY: Validate URL to prevent SSRF
-        if not netsec.is_url_allowed(url):
+        url_allowed, reason = netsec.is_url_allowed(url)
+        if not url_allowed:
             return {
                 "success": False,
-                "error": f"Access denied: {url} targets private IP or metadata service"
+                "error": f"Access denied: {reason}",
+                "url": url,
             }
         
         import requests

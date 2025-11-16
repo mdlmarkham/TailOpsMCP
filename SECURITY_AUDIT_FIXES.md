@@ -7,9 +7,15 @@
 
 ## AUDIT FINDINGS & FIXES
 
+### 🔴 CRITICAL #7: Allowlist Enforcement Bypassed (Feb 2025 follow-up)
+**Finding**: `file_operations`, `ping_host`, `test_port_connectivity`, and `http_request_test` compared the tuple returned by `filesec.is_path_allowed()` / `netsec.*` directly in boolean expressions.
+**Impact**: Python treats non-empty tuples as truthy, so the "deny" branch never executed. Attackers could read any file (including `/etc/shadow` and SSH keys) and issue arbitrary network probes/HTTP requests despite the newly added security helpers.
+**Fix**: ✅ Updated `src/mcp_server.py` to unpack `(allowed, reason)` tuples and enforce the boolean flag before performing any file or network operations. Added defensive error messaging so the caller knows why access was denied.
+**Tests**: ✅ Added `tests/test_security_enforcement.py` to ensure every tool aborts before touching the system when the helpers report "blocked".
+
 ### 🔴 CRITICAL #1: Security Middleware Never Wired
-**Finding**: Security middleware exists but `@secure_tool()` decorator never applied to any MCP tools  
-**Impact**: All endpoints completely unauthenticated  
+**Finding**: Security middleware exists but `@secure_tool()` decorator never applied to any MCP tools
+**Impact**: All endpoints completely unauthenticated
 **Fix**: ✅ Added `@secure_tool()` decorator to all 23 MCP tools  
 **Files**: `src/mcp_server.py`  
 **Note**: FastMCP doesn't support `**kwargs` in tools - will need to refactor to use Context state instead in production
