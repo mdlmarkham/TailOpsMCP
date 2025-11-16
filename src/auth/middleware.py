@@ -290,7 +290,19 @@ def secure_tool(tool_name: str):
         @secure_tool("manage_container")
         async def manage_container(**kwargs):
             ...
+    
+    Note: This decorator is only active when using token-based authentication.
+    When AUTH_MODE=oidc, FastMCP's RemoteAuthProvider handles authentication,
+    so this decorator becomes a no-op to avoid conflicts.
     """
+    # In OIDC mode, FastMCP handles auth - don't apply our token middleware
+    auth_mode = os.getenv("SYSTEMMANAGER_AUTH_MODE", "token").lower()
+    if auth_mode == "oidc":
+        def decorator(func: Callable) -> Callable:
+            return func  # Pass through without wrapping
+        return decorator
+    
+    # In token mode, apply our HMAC token middleware
     def decorator(func: Callable) -> Callable:
         return _middleware.wrap_tool(tool_name, func)
     return decorator
