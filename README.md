@@ -8,6 +8,7 @@ A secure Model Context Protocol (MCP) server for remote system management and mo
 
 - **System Monitoring**: Real-time CPU, memory, disk, and network metrics
 - **Docker Management**: Container lifecycle operations and status monitoring
+- **🆕 Intelligent Log Analysis**: AI-powered log analysis with root cause detection and recommendations
 - **File System Exploration**: Directory listing and file search capabilities
 - **Network Status**: Interface monitoring and connectivity testing
 - **Defense-in-Depth Security**: 
@@ -191,9 +192,10 @@ asyncio.run(main())
 - `get_network_io_counters` — Network I/O statistics summary
 - `health_check` — Server health status (no auth required)
 
-#### Docker Management (5 tools)
+#### Docker Management (6 tools)
 - `get_container_list` — List containers (scope: `container:read`, supports `format="toon"`)
 - `manage_container` — Start/stop/restart/logs (scope: `container:write`, **HIGH RISK**)
+- `analyze_container_logs` 🆕 — AI-powered log analysis with root cause detection (scope: `container:read`)
 - `list_docker_images` — List images (scope: `container:read`)
 - `update_docker_container` — Update with latest image (scope: `container:admin`, **CRITICAL**, requires approval)
 - `pull_docker_image` — Pull from registry (scope: `docker:admin`, **CRITICAL**, requires approval)
@@ -338,6 +340,7 @@ MIT License - see LICENSE file for details.
 - **Tailscale ACLs**: [docs/security-configs/tailscale-acl.production.jsonc](./docs/security-configs/tailscale-acl.production.jsonc) — Production ACL template
 
 ### Advanced Features
+- **🆕 Intelligent Log Analysis**: [docs/INTELLIGENT_LOG_ANALYSIS.md](./docs/INTELLIGENT_LOG_ANALYSIS.md) — AI-powered log analysis with sampling
 - **TOON Format**: [TOON_INTEGRATION.md](./TOON_INTEGRATION.md) — 15-40% token savings guide
 - **Tailscale Services**: [TAILSCALE_SERVICES.md](./TAILSCALE_SERVICES.md) — Zero-config service discovery
 - **Testing Guide**: [TESTING_REMOTE_GUIDE.md](./TESTING_REMOTE_GUIDE.md) — Remote testing procedures

@@ -12,11 +12,15 @@ from src.utils.toon import model_to_toon
 from src.services.package_manager import PackageManager
 from src.auth.middleware import secure_tool
 from src.tools import stack_tools
+from src.services.log_analyzer import LogAnalyzer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 mcp = FastMCP("SystemManager")
+
+# Initialize log analyzer (will be configured with sampling client later)
+log_analyzer = LogAnalyzer()
 
 # Initialize services
 package_manager = PackageManager()
@@ -218,6 +222,56 @@ async def manage_container(action: Literal["start", "stop", "restart", "logs"], 
             return {"success": False, "error": f"Invalid action: {action}"}
     except Exception as e:
         return format_error(e, "manage_container")
+
+@mcp.tool()
+@secure_tool("analyze_container_logs")
+async def analyze_container_logs(
+    name_or_id: str,
+    lines: int = 200,
+    context: Optional[str] = None,
+    use_ai: bool = True
+) -> dict:
+    """Analyze Docker container logs using AI to extract insights and identify issues.
+    
+    This tool uses AI sampling to intelligently analyze container logs, providing:
+    - Summary of log contents
+    - Identified errors and warnings with severity
+    - Root cause analysis
+    - Performance issue detection
+    - Actionable recommendations
+    
+    Args:
+        name_or_id: Container name or ID to analyze
+        lines: Number of recent log lines to analyze (default: 200)
+        context: Optional context about what to look for (e.g., "why did it crash?")
+        use_ai: Use AI analysis if available, otherwise fallback to pattern matching
+    
+    Returns:
+        Comprehensive analysis including summary, errors, root cause, and recommendations
+    """
+    try:
+        # Get container logs
+        client = get_docker_client()
+        container = client.containers.get(name_or_id)
+        logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
+        
+        # Configure log analyzer with MCP client if AI is requested
+        if use_ai and hasattr(mcp, '_request_ctx'):
+            # Access MCP's sampling capability
+            log_analyzer.mcp_client = mcp._request_ctx
+        
+        # Perform intelligent analysis
+        analysis = await log_analyzer.analyze_container_logs(
+            container_name=container.name,
+            logs=logs,
+            context=context
+        )
+        
+        return analysis
+        
+    except Exception as e:
+        logger.error(f"Log analysis failed: {e}")
+        return format_error(e, "analyze_container_logs")
 
 @mcp.tool()
 @secure_tool("file_operations")
@@ -916,5 +970,10 @@ async def list_docker_images(format: Literal["json", "toon"] = "json") -> Union[
 
 if __name__ == "__main__":
     logger.info("Starting SystemManager MCP Server on http://0.0.0.0:8080")
+    logger.info("Intelligent log analysis with AI sampling enabled")
+    
+    # Note: FastMCP automatically provides sampling capability to tools
+    # The log_analyzer will access it through mcp._request_ctx when available
+    
     mcp.run(transport="sse", host="0.0.0.0", port=8080)
 
