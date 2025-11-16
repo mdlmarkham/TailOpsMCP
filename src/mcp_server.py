@@ -134,45 +134,15 @@ def format_response(data: dict, format: str = "json") -> Union[dict, str]:
 @secure_tool("get_system_status")
 @cached(ttl_seconds=5)
 async def get_system_status(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
-    """Get comprehensive system status with CPU, memory, disk, uptime, and virtualization.
+    """Get comprehensive system status with CPU, memory, disk, and uptime.
     
     Args:
         format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
     """
     import psutil
     import os
-    import subprocess
     
     try:
-        # Detect virtualization
-        virt_type = "none"
-        virt_method = "no detection"
-        try:
-            result = subprocess.run(
-                ['systemd-detect-virt'],
-                capture_output=True,
-                text=True,
-                timeout=2
-            )
-            if result.returncode == 0:
-                detected = result.stdout.strip()
-                if detected and detected != 'none':
-                    virt_type = detected
-                    virt_method = "systemd-detect-virt"
-        except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
-            # Fallback: check /proc/1/cgroup
-            try:
-                with open('/proc/1/cgroup', 'r') as f:
-                    cgroup = f.read().lower()
-                    if 'lxc' in cgroup:
-                        virt_type = "lxc"
-                        virt_method = "/proc/1/cgroup"
-                    elif 'docker' in cgroup:
-                        virt_type = "docker"
-                        virt_method = "/proc/1/cgroup"
-            except (FileNotFoundError, PermissionError):
-                pass
-        
         # Non-blocking CPU measurement (returns cached value from previous call)
         cpu_percent = psutil.cpu_percent(interval=None)
         memory = psutil.virtual_memory()
@@ -216,10 +186,6 @@ async def get_system_status(format: Literal["json", "toon"] = "json") -> Union[d
                 "percent": memory.percent
             },
             "disk_usage": disk_info,
-            "virtualization": {
-                "type": virt_type,
-                "method": virt_method
-            },
             "uptime": uptime,
             "timestamp": datetime.now().isoformat()
         }
@@ -317,9 +283,9 @@ async def analyze_container_logs(
     use_ai: bool = True,
     ctx: Context = None
 ) -> dict:
-    """Analyze Docker container logs using AI to extract insights and identify issues.
+    """Analyze Docker container logs OR system log files using AI to extract insights and identify issues.
     
-    This tool uses AI sampling to intelligently analyze container logs, providing:
+    This tool uses AI sampling to intelligently analyze logs, providing:
     - Summary of log contents
     - Identified errors and warnings with severity
     - Root cause analysis
@@ -327,30 +293,73 @@ async def analyze_container_logs(
     - Actionable recommendations
     
     Args:
-        name_or_id: Container name or ID to analyze
+        name_or_id: Container name/ID OR path to system log file
+                   - For Docker: container name like "nginx" or ID like "abc123"
+                   - For system logs: full path like "/var/log/syslog" or "/var/log/auth.log"
+                   - Common system logs: syslog, auth.log, kern.log, dmesg, apache2/error.log
         lines: Number of recent log lines to analyze (default: 200)
-        context: Optional context about what to look for (e.g., "why did it crash?")
+        context: Optional context about what to look for (e.g., "why did it crash?", "find security issues")
         use_ai: Use AI analysis if available, otherwise fallback to pattern matching
     
     Returns:
         Comprehensive analysis including summary, errors, root cause, and recommendations
+        
+    Examples:
+        - Docker: name_or_id="nginx"
+        - System: name_or_id="/var/log/syslog"
+        - Auth:   name_or_id="/var/log/auth.log"
     """
     try:
-        # Get container logs
-        client = get_docker_client()
-        container = client.containers.get(name_or_id)
-        logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
+        # Check if it's a file path (system log)
+        if name_or_id.startswith('/'):
+            # System log file analysis
+            log_path = name_or_id
+            
+            # Read the log file (tail last N lines)
+            import subprocess
+            result = subprocess.run(
+                ['tail', '-n', str(lines), log_path],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            if result.returncode != 0:
+                return {
+                    "success": False,
+                    "error": f"Failed to read log file: {result.stderr}"
+                }
+            
+            logs = result.stdout
+            log_name = log_path.split('/')[-1]
+            
+            # Perform intelligent analysis
+            analysis = await log_analyzer.analyze_container_logs(
+                container_name=f"System Log: {log_name}",
+                logs=logs,
+                analysis_context=context,
+                use_ai=use_ai,
+                mcp_context=ctx
+            )
+            
+            return analysis
         
-        # Perform intelligent analysis - pass Context for AI sampling
-        analysis = await log_analyzer.analyze_container_logs(
-            container_name=container.name,
-            logs=logs,
-            analysis_context=context,
-            use_ai=use_ai,
-            mcp_context=ctx
-        )
-        
-        return analysis
+        else:
+            # Docker container log analysis (original behavior)
+            client = get_docker_client()
+            container = client.containers.get(name_or_id)
+            logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
+            
+            # Perform intelligent analysis - pass Context for AI sampling
+            analysis = await log_analyzer.analyze_container_logs(
+                container_name=container.name,
+                logs=logs,
+                analysis_context=context,
+                use_ai=use_ai,
+                mcp_context=ctx
+            )
+            
+            return analysis
         
     except Exception as e:
         logger.error(f"Log analysis failed: {e}")
