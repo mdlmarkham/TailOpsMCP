@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  systemmanager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: systemmanager-mcp
+    environment:
+      - SYSTEMMANAGER_AUTH_MODE=tailscale
+      - MCP_TRANSPORT=sse
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Access host Docker
+      - ./logs:/app/logs
+    networks:
+      - tailscale-net
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: systemmanager-tailscale
+    hostname: systemmanager-mcp
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./config:/config:ro
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    networks:
+      - tailscale-net
+    restart: unless-stopped
+    command: sh -c "tailscaled --tun=userspace-networking --socks5-server=localhost:1055 & sleep 5 && tailscale up --authkey=$${TS_AUTHKEY} --hostname=systemmanager-mcp && tailscale serve --bg --https=443 http://systemmanager:8080 && sleep infinity"
+
+networks:
+  tailscale-net:
+    driver: bridge
+
+volumes:
+  tailscale-state:
