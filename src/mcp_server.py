@@ -229,7 +229,7 @@ async def file_operations(
     """
     import os
     import fnmatch
-    from utils import filesec
+    from src.utils import filesec
     
     try:
         # SECURITY: Validate and sanitize path
@@ -421,7 +421,7 @@ async def ping_host(host: str, count: int = 4, format: Literal["json", "toon"] =
     """
     import subprocess
     import re
-    from utils import netsec
+    from src.utils import netsec
     
     try:
         # SECURITY: Validate host to prevent SSRF
@@ -479,7 +479,7 @@ async def test_port_connectivity(host: str, port: int = None, ports: list[int] =
     """
     import socket
     import time as tm
-    from utils import netsec
+    from src.utils import netsec
     
     try:
         # SECURITY: Validate host and ports
@@ -630,7 +630,7 @@ async def get_active_connections(limit: int = 20, format: Literal["json", "toon"
 async def http_request_test(url: str, method: str = "GET", timeout: int = 10) -> dict:
     """Test HTTP/HTTPS request (returns timing breakdown and status)."""
     import time as tm
-    from utils import netsec
+    from src.utils import netsec
     
     try:
         # SECURITY: Validate URL to prevent SSRF

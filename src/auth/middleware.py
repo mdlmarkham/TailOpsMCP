@@ -34,7 +34,7 @@ class SecurityMiddleware:
         self.enable_approval = os.getenv("SYSTEMMANAGER_ENABLE_APPROVAL", "false").lower() == "true"
         
     def get_claims_from_context(self, **kwargs) -> Optional[TokenClaims]:
-        """Extract and verify token from kwargs.
+        """Extract and verify token from kwargs or HTTP request.
         
         Args:
             **kwargs: May contain auth_token or headers with Authorization
@@ -44,13 +44,25 @@ class SecurityMiddleware:
         """
         token = None
         
-        # Extract token from kwargs
-        if "auth_token" in kwargs:
-            token = kwargs.get("auth_token")
-        elif "headers" in kwargs and isinstance(kwargs["headers"], dict):
-            auth_header = kwargs["headers"].get("Authorization", "")
-            if auth_header.lower().startswith("bearer "):
-                token = auth_header.split(None, 1)[1]
+        # Try to get token from HTTP request headers first
+        try:
+            from fastmcp.server.dependencies import get_http_request
+            request = get_http_request()
+            if request:
+                auth_header = request.headers.get("authorization", "")
+                if auth_header.lower().startswith("bearer "):
+                    token = auth_header.split(None, 1)[1]
+        except Exception:
+            pass  # No HTTP request context available
+        
+        # Fallback: Extract token from kwargs
+        if not token:
+            if "auth_token" in kwargs:
+                token = kwargs.get("auth_token")
+            elif "headers" in kwargs and isinstance(kwargs["headers"], dict):
+                auth_header = kwargs["headers"].get("Authorization", "")
+                if auth_header.lower().startswith("bearer "):
+                    token = auth_header.split(None, 1)[1]
         
         if not token:
             if self.require_auth:
