@@ -1027,5 +1027,6 @@ if __name__ == "__main__":
     
     logger.info("Intelligent log analysis with AI sampling enabled")
     
-    mcp.run(transport="sse", host="0.0.0.0", port=8080)
+    # Use HTTP streaming transport instead of SSE
+    mcp.run(transport="http", host="0.0.0.0", port=8080)
 
