@@ -64,7 +64,11 @@ class Inventory:
     """
 
     def __init__(self, path: Optional[str] = None):
-        default_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "inventory.json")
+        # Default to /var/lib/systemmanager for production, local dir for development
+        if os.path.exists('/var/lib/systemmanager'):
+            default_path = '/var/lib/systemmanager/inventory.json'
+        else:
+            default_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "inventory.json")
         self.path = path or os.getenv("SYSTEMMANAGER_INVENTORY", default_path)
         self._data: Dict = {
             "system": None,
