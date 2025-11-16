@@ -167,23 +167,81 @@ else
     echo "  curl http://localhost:8080/health"
 fi
 
+# Optional: Setup Tailscale Services
+echo ""
+echo "Optional: Tailscale Services Integration"
+echo "=========================================="
+read -p "Do you want to set up Tailscale Services for service discovery? (y/N) " -n 1 -r
+echo ""
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if command -v tailscale &> /dev/null; then
+        echo "Setting up Tailscale Services..."
+        
+        # Check if device is tagged
+        TAGS=$(sudo -u systemmanager tailscale status --json 2>/dev/null | python3 -c "import sys, json; data=json.load(sys.stdin); print(','.join(data.get('Self',{}).get('Tags',[])))" || echo "")
+        
+        if [ -z "$TAGS" ]; then
+            echo "⚠️  WARNING: This device is not tagged!"
+            echo "   Tailscale Services require tag-based identity."
+            echo "   Please tag this device in Tailscale admin console first."
+            echo "   Visit: https://login.tailscale.com/admin/machines"
+            echo ""
+            echo "   Skipping Tailscale Services setup. You can run it later:"
+            echo "   sudo /opt/systemmanager/scripts/setup_tailscale_service.sh"
+        else
+            echo "✓ Device has tags: $TAGS"
+            
+            # Run setup script
+            if [ -f /opt/systemmanager/scripts/setup_tailscale_service.sh ]; then
+                chmod +x /opt/systemmanager/scripts/setup_tailscale_service.sh
+                sudo -u systemmanager /opt/systemmanager/scripts/setup_tailscale_service.sh
+                
+                echo ""
+                echo "📋 Tailscale Services Next Steps:"
+                echo "1. Define service in admin console: https://login.tailscale.com/admin/services"
+                echo "2. Approve this host as a service host"
+                echo "3. Access via: http://systemmanager-mcp.<tailnet>.ts.net:8080/sse"
+                echo ""
+                echo "Documentation: /opt/systemmanager/TAILSCALE_SERVICES.md"
+            else
+                echo "⚠️  Setup script not found. Skipping Tailscale Services setup."
+            fi
+        fi
+    else
+        echo "⚠️  Tailscale not installed. Skipping Tailscale Services setup."
+        echo "   Install Tailscale: https://tailscale.com/download"
+        echo "   Then run: sudo /opt/systemmanager/scripts/setup_tailscale_service.sh"
+    fi
+fi
+
 echo ""
 echo "=================================================="
 echo "✓ Installation Complete!"
 echo "=================================================="
 echo ""
-echo "Next steps:"
-echo "1. Update security token in /etc/systemmanager/config.yaml"
-echo "2. Restart service: systemctl restart systemmanager-mcp"
-echo "3. Check status: systemctl status systemmanager-mcp"
-echo "4. View logs: journalctl -u systemmanager-mcp -f"
+echo "Service Status:"
+systemctl status systemmanager-mcp --no-pager | head -10
 echo ""
-echo "Test the server:"
-echo "  TOKEN='dev-test-token-12345'"
-echo "  curl -H 'Authorization: Bearer \$TOKEN' http://localhost:8080/health"
+echo "Next Steps:"
+echo "==========="
+echo "1. 🔐 Update security token in /etc/systemmanager/config.yaml"
+echo "   sed -i 's/dev-test-token-12345/YOUR_SECURE_TOKEN/' /etc/systemmanager/config.yaml"
+echo "   systemctl restart systemmanager-mcp"
+echo ""
+echo "2. 🧪 Test the server:"
+echo "   curl -H 'Authorization: Bearer YOUR_TOKEN' http://localhost:8080/sse"
+echo ""
+echo "3. 📡 (Optional) Set up Tailscale Services:"
+echo "   sudo /opt/systemmanager/scripts/setup_tailscale_service.sh"
+echo "   See: TAILSCALE_SERVICES.md for details"
 echo ""
 echo "Documentation:"
-echo "  - Configuration: /etc/systemmanager/config.yaml"
-echo "  - Logs: /var/log/systemmanager/mcp.log"
-echo "  - Service: systemctl {start|stop|restart} systemmanager-mcp"
+echo "=============="
+echo "  📝 Main: README.md"
+echo "  🔧 Configuration: /etc/systemmanager/config.yaml"
+echo "  📊 TOON Format: TOON_INTEGRATION.md (15-40% token savings)"
+echo "  🌐 Tailscale: TAILSCALE_SERVICES.md (zero-config discovery)"
+echo "  📜 Logs: /var/log/systemmanager/mcp.log"
+echo "  🔄 Service: systemctl {start|stop|restart|status} systemmanager-mcp"
+echo "  📋 Journal: journalctl -u systemmanager-mcp -f"
 echo ""

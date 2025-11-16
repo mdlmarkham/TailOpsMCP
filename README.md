@@ -46,6 +46,38 @@ docker run -d \
   systemmanager-mcp-server
 ```
 
+### TOON Format (Token-Efficient Responses)
+
+SystemManager supports TOON (Token-Oriented Object Notation) for 15-40% token savings:
+
+```python
+# Use format parameter on any MCP tool
+response = await mcp.call_tool(
+    "get_top_processes",
+    {"limit": 10, "format": "toon"}  # vs "json" (default)
+)
+
+# JSON response: ~177 tokens
+# TOON response: ~117 tokens  (33.9% savings!)
+```
+
+**Token Savings by Data Type:**
+- **Processes/Connections**: 30-52% reduction (tabular format)
+- **Container Lists**: 9-30% reduction
+- **System Status**: 2-10% reduction (nested structures)
+- **Overall Average**: 15-40% fewer tokens
+
+**Example TOON Output:**
+```javascript
+// Instead of:
+{"processes":[{"pid":1,"name":"systemd","cpu":0.0},...],"timestamp":"..."}
+
+// TOON format:
+{"processes":"[pid,name,cpu][1,\"systemd\",0.0]...","timestamp":"..."}
+```
+
+**Documentation**: See [TOON_INTEGRATION.md](./TOON_INTEGRATION.md) for benchmarks and usage
+
 ### Configuration
 
 Create `/etc/systemmanager/config.yaml`:
@@ -87,7 +119,42 @@ async def main():
 asyncio.run(main())
 ```
 
-### Available Tools
+### Available MCP Tools
+
+### System Monitoring (6 tools)
+- `get_system_status` — CPU, memory, disk, uptime, load average
+- `get_system_overview` — Comprehensive system + containers + network snapshot
+- `get_top_processes` — Top processes by CPU/memory (supports `format=\"toon\"`)
+- `get_network_status` — Network interfaces with addresses and stats
+- `get_network_io_counters` — Network I/O statistics summary
+- `health_check` — Server health status
+
+### Docker Management (5 tools)
+- `get_container_list` — List all containers with status (supports `format=\"toon\"`)
+- `start_container` — Start a container by name/ID
+- `stop_container` — Stop a container gracefully
+- `restart_container` — Restart a container
+- `get_container_logs` — Retrieve recent container logs
+
+### File Operations (5 tools)
+- `list_directory` — List directory contents
+- `get_file_info` — Get file metadata and stats
+- `read_file` — Read file contents with line limits
+- `tail_file` — Get last N lines from file (for logs)
+- `search_files` — Search for files by pattern (wildcards)
+
+### Network Diagnostics (11 tools)
+- `ping_host` — Ping with latency stats (supports `format=\"toon\"`)
+- `test_tcp_port` — TCP connectivity test with latency
+- `dns_lookup` — DNS resolution (A, AAAA, MX, TXT, CNAME)
+- `check_ssl_certificate` — SSL cert validation and expiry
+- `http_request_test` — HTTP request performance testing
+- `get_active_connections` — Network connections summary (supports `format=\"toon\"`)
+- `check_open_ports` — Port scanning on localhost
+- `get_docker_networks` — Docker network inspection
+- `traceroute` — Network route tracing (requires traceroute binary)
+
+**All tools support optional `format` parameter**: `\"json\"` (default) or `\"toon\"` (token-efficient)
 
 - `get_system_status` - System health metrics
 - `get_container_list` - Docker container information
@@ -114,12 +181,32 @@ sudo systemctl enable systemmanager-mcp
 sudo systemctl start systemmanager-mcp
 ```
 
-### Tailscale Services
+### Tailscale Services (Zero-Config Service Discovery)
+
+Tailscale Services provides enterprise-grade service discovery and high availability:
 
 ```bash
-# Enable Tailscale Services
-tailscale serve --config=deploy/tailscale-service.json
+# Quick setup (interactive)
+sudo /opt/systemmanager/scripts/setup_tailscale_service.sh
+
+# Manual setup
+tailscale serve \
+  --service=svc:systemmanager-mcp \
+  --tls-terminated-tcp=8080 \
+  tcp://localhost:8080
+
+# Then approve in admin console:
+# https://login.tailscale.com/admin/services
 ```
+
+**Benefits:**
+- 🌐 **Stable Names**: Access via `http://systemmanager-mcp.yourtailnet.ts.net:8080`
+- 🔄 **High Availability**: Multiple hosts with automatic failover
+- 🔍 **Auto-Discovery**: DNS SRV records for service discovery
+- 🔐 **Service ACLs**: Granular access control per service
+- 🚀 **Zero Reconfiguration**: Move hosts without updating clients
+
+**Documentation**: See [TAILSCALE_SERVICES.md](./TAILSCALE_SERVICES.md) for complete guide
 
 ### ProxMox LXC Containers
 
@@ -172,12 +259,20 @@ MIT License - see LICENSE file for details.
 
 ## Documentation
 
-- Tool Registry: `docs/tool_registry.md` — detailed tool catalog and schemas.
-- LLM Prompt Templates: `docs/prompts.md` — prompt templates, decision rules, and examples.
-- Integration & Deployment: `docs/integration.md` — multi-host Tailscale deployment, tokens, and hardening.
+### Core Documentation
+- **Getting Started**: This README
+- **Installation**: [install.sh](./install.sh) — Automated Linux deployment
+- **API Reference**: [docs/tool_registry.md](./docs/tool_registry.md) — Complete MCP tool catalog
+- **Integration Guide**: [docs/integration.md](./docs/integration.md) — Multi-host deployment & security
+- **LLM Prompts**: [docs/prompts.md](./docs/prompts.md) — Prompt templates and decision rules
+
+### Advanced Features
+- **TOON Format**: [TOON_INTEGRATION.md](./TOON_INTEGRATION.md) — 15-40% token savings guide
+- **Tailscale Services**: [TAILSCALE_SERVICES.md](./TAILSCALE_SERVICES.md) — Zero-config service discovery
+- **Testing Guide**: [TESTING_REMOTE_GUIDE.md](./TESTING_REMOTE_GUIDE.md) — Remote testing procedures
 
 ## Support
 
-- Documentation: [docs.systemmanager.local](https://docs.systemmanager.local)
-- Issues: [GitHub Issues](https://github.com/your-org/systemmanager-mcp-server/issues)
-- Discussions: [GitHub Discussions](https://github.com/your-org/systemmanager-mcp-server/discussions)
+- Repository: [github.com/mdlmarkham/SystemManager](https://github.com/mdlmarkham/SystemManager)
+- Issues: [GitHub Issues](https://github.com/mdlmarkham/SystemManager/issues)
+- Discussions: [GitHub Discussions](https://github.com/mdlmarkham/SystemManager/discussions)
