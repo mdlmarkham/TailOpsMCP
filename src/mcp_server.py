@@ -227,10 +227,10 @@ async def manage_container(action: Literal["start", "stop", "restart", "logs"], 
 @secure_tool("analyze_container_logs")
 async def analyze_container_logs(
     name_or_id: str,
-    ctx: Context,
     lines: int = 200,
-    analysis_context: Optional[str] = None,
-    use_ai: bool = True
+    context: Optional[str] = None,
+    use_ai: bool = True,
+    ctx: Context = None
 ) -> dict:
     """Analyze Docker container logs using AI to extract insights and identify issues.
     
@@ -243,9 +243,8 @@ async def analyze_container_logs(
     
     Args:
         name_or_id: Container name or ID to analyze
-        ctx: FastMCP Context object (automatically injected)
         lines: Number of recent log lines to analyze (default: 200)
-        analysis_context: Optional context about what to look for (e.g., "why did it crash?")
+        context: Optional context about what to look for (e.g., "why did it crash?")
         use_ai: Use AI analysis if available, otherwise fallback to pattern matching
     
     Returns:
@@ -261,7 +260,7 @@ async def analyze_container_logs(
         analysis = await log_analyzer.analyze_container_logs(
             container_name=container.name,
             logs=logs,
-            analysis_context=analysis_context,
+            analysis_context=context,
             use_ai=use_ai,
             mcp_context=ctx
         )
