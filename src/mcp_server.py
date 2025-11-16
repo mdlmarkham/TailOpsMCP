@@ -21,6 +21,17 @@ mcp = FastMCP("SystemManager")
 # Initialize services
 package_manager = PackageManager()
 
+# Docker client singleton (P1 optimization)
+_docker_client = None
+
+def get_docker_client():
+    """Get or create Docker client singleton."""
+    global _docker_client
+    if _docker_client is None:
+        import docker
+        _docker_client = docker.from_env()
+    return _docker_client
+
 # Cache decorator for system stats
 _cache = {}
 def cached(ttl_seconds: int = 5):
@@ -77,8 +88,8 @@ async def get_system_status(format: Literal["json", "toon"] = "json") -> Union[d
     import os
     
     try:
-        # Non-blocking CPU measurement
-        cpu_percent = psutil.cpu_percent(interval=0.1)
+        # Non-blocking CPU measurement (returns cached value from previous call)
+        cpu_percent = psutil.cpu_percent(interval=None)
         memory = psutil.virtual_memory()
         boot_time = psutil.boot_time()
         uptime = int(datetime.now().timestamp() - boot_time)
@@ -136,8 +147,7 @@ async def get_container_list(format: Literal["json", "toon"] = "json") -> Union[
         format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
     """
     try:
-        import docker
-        client = docker.from_env()
+        client = get_docker_client()
         containers = client.containers.list(all=True)
         
         result = []
@@ -167,8 +177,7 @@ async def manage_container(action: Literal["start", "stop", "restart", "logs"], 
         lines: Number of log lines to retrieve (only for 'logs' action)
     """
     try:
-        import docker
-        client = docker.from_env()
+        client = get_docker_client()
         container = client.containers.get(name_or_id)
         
         if action == "start":
@@ -724,14 +733,17 @@ async def check_ssl_certificate(host: str, port: int = 443) -> dict:
 
 @mcp.tool()
 @secure_tool("get_docker_networks")
-async def get_docker_networks() -> dict:
-    """List Docker networks (compact summary)."""
+async def get_docker_networks(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+    """List Docker networks (compact summary).
+    
+    Args:
+        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+    """
     try:
-        import docker
-        client = docker.from_env()
+        client = get_docker_client()
         networks = client.networks.list()
         
-        return {
+        result = {
             "networks": [
                 {
                     "name": net.name,
@@ -744,6 +756,7 @@ async def get_docker_networks() -> dict:
             ],
             "count": len(networks)
         }
+        return format_response(result, format)
     except Exception as e:
         return format_error(e, "get_docker_networks")
 
@@ -848,8 +861,7 @@ async def pull_docker_image(image_name: str, tag: str = "latest") -> dict:
     Returns image ID, tags, and size information.
     """
     try:
-        import docker
-        client = docker.from_env()
+        client = get_docker_client()
         from src.services.docker_manager import DockerManager
         dm = DockerManager()
         dm.client = client
@@ -873,8 +885,7 @@ async def update_docker_container(name_or_id: str, pull_latest: bool = True) -> 
     Warning: Container will be stopped and recreated. Ensure data is in volumes.
     """
     try:
-        import docker
-        client = docker.from_env()
+        client = get_docker_client()
         from src.services.docker_manager import DockerManager
         dm = DockerManager()
         dm.client = client
@@ -885,19 +896,21 @@ async def update_docker_container(name_or_id: str, pull_latest: bool = True) -> 
 
 @mcp.tool()
 @secure_tool("list_docker_images")
-async def list_docker_images() -> dict:
+async def list_docker_images(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
     """List all Docker images on the system.
+    
+    Args:
+        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
     
     Returns image IDs, tags, sizes, and creation dates.
     """
     try:
-        import docker
-        client = docker.from_env()
+        client = get_docker_client()
         from src.services.docker_manager import DockerManager
         dm = DockerManager()
         dm.client = client
         result = await dm.list_images()
-        return result
+        return format_response(result, format)
     except Exception as e:
         return format_error(e, "list_docker_images")
 
