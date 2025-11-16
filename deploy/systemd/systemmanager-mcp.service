@@ -1,34 +1,44 @@
 [Unit]
-Description=SystemManager MCP Server
-Documentation=https://github.com/your-org/systemmanager-mcp-server
+Description=SystemManager MCP Server with OAuth/OIDC
+Documentation=https://github.com/mdlmarkham/SystemManager
 After=network.target docker.service
 Wants=docker.service
 
 [Service]
 Type=simple
-User=systemmanager
-Group=systemmanager
+User=root
+Group=root
 WorkingDirectory=/opt/systemmanager
-ExecStart=/usr/local/bin/python -m src.mcp_server
+
+# Load secrets from protected environment file
+EnvironmentFile=/opt/systemmanager/.env
+
+# Use the virtual environment Python
+ExecStart=/opt/systemmanager/venv/bin/python -m src.mcp_server
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
-RestartSec=5
+RestartSec=10s
+StartLimitInterval=300
+StartLimitBurst=5
 
-# Security
+# Security hardening
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/var/log/systemmanager /etc/systemmanager
+ReadWritePaths=/opt/systemmanager/logs
 
 # Resource limits
 LimitNOFILE=65536
-MemoryLimit=100M
-CPUQuota=50%
 
 # Environment
 Environment=PYTHONUNBUFFERED=1
 Environment=LOG_LEVEL=INFO
+
+# Logging to journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=systemmanager-mcp
 
 [Install]
 WantedBy=multi-user.target
