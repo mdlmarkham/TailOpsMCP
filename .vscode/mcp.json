@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "SystemManager": {
+      "type": "sse",
+      "url": "http://dev1.tailf9480.ts.net:8080/sse",
+      "description": "SystemManager MCP Server - Provides system monitoring, Docker container management, file operations, and network status tools"
+    }
+  }
+}
