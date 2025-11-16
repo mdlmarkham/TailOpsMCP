@@ -448,6 +448,293 @@ async def health_check() -> dict:
     """Health check."""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
+# ============================================================================
+# NETWORK DIAGNOSTICS - Token-efficient output
+# ============================================================================
+
+@mcp.tool()
+async def ping_host(host: str, count: int = 4) -> dict:
+    """Ping a host and return latency statistics (min/avg/max/loss)."""
+    import subprocess
+    import re
+    
+    try:
+        # Use system ping command
+        result = subprocess.run(
+            ['ping', '-c', str(count), host],
+            capture_output=True,
+            text=True,
+            timeout=count + 5
+        )
+        
+        # Parse compact stats from output
+        stats = {"host": host, "count": count, "reachable": False}
+        
+        if result.returncode == 0:
+            stats["reachable"] = True
+            # Extract packet loss
+            loss_match = re.search(r'(\d+)% packet loss', result.stdout)
+            if loss_match:
+                stats["loss_percent"] = int(loss_match.group(1))
+            
+            # Extract rtt stats (min/avg/max/mdev)
+            rtt_match = re.search(r'min/avg/max/\w+ = ([\d.]+)/([\d.]+)/([\d.]+)', result.stdout)
+            if rtt_match:
+                stats["latency_ms"] = {
+                    "min": float(rtt_match.group(1)),
+                    "avg": float(rtt_match.group(2)),
+                    "max": float(rtt_match.group(3))
+                }
+        
+        return stats
+    except Exception as e:
+        return format_error(e, "ping_host")
+
+@mcp.tool()
+async def test_tcp_port(host: str, port: int, timeout: int = 5) -> dict:
+    """Test TCP port connectivity (returns open/closed status and latency)."""
+    import socket
+    import time as tm
+    
+    try:
+        start = tm.time()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        
+        result = sock.connect_ex((host, port))
+        latency = (tm.time() - start) * 1000  # Convert to ms
+        sock.close()
+        
+        return {
+            "host": host,
+            "port": port,
+            "open": result == 0,
+            "latency_ms": round(latency, 2) if result == 0 else None
+        }
+    except Exception as e:
+        return format_error(e, "test_tcp_port")
+
+@mcp.tool()
+async def dns_lookup(domain: str, record_type: str = "A") -> dict:
+    """DNS lookup (supports A, AAAA, MX, TXT, CNAME). Returns compact results."""
+    import socket
+    
+    try:
+        results = {"domain": domain, "type": record_type, "records": []}
+        
+        if record_type == "A":
+            # IPv4 addresses
+            results["records"] = socket.gethostbyname_ex(domain)[2]
+        elif record_type == "AAAA":
+            # IPv6 addresses
+            info = socket.getaddrinfo(domain, None, socket.AF_INET6)
+            results["records"] = list(set([addr[4][0] for addr in info]))
+        else:
+            # For MX, TXT, CNAME - require dnspython (optional)
+            try:
+                import dns.resolver
+                answers = dns.resolver.resolve(domain, record_type)
+                results["records"] = [str(rdata) for rdata in answers]
+            except ImportError:
+                results["error"] = f"{record_type} records require 'dnspython' package"
+        
+        results["count"] = len(results["records"])
+        return results
+    except Exception as e:
+        return format_error(e, "dns_lookup")
+
+@mcp.tool()
+async def get_network_io_counters() -> dict:
+    """Get network I/O statistics (bytes, packets, errors) - summary only."""
+    import psutil
+    
+    try:
+        io = psutil.net_io_counters()
+        return {
+            "bytes_sent_mb": round(io.bytes_sent / 1024 / 1024, 2),
+            "bytes_recv_mb": round(io.bytes_recv / 1024 / 1024, 2),
+            "packets_sent": io.packets_sent,
+            "packets_recv": io.packets_recv,
+            "errors_in": io.errin,
+            "errors_out": io.errout,
+            "drops_in": io.dropin,
+            "drops_out": io.dropout
+        }
+    except Exception as e:
+        return format_error(e, "get_network_io_counters")
+
+@mcp.tool()
+async def get_active_connections(limit: int = 20) -> dict:
+    """Get active network connections (limited to 'limit' for token efficiency)."""
+    import psutil
+    
+    try:
+        conns = psutil.net_connections(kind='inet')
+        
+        # Group by status for summary
+        summary = {}
+        detailed = []
+        
+        for conn in conns[:limit]:
+            status = conn.status
+            summary[status] = summary.get(status, 0) + 1
+            
+            if len(detailed) < limit:
+                detailed.append({
+                    "local": f"{conn.laddr.ip}:{conn.laddr.port}" if conn.laddr else None,
+                    "remote": f"{conn.raddr.ip}:{conn.raddr.port}" if conn.raddr else None,
+                    "status": status,
+                    "pid": conn.pid
+                })
+        
+        return {
+            "total": len(conns),
+            "summary": summary,
+            "connections": detailed,
+            "truncated": len(conns) > limit
+        }
+    except Exception as e:
+        return format_error(e, "get_active_connections")
+
+@mcp.tool()
+async def check_open_ports(ports: list[int] = [22, 80, 443, 3306, 5432, 6379, 8080]) -> dict:
+    """Check which ports are listening on localhost (returns only open ports)."""
+    import socket
+    
+    try:
+        open_ports = []
+        
+        for port in ports:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.5)
+            result = sock.connect_ex(('127.0.0.1', port))
+            sock.close()
+            
+            if result == 0:
+                open_ports.append(port)
+        
+        return {
+            "scanned": len(ports),
+            "open": open_ports,
+            "count": len(open_ports)
+        }
+    except Exception as e:
+        return format_error(e, "check_open_ports")
+
+@mcp.tool()
+async def http_request_test(url: str, method: str = "GET", timeout: int = 10) -> dict:
+    """Test HTTP/HTTPS request (returns timing breakdown and status)."""
+    import time as tm
+    
+    try:
+        import requests
+        
+        start = tm.time()
+        response = requests.request(method, url, timeout=timeout, allow_redirects=True)
+        total_time = (tm.time() - start) * 1000
+        
+        return {
+            "url": url,
+            "method": method,
+            "status_code": response.status_code,
+            "ok": response.ok,
+            "total_time_ms": round(total_time, 2),
+            "size_bytes": len(response.content),
+            "redirects": len(response.history)
+        }
+    except Exception as e:
+        return format_error(e, "http_request_test")
+
+@mcp.tool()
+async def check_ssl_certificate(host: str, port: int = 443) -> dict:
+    """Check SSL/TLS certificate (returns validity, expiration, issuer - compact)."""
+    import socket
+    import ssl
+    from datetime import datetime
+    
+    try:
+        context = ssl.create_default_context()
+        with socket.create_connection((host, port), timeout=5) as sock:
+            with context.wrap_socket(sock, server_hostname=host) as ssock:
+                cert = ssock.getpeercert()
+                
+                # Parse expiration
+                not_after = datetime.strptime(cert['notAfter'], '%b %d %H:%M:%S %Y %Z')
+                days_until_expiry = (not_after - datetime.now()).days
+                
+                return {
+                    "host": host,
+                    "valid": True,
+                    "subject": dict(x[0] for x in cert['subject']),
+                    "issuer": dict(x[0] for x in cert['issuer'])['organizationName'],
+                    "expires": cert['notAfter'],
+                    "days_until_expiry": days_until_expiry,
+                    "expired": days_until_expiry < 0,
+                    "expiring_soon": 0 < days_until_expiry < 30
+                }
+    except Exception as e:
+        return format_error(e, "check_ssl_certificate")
+
+@mcp.tool()
+async def get_docker_networks() -> dict:
+    """List Docker networks (compact summary)."""
+    try:
+        import docker
+        client = docker.from_env()
+        networks = client.networks.list()
+        
+        return {
+            "networks": [
+                {
+                    "name": net.name,
+                    "id": net.id[:12],
+                    "driver": net.attrs['Driver'],
+                    "scope": net.attrs['Scope'],
+                    "containers": len(net.attrs.get('Containers', {}))
+                }
+                for net in networks
+            ],
+            "count": len(networks)
+        }
+    except Exception as e:
+        return format_error(e, "get_docker_networks")
+
+@mcp.tool()
+async def traceroute(host: str, max_hops: int = 15) -> dict:
+    """Perform traceroute (returns hop summary, not full details)."""
+    import subprocess
+    import re
+    
+    try:
+        result = subprocess.run(
+            ['traceroute', '-m', str(max_hops), '-w', '2', host],
+            capture_output=True,
+            text=True,
+            timeout=max_hops * 3
+        )
+        
+        hops = []
+        for line in result.stdout.split('\n')[1:]:  # Skip header
+            if not line.strip():
+                continue
+            
+            # Extract hop number and IP/hostname (simplified parsing)
+            match = re.match(r'\s*(\d+)\s+(\S+)', line)
+            if match:
+                hop_num = int(match.group(1))
+                hop_addr = match.group(2)
+                if hop_addr != '*':
+                    hops.append({"hop": hop_num, "address": hop_addr})
+        
+        return {
+            "host": host,
+            "hops": hops,
+            "hop_count": len(hops),
+            "reached": hops[-1]["address"] == host if hops else False
+        }
+    except Exception as e:
+        return format_error(e, "traceroute")
+
 if __name__ == "__main__":
     logger.info("Starting SystemManager MCP Server on http://0.0.0.0:8080")
     mcp.run(transport="sse", host="0.0.0.0", port=8080)

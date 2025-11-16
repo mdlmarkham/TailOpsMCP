@@ -7,6 +7,8 @@ pydantic>=2.0.0
 pyyaml>=6.0.0
 uvicorn>=0.25.0
 python-multipart>=0.0.6
+requests>=2.31.0
+dnspython>=2.4.0
 
 # Development dependencies
 pytest>=7.4.0
