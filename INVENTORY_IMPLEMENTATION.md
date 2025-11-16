@@ -263,7 +263,7 @@ Knows what needs to be moved and where data is stored.
 
 ### Inventory Storage
 
-**File:** `/opt/systemmanager/inventory.json`
+**File:** `/var/lib/systemmanager/inventory.json`
 
 **Format:**
 ```json
@@ -368,7 +368,7 @@ print(response.json())
 EOF
 
 # 4. View inventory file
-ssh root@dev1.tailf9480.ts.net "cat /opt/systemmanager/inventory.json"
+ssh root@dev1.tailf9480.ts.net "cat /var/lib/systemmanager/inventory.json"
 ```
 
 ---

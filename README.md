@@ -360,7 +360,7 @@ When managing multiple LXC containers with a single AI:
 1. Each system gets a unique identifier: `hostname-containerID` (e.g., `dev1-103`)
 2. The inventory tracks what's running on each system
 3. AI provides context-aware suggestions based on what you have installed
-4. Inventory stored in `/opt/systemmanager/inventory.json` per system
+4. Inventory stored in `/var/lib/systemmanager/inventory.json` per system
 
 ### Benefits
 

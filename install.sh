@@ -146,19 +146,30 @@ fi
 chmod 600 $INSTALL_DIR/.env
 msg_ok "Configured Authentication ($AUTH_MODE)"
 
+msg_info "Creating Inventory Directory"
+mkdir -p /var/lib/systemmanager
+chown root:root /var/lib/systemmanager
+chmod 755 /var/lib/systemmanager
+msg_ok "Created Inventory Directory"
+
 msg_info "Creating Systemd Service"
 cat > /etc/systemd/system/systemmanager-mcp.service << EOF
 [Unit]
-Description=SystemManager MCP Server
+Description=SystemManager MCP Server with OAuth/OIDC
+Documentation=https://github.com/mdlmarkham/SystemManager
 After=network-online.target docker.service
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=root
+Group=root
 WorkingDirectory=$INSTALL_DIR
 Environment="PATH=$INSTALL_DIR/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Load secrets from protected environment file
 EnvironmentFile=$INSTALL_DIR/.env
+
 ExecStart=$INSTALL_DIR/venv/bin/python -m src.mcp_server
 Restart=on-failure
 RestartSec=10
@@ -168,7 +179,8 @@ StandardError=journal
 # Security hardening
 PrivateTmp=yes
 ProtectSystem=strict
-ReadWritePaths=$INSTALL_DIR
+ProtectHome=yes
+ReadWritePaths=$INSTALL_DIR /var/lib/systemmanager
 NoNewPrivileges=true
 
 [Install]

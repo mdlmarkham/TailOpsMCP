@@ -190,7 +190,7 @@ add_application_to_inventory(
 
 ## Inventory File Format
 
-The inventory is stored as JSON at `/opt/systemmanager/inventory.json`:
+The inventory is stored as JSON at `/var/lib/systemmanager/inventory.json`:
 
 ```json
 {
@@ -275,7 +275,7 @@ Get complete inventory (system identity + applications + stacks).
   },
   "applications": {...},
   "stacks": {...},
-  "inventory_path": "/opt/systemmanager/inventory.json"
+  "inventory_path": "/var/lib/systemmanager/inventory.json"
 }
 ```
 
@@ -458,12 +458,12 @@ add_application_to_inventory(name="app-name", version="correct-version", ...)
 
 ### Multiple Systems Using Same Inventory File
 
-Each SystemManager instance should have its own inventory file. By default, it's stored at `/opt/systemmanager/inventory.json` on each LXC container.
+Each SystemManager instance should have its own inventory file. By default, it's stored at `/var/lib/systemmanager/inventory.json` on each LXC container.
 
 If running multiple instances on the same host (not recommended), set different paths:
 
 ```bash
-export SYSTEMMANAGER_INVENTORY="/opt/systemmanager/inventory-dev1.json"
+export SYSTEMMANAGER_INVENTORY="/var/lib/systemmanager/inventory-dev1.json"
 ```
 
 ## Future Enhancements
