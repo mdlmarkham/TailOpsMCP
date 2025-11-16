@@ -153,152 +153,146 @@ async def get_container_list(format: Literal["json", "toon"] = "json") -> Union[
         return format_error(e, "get_container_list")
 
 @mcp.tool()
-async def start_container(name_or_id: str) -> dict:
-    """Start a Docker container by name or ID."""
+async def manage_container(action: Literal["start", "stop", "restart", "logs"], name_or_id: str, lines: int = 100) -> dict:
+    """Manage Docker container lifecycle: start, stop, restart, or get logs.
+    
+    Args:
+        action: Operation to perform (start|stop|restart|logs)
+        name_or_id: Container name or ID
+        lines: Number of log lines to retrieve (only for 'logs' action)
+    """
     try:
         import docker
         client = docker.from_env()
         container = client.containers.get(name_or_id)
-        container.start()
-        return {
-            "success": True,
-            "container": name_or_id,
-            "status": "started",
-            "timestamp": datetime.now().isoformat()
-        }
+        
+        if action == "start":
+            container.start()
+            return {
+                "success": True,
+                "container": name_or_id,
+                "action": "started",
+                "timestamp": datetime.now().isoformat()
+            }
+        elif action == "stop":
+            container.stop()
+            return {
+                "success": True,
+                "container": name_or_id,
+                "action": "stopped",
+                "timestamp": datetime.now().isoformat()
+            }
+        elif action == "restart":
+            container.restart()
+            return {
+                "success": True,
+                "container": name_or_id,
+                "action": "restarted",
+                "timestamp": datetime.now().isoformat()
+            }
+        elif action == "logs":
+            logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
+            return {
+                "success": True,
+                "container": name_or_id,
+                "action": "logs",
+                "lines": lines,
+                "logs": logs,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {"success": False, "error": f"Invalid action: {action}"}
     except Exception as e:
-        return format_error(e, "start_container")
+        return format_error(e, "manage_container")
 
 @mcp.tool()
-async def stop_container(name_or_id: str) -> dict:
-    """Stop a Docker container by name or ID."""
-    try:
-        import docker
-        client = docker.from_env()
-        container = client.containers.get(name_or_id)
-        container.stop()
-        return {
-            "success": True,
-            "container": name_or_id,
-            "status": "stopped",
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        return format_error(e, "stop_container")
-
-@mcp.tool()
-async def restart_container(name_or_id: str) -> dict:
-    """Restart a Docker container by name or ID."""
-    try:
-        import docker
-        client = docker.from_env()
-        container = client.containers.get(name_or_id)
-        container.restart()
-        return {
-            "success": True,
-            "container": name_or_id,
-            "status": "restarted",
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        return format_error(e, "restart_container")
-
-@mcp.tool()
-async def get_container_logs(name_or_id: str, lines: int = 100) -> dict:
-    """Get recent logs from a Docker container."""
-    try:
-        import docker
-        client = docker.from_env()
-        container = client.containers.get(name_or_id)
-        logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
-        return {
-            "container": name_or_id,
-            "lines": lines,
-            "logs": logs,
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        return format_error(e, "get_container_logs")
-
-@mcp.tool()
-async def list_directory(path: str = "/tmp") -> dict:
-    """List directory contents with file and directory names."""
+async def file_operations(
+    action: Literal["list", "info", "read", "tail", "search"],
+    path: str,
+    lines: int = 100,
+    offset: int = 0,
+    pattern: str = "*"
+) -> dict:
+    """Perform file system operations: list directory, get file info, read, tail, or search.
+    
+    Args:
+        action: Operation to perform (list|info|read|tail|search)
+        path: File or directory path
+        lines: Number of lines for read/tail operations
+        offset: Line offset for read operation
+        pattern: Search pattern for search operation (supports wildcards)
+    """
     import os
+    import fnmatch
     
     try:
-        result = {"path": path, "files": [], "directories": []}
-        
-        for item in os.listdir(path):
-            full_path = os.path.join(path, item)
-            if os.path.isdir(full_path):
-                result["directories"].append(item)
-            else:
-                result["files"].append(item)
-        
-        return result
-    except Exception as e:
-        return format_error(e, "list_directory")
-
-@mcp.tool()
-async def get_file_info(path: str) -> dict:
-    """Get detailed information about a file or directory."""
-    import os
-    
-    try:
-        stat_info = os.stat(path)
-        is_dir = os.path.isdir(path)
-        
-        return {
-            "path": path,
-            "exists": True,
-            "type": "directory" if is_dir else "file",
-            "size": stat_info.st_size,
-            "modified": datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
-            "created": datetime.fromtimestamp(stat_info.st_ctime).isoformat(),
-            "permissions": oct(stat_info.st_mode)[-3:],
-            "owner_uid": stat_info.st_uid,
-            "group_gid": stat_info.st_gid
-        }
+        if action == "list":
+            result = {"path": path, "files": [], "directories": []}
+            for item in os.listdir(path):
+                full_path = os.path.join(path, item)
+                if os.path.isdir(full_path):
+                    result["directories"].append(item)
+                else:
+                    result["files"].append(item)
+            return result
+            
+        elif action == "info":
+            stat_info = os.stat(path)
+            is_dir = os.path.isdir(path)
+            return {
+                "path": path,
+                "exists": True,
+                "type": "directory" if is_dir else "file",
+                "size": stat_info.st_size,
+                "modified": datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
+                "created": datetime.fromtimestamp(stat_info.st_ctime).isoformat(),
+                "permissions": oct(stat_info.st_mode)[-3:],
+                "owner_uid": stat_info.st_uid,
+                "group_gid": stat_info.st_gid
+            }
+            
+        elif action == "read":
+            with open(path, 'r', encoding='utf-8', errors='replace') as f:
+                all_lines = f.readlines()
+                selected_lines = all_lines[offset:offset + lines]
+                return {
+                    "path": path,
+                    "total_lines": len(all_lines),
+                    "offset": offset,
+                    "lines_returned": len(selected_lines),
+                    "content": ''.join(selected_lines),
+                    "has_more": offset + lines < len(all_lines)
+                }
+                
+        elif action == "tail":
+            with open(path, 'r', encoding='utf-8', errors='replace') as f:
+                all_lines = f.readlines()
+                tail_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+                return {
+                    "path": path,
+                    "total_lines": len(all_lines),
+                    "lines_returned": len(tail_lines),
+                    "content": ''.join(tail_lines)
+                }
+                
+        elif action == "search":
+            result = {"pattern": pattern, "directory": path, "files": []}
+            for root, dirs, files in os.walk(path):
+                for filename in files:
+                    if fnmatch.fnmatch(filename, pattern):
+                        result["files"].append(os.path.join(root, filename))
+                        if len(result["files"]) >= 100:
+                            result["truncated"] = True
+                            return result
+            return result
+            
+        else:
+            return {"success": False, "error": f"Invalid action: {action}"}
+            
     except FileNotFoundError:
-        return {"path": path, "exists": False}
+        return {"path": path, "exists": False, "error": "File or directory not found"}
     except Exception as e:
-        return format_error(e, "get_file_info")
-
-@mcp.tool()
-async def read_file(path: str, lines: int = 50, offset: int = 0) -> dict:
-    """Read file contents with line limit and offset."""
-    try:
-        with open(path, 'r', encoding='utf-8', errors='replace') as f:
-            all_lines = f.readlines()
-            selected_lines = all_lines[offset:offset + lines]
-            
-            return {
-                "path": path,
-                "total_lines": len(all_lines),
-                "offset": offset,
-                "lines_returned": len(selected_lines),
-                "content": ''.join(selected_lines),
-                "has_more": offset + lines < len(all_lines)
-            }
-    except Exception as e:
-        return format_error(e, "read_file")
-
-@mcp.tool()
-async def tail_file(path: str, lines: int = 100) -> dict:
-    """Get the last N lines from a file (useful for logs)."""
-    try:
-        with open(path, 'r', encoding='utf-8', errors='replace') as f:
-            all_lines = f.readlines()
-            tail_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
-            
-            return {
-                "path": path,
-                "total_lines": len(all_lines),
-                "lines_returned": len(tail_lines),
-                "content": ''.join(tail_lines)
-            }
-    except Exception as e:
-        return format_error(e, "tail_file")
+        return format_error(e, "file_operations")
 
 @mcp.tool()
 async def get_network_status(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
@@ -339,24 +333,6 @@ async def get_network_status(format: Literal["json", "toon"] = "json") -> Union[
     except Exception as e:
         return format_error(e, "get_network_status")
 
-@mcp.tool()
-async def search_files(pattern: str, directory: str = "/tmp") -> dict:
-    """Search for files by pattern (supports wildcards like *.log)."""
-    import os
-    import fnmatch
-    
-    try:
-        result = {"pattern": pattern, "directory": directory, "files": []}
-        for root, dirs, files in os.walk(directory):
-            for filename in files:
-                if fnmatch.fnmatch(filename, pattern):
-                    result["files"].append(os.path.join(root, filename))
-                    if len(result["files"]) >= 100:
-                        result["truncated"] = True
-                        return result
-        return result
-    except Exception as e:
-        return format_error(e, "search_files")
 
 @mcp.tool()
 async def get_top_processes(limit: int = 10, sort_by: str = "cpu", format: Literal["json", "toon"] = "json") -> Union[dict, str]:
@@ -394,93 +370,12 @@ async def get_top_processes(limit: int = 10, sort_by: str = "cpu", format: Liter
         return format_error(e, "get_top_processes")
 
 @mcp.tool()
-async def get_system_overview() -> dict:
-    """Get comprehensive system overview (system stats, containers, network) in one call."""
-    import psutil
-    import os
-    
-    try:
-        # Inline system status
-        cpu_percent = psutil.cpu_percent(interval=0.1)
-        memory = psutil.virtual_memory()
-        boot_time = psutil.boot_time()
-        uptime = int(datetime.now().timestamp() - boot_time)
-        
-        disk_info = []
-        for partition in psutil.disk_partitions(all=False):
-            try:
-                usage = psutil.disk_usage(partition.mountpoint)
-                disk_info.append({
-                    "mountpoint": partition.mountpoint,
-                    "total": usage.total,
-                    "used": usage.used,
-                    "free": usage.free,
-                    "percent": usage.percent
-                })
-            except (PermissionError, OSError):
-                continue
-        
-        load_avg = {}
-        if hasattr(os, 'getloadavg'):
-            load_avg = {"1m": os.getloadavg()[0], "5m": os.getloadavg()[1], "15m": os.getloadavg()[2]}
-        
-        system = {
-            "cpu_percent": cpu_percent,
-            "load_average": load_avg,
-            "memory_usage": {"total": memory.total, "available": memory.available, "used": memory.used, "percent": memory.percent},
-            "disk_usage": disk_info,
-            "uptime": uptime
-        }
-        
-        # Inline container list
-        containers_result = {"containers": [], "count": 0}
-        try:
-            import docker
-            client = docker.from_env()
-            containers = client.containers.list(all=True)
-            for container in containers:
-                image_name = container.image.tags[0] if container.image.tags else "unknown"
-                containers_result["containers"].append({
-                    "id": container.id[:12],
-                    "name": container.name,
-                    "status": container.status,
-                    "image": image_name
-                })
-            containers_result["count"] = len(containers_result["containers"])
-        except:
-            pass
-        
-        # Inline network status
-        network = {"interfaces": []}
-        try:
-            stats = psutil.net_if_stats()
-            for name, stat in stats.items():
-                network["interfaces"].append({"name": name, "isup": stat.isup, "speed": stat.speed})
-        except:
-            pass
-        
-        # Inline top processes
-        processes = []
-        try:
-            for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
-                try:
-                    processes.append(proc.info)
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-            processes.sort(key=lambda p: p.get('cpu_percent', 0), reverse=True)
-            processes = processes[:5]
-        except:
-            pass
-        
-        return {
-            "system": system,
-            "containers": containers_result,
-            "network": network,
-            "top_processes": processes,
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        return format_error(e, "get_system_overview")
+async def health_check() -> dict:
+    """Health check."""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+
+# ============================================================================
+# NETWORK DIAGNOSTICS - Token-efficient output
 
 @mcp.tool()
 async def health_check() -> dict:
@@ -536,28 +431,63 @@ async def ping_host(host: str, count: int = 4, format: Literal["json", "toon"] =
         return format_error(e, "ping_host")
 
 @mcp.tool()
-async def test_tcp_port(host: str, port: int, timeout: int = 5) -> dict:
-    """Test TCP port connectivity (returns open/closed status and latency)."""
+async def test_port_connectivity(host: str, port: int = None, ports: list[int] = None, timeout: int = 5) -> dict:
+    """Test TCP port connectivity - single port or multiple ports.
+    
+    Args:
+        host: Hostname or IP address (use '127.0.0.1' or 'localhost' for local)
+        port: Single port to test
+        ports: List of ports to test (alternative to single port)
+        timeout: Connection timeout in seconds
+    
+    Examples:
+        - Single port: test_port_connectivity(host="example.com", port=443)
+        - Multiple ports: test_port_connectivity(host="localhost", ports=[22, 80, 443])
+    """
     import socket
     import time as tm
     
     try:
-        start = tm.time()
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
+        # Determine which ports to test
+        test_ports = []
+        if port:
+            test_ports = [port]
+        elif ports:
+            test_ports = ports
+        else:
+            # Default common ports for localhost
+            test_ports = [22, 80, 443, 3306, 5432, 6379, 8080]
         
-        result = sock.connect_ex((host, port))
-        latency = (tm.time() - start) * 1000  # Convert to ms
-        sock.close()
+        results = []
+        open_count = 0
+        
+        for p in test_ports:
+            start = tm.time()
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeout)
+            
+            result_code = sock.connect_ex((host, p))
+            latency = (tm.time() - start) * 1000  # Convert to ms
+            sock.close()
+            
+            is_open = result_code == 0
+            if is_open:
+                open_count += 1
+                
+            results.append({
+                "port": p,
+                "open": is_open,
+                "latency_ms": round(latency, 2) if is_open else None
+            })
         
         return {
             "host": host,
-            "port": port,
-            "open": result == 0,
-            "latency_ms": round(latency, 2) if result == 0 else None
+            "scanned": len(test_ports),
+            "open_count": open_count,
+            "ports": results
         }
     except Exception as e:
-        return format_error(e, "test_tcp_port")
+        return format_error(e, "test_port_connectivity")
 
 @mcp.tool()
 async def dns_lookup(domain: str, record_type: str = "A") -> dict:
@@ -646,31 +576,6 @@ async def get_active_connections(limit: int = 20, format: Literal["json", "toon"
         return format_response(result, format)
     except Exception as e:
         return format_error(e, "get_active_connections")
-
-@mcp.tool()
-async def check_open_ports(ports: list[int] = [22, 80, 443, 3306, 5432, 6379, 8080]) -> dict:
-    """Check which ports are listening on localhost (returns only open ports)."""
-    import socket
-    
-    try:
-        open_ports = []
-        
-        for port in ports:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(0.5)
-            result = sock.connect_ex(('127.0.0.1', port))
-            sock.close()
-            
-            if result == 0:
-                open_ports.append(port)
-        
-        return {
-            "scanned": len(ports),
-            "open": open_ports,
-            "count": len(open_ports)
-        }
-    except Exception as e:
-        return format_error(e, "check_open_ports")
 
 @mcp.tool()
 async def http_request_test(url: str, method: str = "GET", timeout: int = 10) -> dict:
