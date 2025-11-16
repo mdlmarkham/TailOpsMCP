@@ -180,11 +180,11 @@ def format_response(data: dict, format: str = "json") -> Union[dict, str]:
 @mcp.tool()
 @secure_tool("get_system_status")
 @cached(ttl_seconds=5)
-async def get_system_status(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+async def get_system_status(format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
     """Get comprehensive system status with CPU, memory, disk, and uptime.
     
     Args:
-        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+        format: Response format - 'toon' (compact, default) or 'json' (verbose)
     """
     import psutil
     import os
@@ -242,11 +242,11 @@ async def get_system_status(format: Literal["json", "toon"] = "json") -> Union[d
 
 @mcp.tool()
 @secure_tool("get_container_list")
-async def get_container_list(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+async def get_container_list(format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
     """List all Docker containers with status and image information.
     
     Args:
-        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+        format: Response format - 'toon' (compact, default) or 'json' (verbose)
     """
     try:
         client = get_docker_client()
@@ -542,11 +542,11 @@ async def get_stack_network_info(
 
 @mcp.tool()
 @secure_tool("get_network_status")
-async def get_network_status(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+async def get_network_status(format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
     """Get network interface status with addresses and statistics.
     
     Args:
-        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+        format: Response format - 'toon' (compact, default) or 'json' (verbose)
     """
     import psutil
     
@@ -583,13 +583,13 @@ async def get_network_status(format: Literal["json", "toon"] = "json") -> Union[
 
 @mcp.tool()
 @secure_tool("get_top_processes")
-async def get_top_processes(limit: int = 10, sort_by: str = "cpu", format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+async def get_top_processes(limit: int = 10, sort_by: str = "cpu", format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
     """Get top processes by CPU or memory usage.
     
     Args:
         limit: Number of processes to return
         sort_by: Sort by 'cpu' or 'memory'
-        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+        format: Response format - 'toon' (compact, default) or 'json' (verbose)
     """
     import psutil
     
@@ -632,13 +632,13 @@ async def health_check() -> dict:
 
 @mcp.tool()
 @secure_tool("ping_host")
-async def ping_host(host: str, count: int = 4, format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+async def ping_host(host: str, count: int = 4, format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
     """Ping a host and return latency statistics (min/avg/max/loss).
     
     Args:
         host: Hostname or IP address to ping
         count: Number of ping packets to send
-        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+        format: Response format - 'toon' (compact, default) or 'json' (verbose)
     """
     import subprocess
     import re
@@ -820,12 +820,12 @@ async def get_network_io_counters() -> dict:
 
 @mcp.tool()
 @secure_tool("get_active_connections")
-async def get_active_connections(limit: int = 20, format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+async def get_active_connections(limit: int = 20, format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
     """Get active network connections (limited to 'limit' for token efficiency).
     
     Args:
         limit: Maximum number of connections to return
-        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+        format: Response format - 'toon' (compact, default) or 'json' (verbose)
     """
     import psutil
     
@@ -926,11 +926,11 @@ async def check_ssl_certificate(host: str, port: int = 443) -> dict:
 
 @mcp.tool()
 @secure_tool("get_docker_networks")
-async def get_docker_networks(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+async def get_docker_networks(format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
     """List Docker networks (compact summary).
     
     Args:
-        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+        format: Response format - 'toon' (compact, default) or 'json' (verbose)
     """
     try:
         client = get_docker_client()
@@ -1089,11 +1089,11 @@ async def update_docker_container(name_or_id: str, pull_latest: bool = True) -> 
 
 @mcp.tool()
 @secure_tool("list_docker_images")
-async def list_docker_images(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
+async def list_docker_images(format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
     """List all Docker images on the system.
     
     Args:
-        format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
+        format: Response format - 'toon' (compact, default) or 'json' (verbose)
     
     Returns image IDs, tags, sizes, and creation dates.
     """
