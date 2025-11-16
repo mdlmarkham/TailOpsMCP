@@ -19,8 +19,13 @@ from src.utils.errors import ErrorCategory, SystemManagerError
 class TokenClaims(BaseModel):
     agent: Optional[str]
     scopes: List[str]
-    host_tags: Optional[List[str]] = []
+    host_tags: Optional[List[str]] = None
     expiry: Optional[datetime.datetime]
+    
+    def __init__(self, **data):
+        if 'host_tags' not in data:
+            data['host_tags'] = []
+        super().__init__(**data)
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "TokenClaims":

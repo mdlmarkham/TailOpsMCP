@@ -12,6 +12,7 @@ import os
 import logging
 from typing import Any, Dict, Optional, Callable
 from functools import wraps
+from fastmcp.server.context import Context
 
 from src.auth.token_auth import TokenVerifier, TokenClaims
 from src.auth.scopes import check_authorization, requires_approval, get_tool_risk_level
@@ -28,7 +29,8 @@ class SecurityMiddleware:
     def __init__(self):
         self.token_verifier = TokenVerifier()
         self.audit_logger = AuditLogger()
-        self.require_auth = os.getenv("SYSTEMMANAGER_REQUIRE_AUTH", "false").lower() == "true"
+        # DEFAULT TO REQUIRING AUTH - fail closed
+        self.require_auth = os.getenv("SYSTEMMANAGER_REQUIRE_AUTH", "true").lower() == "true"
         self.enable_approval = os.getenv("SYSTEMMANAGER_ENABLE_APPROVAL", "false").lower() == "true"
         
     def get_claims_from_context(self, **kwargs) -> Optional[TokenClaims]:
@@ -56,12 +58,11 @@ class SecurityMiddleware:
                     "Authentication required but no token provided",
                     category=ErrorCategory.UNAUTHORIZED
                 )
-            # No token, no auth required - return default claims
-            return TokenClaims(
-                agent="anonymous",
-                scopes=["readonly"],  # Default to read-only
-                host_tags=[],
-                expiry=None
+            # CRITICAL: No default scopes for anonymous users
+            # This ensures unauthenticated access is completely blocked
+            raise SystemManagerError(
+                "No authentication token provided. Set SYSTEMMANAGER_REQUIRE_AUTH=false to allow anonymous access (NOT RECOMMENDED)",
+                category=ErrorCategory.UNAUTHORIZED
             )
         
         # Verify token
@@ -124,20 +125,27 @@ class SecurityMiddleware:
             # Tool doesn't require approval
             return True
         
+        # CRITICAL SECURITY FIX: Remove auto_approve bypass
         # In production, implement actual approval flow here
-        # For now, log and deny critical operations without explicit approval flag
-        if args.get("auto_approve") is True:
-            logger.warning(
-                f"High-risk operation {tool_name} auto-approved via auto_approve flag"
-            )
-            return True
+        # For now, DENY all critical operations unless approval system is configured
         
-        logger.error(
-            f"High-risk operation {tool_name} requires approval but none granted"
-        )
+        approval_webhook = os.getenv("SYSTEMMANAGER_APPROVAL_WEBHOOK")
+        if not approval_webhook:
+            logger.error(
+                f"Critical operation {tool_name} requires approval but no approval webhook configured. "
+                f"Set SYSTEMMANAGER_APPROVAL_WEBHOOK or disable approval requirement."
+            )
+            raise SystemManagerError(
+                f"Operation requires approval. Configure SYSTEMMANAGER_APPROVAL_WEBHOOK or "
+                f"set SYSTEMMANAGER_ENABLE_APPROVAL=false to proceed (NOT RECOMMENDED for production)",
+                category=ErrorCategory.FORBIDDEN
+            )
+        
+        # TODO: Implement actual webhook-based approval
+        # For now, deny by default
+        logger.error(f"Approval workflow not implemented for {tool_name}")
         raise SystemManagerError(
-            f"Operation requires interactive approval. Set auto_approve=True to bypass, "
-            f"or configure approval webhook via SYSTEMMANAGER_APPROVAL_WEBHOOK",
+            f"Approval workflow not yet implemented. Operation denied.",
             category=ErrorCategory.FORBIDDEN
         )
     
@@ -152,20 +160,40 @@ class SecurityMiddleware:
             Wrapped function with security enforcement
         """
         @wraps(func)
-        async def wrapped(**kwargs):
-            # Extract and verify authentication
-            try:
-                claims = self.get_claims_from_context(**kwargs)
-            except SystemManagerError as e:
-                result = {"success": False, "error": str(e)}
-                self.audit_logger.log(
-                    tool=tool_name,
-                    args=kwargs,
-                    result=result,
-                    subject="unauthenticated",
-                    risk_level=get_tool_risk_level(tool_name),
-                )
-                return result
+        async def wrapped(*args, **kwargs):
+            # Extract Context from args (FastMCP injects it as ctx parameter)
+            ctx = None
+            for arg in args:
+                if isinstance(arg, Context):
+                    ctx = arg
+                    break
+            
+            # Also check kwargs for ctx/context parameter
+            if ctx is None:
+                ctx = kwargs.get('ctx') or kwargs.get('context')
+            
+            # Get claims from Context state (set by HTTP middleware or stored earlier)
+            claims = None
+            if ctx:
+                claims = ctx.get_state("auth_claims")
+            
+            # Fallback: try to extract from kwargs if not in context
+            if claims is None:
+                try:
+                    claims = self.get_claims_from_context(**kwargs)
+                    # Store in context for future use
+                    if ctx:
+                        ctx.set_state("auth_claims", claims)
+                except SystemManagerError as e:
+                    result = {"success": False, "error": str(e)}
+                    self.audit_logger.log(
+                        tool=tool_name,
+                        args=kwargs,
+                        result=result,
+                        subject="unauthenticated",
+                        risk_level=get_tool_risk_level(tool_name),
+                    )
+                    return result
             
             # Check authorization
             try:
@@ -201,7 +229,7 @@ class SecurityMiddleware:
             
             # Execute tool
             try:
-                result = await func(**kwargs)
+                result = await func(*args, **kwargs)
                 
                 # Ensure result is dict
                 if not isinstance(result, dict):

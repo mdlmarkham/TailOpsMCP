@@ -10,6 +10,7 @@ from typing import Optional, Literal, Union
 from fastmcp import FastMCP
 from src.utils.toon import model_to_toon
 from src.services.package_manager import PackageManager
+from src.auth.middleware import secure_tool
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -63,6 +64,7 @@ def format_response(data: dict, format: str = "json") -> Union[dict, str]:
     return data
 
 @mcp.tool()
+@secure_tool("get_system_status")
 @cached(ttl_seconds=5)
 async def get_system_status(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
     """Get comprehensive system status with CPU, memory, disk, and uptime.
@@ -125,6 +127,7 @@ async def get_system_status(format: Literal["json", "toon"] = "json") -> Union[d
         return format_error(e, "get_system_status")
 
 @mcp.tool()
+@secure_tool("get_container_list")
 async def get_container_list(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
     """List all Docker containers with status and image information.
     
@@ -153,6 +156,7 @@ async def get_container_list(format: Literal["json", "toon"] = "json") -> Union[
         return format_error(e, "get_container_list")
 
 @mcp.tool()
+@secure_tool("manage_container")
 async def manage_container(action: Literal["start", "stop", "restart", "logs"], name_or_id: str, lines: int = 100) -> dict:
     """Manage Docker container lifecycle: start, stop, restart, or get logs.
     
@@ -206,6 +210,7 @@ async def manage_container(action: Literal["start", "stop", "restart", "logs"], 
         return format_error(e, "manage_container")
 
 @mcp.tool()
+@secure_tool("file_operations")
 async def file_operations(
     action: Literal["list", "info", "read", "tail", "search"],
     path: str,
@@ -224,12 +229,22 @@ async def file_operations(
     """
     import os
     import fnmatch
+    from utils import filesec
     
     try:
+        # SECURITY: Validate and sanitize path
+        clean_path = filesec.sanitize_path(path)
+        if not filesec.is_path_allowed(clean_path):
+            return {
+                "success": False,
+                "error": f"Access denied: {path} is not in allowed paths or matches deny pattern",
+                "allowed_paths": filesec.DEFAULT_ALLOWED_PATHS
+            }
+        
         if action == "list":
             result = {"path": path, "files": [], "directories": []}
-            for item in os.listdir(path):
-                full_path = os.path.join(path, item)
+            for item in os.listdir(clean_path):
+                full_path = os.path.join(clean_path, item)
                 if os.path.isdir(full_path):
                     result["directories"].append(item)
                 else:
@@ -237,8 +252,8 @@ async def file_operations(
             return result
             
         elif action == "info":
-            stat_info = os.stat(path)
-            is_dir = os.path.isdir(path)
+            stat_info = os.stat(clean_path)
+            is_dir = os.path.isdir(clean_path)
             return {
                 "path": path,
                 "exists": True,
@@ -252,7 +267,12 @@ async def file_operations(
             }
             
         elif action == "read":
-            with open(path, 'r', encoding='utf-8', errors='replace') as f:
+            # SECURITY: Check file size before reading
+            size_ok, msg = filesec.check_file_size(clean_path)
+            if not size_ok:
+                return {"success": False, "error": msg}
+            
+            with open(clean_path, 'r', encoding='utf-8', errors='replace') as f:
                 all_lines = f.readlines()
                 selected_lines = all_lines[offset:offset + lines]
                 return {
@@ -265,7 +285,12 @@ async def file_operations(
                 }
                 
         elif action == "tail":
-            with open(path, 'r', encoding='utf-8', errors='replace') as f:
+            # SECURITY: Check file size before reading
+            size_ok, msg = filesec.check_file_size(clean_path)
+            if not size_ok:
+                return {"success": False, "error": msg}
+            
+            with open(clean_path, 'r', encoding='utf-8', errors='replace') as f:
                 all_lines = f.readlines()
                 tail_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
                 return {
@@ -277,7 +302,7 @@ async def file_operations(
                 
         elif action == "search":
             result = {"pattern": pattern, "directory": path, "files": []}
-            for root, dirs, files in os.walk(path):
+            for root, dirs, files in os.walk(clean_path):
                 for filename in files:
                     if fnmatch.fnmatch(filename, pattern):
                         result["files"].append(os.path.join(root, filename))
@@ -295,6 +320,7 @@ async def file_operations(
         return format_error(e, "file_operations")
 
 @mcp.tool()
+@secure_tool("get_network_status")
 async def get_network_status(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
     """Get network interface status with addresses and statistics.
     
@@ -335,6 +361,7 @@ async def get_network_status(format: Literal["json", "toon"] = "json") -> Union[
 
 
 @mcp.tool()
+@secure_tool("get_top_processes")
 async def get_top_processes(limit: int = 10, sort_by: str = "cpu", format: Literal["json", "toon"] = "json") -> Union[dict, str]:
     """Get top processes by CPU or memory usage.
     
@@ -370,6 +397,7 @@ async def get_top_processes(limit: int = 10, sort_by: str = "cpu", format: Liter
         return format_error(e, "get_top_processes")
 
 @mcp.tool()
+@secure_tool("health_check")
 async def health_check() -> dict:
     """Health check."""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
@@ -377,16 +405,12 @@ async def health_check() -> dict:
 # ============================================================================
 # NETWORK DIAGNOSTICS - Token-efficient output
 
-@mcp.tool()
-async def health_check() -> dict:
-    """Health check."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
-
 # ============================================================================
 # NETWORK DIAGNOSTICS - Token-efficient output
 # ============================================================================
 
 @mcp.tool()
+@secure_tool("ping_host")
 async def ping_host(host: str, count: int = 4, format: Literal["json", "toon"] = "json") -> Union[dict, str]:
     """Ping a host and return latency statistics (min/avg/max/loss).
     
@@ -397,8 +421,16 @@ async def ping_host(host: str, count: int = 4, format: Literal["json", "toon"] =
     """
     import subprocess
     import re
+    from utils import netsec
     
     try:
+        # SECURITY: Validate host to prevent SSRF
+        if not netsec.is_host_allowed(host):
+            return format_response({
+                "success": False,
+                "error": f"Access denied: {host} is not allowed (private IP or metadata service blocked)"
+            }, format)
+        
         # Linux/Unix ping command
         result = subprocess.run(
             ['ping', '-c', str(count), host],
@@ -431,6 +463,7 @@ async def ping_host(host: str, count: int = 4, format: Literal["json", "toon"] =
         return format_error(e, "ping_host")
 
 @mcp.tool()
+@secure_tool("test_port_connectivity")
 async def test_port_connectivity(host: str, port: int = None, ports: list[int] = None, timeout: int = 5) -> dict:
     """Test TCP port connectivity - single port or multiple ports.
     
@@ -446,14 +479,26 @@ async def test_port_connectivity(host: str, port: int = None, ports: list[int] =
     """
     import socket
     import time as tm
+    from utils import netsec
     
     try:
+        # SECURITY: Validate host and ports
+        if not netsec.is_host_allowed(host):
+            return {
+                "success": False,
+                "error": f"Access denied: {host} is not allowed (private IP or metadata service blocked)"
+            }
+        
         # Determine which ports to test
         test_ports = []
         if port:
+            if not netsec.is_port_allowed(port):
+                return {"success": False, "error": f"Port {port} is not allowed"}
             test_ports = [port]
         elif ports:
-            test_ports = ports
+            test_ports = [p for p in ports if netsec.is_port_allowed(p)]
+            if not test_ports:
+                return {"success": False, "error": "No allowed ports in request"}
         else:
             # Default common ports for localhost
             test_ports = [22, 80, 443, 3306, 5432, 6379, 8080]
@@ -490,6 +535,7 @@ async def test_port_connectivity(host: str, port: int = None, ports: list[int] =
         return format_error(e, "test_port_connectivity")
 
 @mcp.tool()
+@secure_tool("dns_lookup")
 async def dns_lookup(domain: str, record_type: str = "A") -> dict:
     """DNS lookup (supports A, AAAA, MX, TXT, CNAME). Returns compact results."""
     import socket
@@ -519,6 +565,7 @@ async def dns_lookup(domain: str, record_type: str = "A") -> dict:
         return format_error(e, "dns_lookup")
 
 @mcp.tool()
+@secure_tool("get_network_io_counters")
 async def get_network_io_counters() -> dict:
     """Get network I/O statistics (bytes, packets, errors) - summary only."""
     import psutil
@@ -539,6 +586,7 @@ async def get_network_io_counters() -> dict:
         return format_error(e, "get_network_io_counters")
 
 @mcp.tool()
+@secure_tool("get_active_connections")
 async def get_active_connections(limit: int = 20, format: Literal["json", "toon"] = "json") -> Union[dict, str]:
     """Get active network connections (limited to 'limit' for token efficiency).
     
@@ -578,11 +626,20 @@ async def get_active_connections(limit: int = 20, format: Literal["json", "toon"
         return format_error(e, "get_active_connections")
 
 @mcp.tool()
+@secure_tool("http_request_test")
 async def http_request_test(url: str, method: str = "GET", timeout: int = 10) -> dict:
     """Test HTTP/HTTPS request (returns timing breakdown and status)."""
     import time as tm
+    from utils import netsec
     
     try:
+        # SECURITY: Validate URL to prevent SSRF
+        if not netsec.is_url_allowed(url):
+            return {
+                "success": False,
+                "error": f"Access denied: {url} targets private IP or metadata service"
+            }
+        
         import requests
         
         start = tm.time()
@@ -602,6 +659,7 @@ async def http_request_test(url: str, method: str = "GET", timeout: int = 10) ->
         return format_error(e, "http_request_test")
 
 @mcp.tool()
+@secure_tool("check_ssl_certificate")
 async def check_ssl_certificate(host: str, port: int = 443) -> dict:
     """Check SSL/TLS certificate (returns validity, expiration, issuer - compact)."""
     import socket
@@ -632,6 +690,7 @@ async def check_ssl_certificate(host: str, port: int = 443) -> dict:
         return format_error(e, "check_ssl_certificate")
 
 @mcp.tool()
+@secure_tool("get_docker_networks")
 async def get_docker_networks() -> dict:
     """List Docker networks (compact summary)."""
     try:
@@ -656,6 +715,7 @@ async def get_docker_networks() -> dict:
         return format_error(e, "get_docker_networks")
 
 @mcp.tool()
+@secure_tool("traceroute")
 async def traceroute(host: str, max_hops: int = 15) -> dict:
     """Perform traceroute (returns hop summary, not full details)."""
     import subprocess
@@ -694,6 +754,7 @@ async def traceroute(host: str, max_hops: int = 15) -> dict:
 # System Package Management Tools
 
 @mcp.tool()
+@secure_tool("check_system_updates")
 async def check_system_updates() -> dict:
     """Check for available system package updates without installing.
     
@@ -707,6 +768,7 @@ async def check_system_updates() -> dict:
         return format_error(e, "check_system_updates")
 
 @mcp.tool()
+@secure_tool("update_system_packages")
 async def update_system_packages(auto_approve: bool = False) -> dict:
     """Update all system packages (apt-get upgrade or yum update).
     
@@ -723,6 +785,7 @@ async def update_system_packages(auto_approve: bool = False) -> dict:
         return format_error(e, "update_system_packages")
 
 @mcp.tool()
+@secure_tool("install_package")
 async def install_package(package_name: str, auto_approve: bool = False) -> dict:
     """Install a specific system package.
     
@@ -741,6 +804,7 @@ async def install_package(package_name: str, auto_approve: bool = False) -> dict
 # Docker Image Management Tools
 
 @mcp.tool()
+@secure_tool("pull_docker_image")
 async def pull_docker_image(image_name: str, tag: str = "latest") -> dict:
     """Pull a Docker image from registry.
     
@@ -762,6 +826,7 @@ async def pull_docker_image(image_name: str, tag: str = "latest") -> dict:
         return format_error(e, "pull_docker_image")
 
 @mcp.tool()
+@secure_tool("update_docker_container")
 async def update_docker_container(name_or_id: str, pull_latest: bool = True) -> dict:
     """Update a Docker container by pulling latest image and recreating it.
     
@@ -786,6 +851,7 @@ async def update_docker_container(name_or_id: str, pull_latest: bool = True) -> 
         return format_error(e, "update_docker_container")
 
 @mcp.tool()
+@secure_tool("list_docker_images")
 async def list_docker_images() -> dict:
     """List all Docker images on the system.
     

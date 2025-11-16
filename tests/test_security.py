@@ -109,11 +109,10 @@ class TestSecurityMiddleware:
         os.environ.pop("SYSTEMMANAGER_ENABLE_APPROVAL", None)
     
     def test_get_claims_anonymous(self):
-        """Test anonymous access when auth not required."""
-        claims = self.middleware.get_claims_from_context()
-        assert claims is not None
-        assert claims.agent == "anonymous"
-        assert "readonly" in claims.scopes
+        """Test anonymous access is now blocked by default."""
+        with pytest.raises(Exception) as exc:
+            self.middleware.get_claims_from_context()
+        assert "Authentication required" in str(exc.value) or "No authentication token" in str(exc.value)
     
     def test_check_authorization_with_readonly(self):
         """Test authorization check with readonly scope."""
@@ -138,15 +137,17 @@ class TestSecurityMiddleware:
         assert approved is True
     
     def test_check_approval_auto_approve(self):
-        """Test auto_approve flag."""
+        """Test auto_approve bypass removed for security."""
         os.environ["SYSTEMMANAGER_ENABLE_APPROVAL"] = "true"
         middleware = SecurityMiddleware()
         
-        approved = middleware.check_approval(
-            "install_package",
-            {"auto_approve": True}
-        )
-        assert approved is True
+        # auto_approve should no longer bypass approval
+        with pytest.raises(Exception) as exc:
+            middleware.check_approval(
+                "install_package",
+                {"auto_approve": True}
+            )
+        assert "approval" in str(exc.value).lower()
     
     def test_check_approval_required_denied(self):
         """Test approval required but not granted."""
@@ -155,7 +156,7 @@ class TestSecurityMiddleware:
         
         with pytest.raises(Exception) as exc:
             middleware.check_approval("install_package", {})
-        assert "interactive approval" in str(exc.value).lower()
+        assert "approval" in str(exc.value).lower()
 
 
 class TestAuditLogger:
