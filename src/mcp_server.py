@@ -2,7 +2,7 @@
 SystemManager MCP Server - FastMCP with HTTP Transport
 
 Supports two authentication modes:
-1. TSIDP OAuth 2.1 - Uses Tailscale Identity Provider with automatic DCR
+1. TSIDP OAuth 2.1 - Uses Tailscale Identity Provider with token introspection
 2. HMAC Token Authentication - Legacy token-based auth for backwards compatibility
 
 Set SYSTEMMANAGER_AUTH_MODE environment variable:
@@ -38,14 +38,22 @@ if AUTH_MODE == "oauth":
     
     logger.info(f"Configuring OAuth authentication with TSIDP: {auth_server}")
     
-    # FastMCP will auto-discover and register with TSIDP
-    # See: https://fastmcp.wiki/en/servers/auth/authentication
+    # Use RemoteAuthProvider with TSIDP token introspection
     from fastmcp.server.auth import RemoteAuthProvider
+    from fastmcp.server.auth.verifiers.introspection import IntrospectionVerifier
+    from pydantic import AnyHttpUrl
+    
+    # TSIDP introspection endpoint
+    introspection_endpoint = f"{auth_server.rstrip('/')}/introspect"
+    
+    token_verifier = IntrospectionVerifier(
+        introspection_endpoint=introspection_endpoint,
+    )
     
     auth = RemoteAuthProvider(
-        authorization_server_url=auth_server,
-        client_name=os.getenv("SYSTEMMANAGER_CLIENT_NAME", "SystemManager MCP"),
-        required_scopes=os.getenv("SYSTEMMANAGER_REQUIRED_SCOPES", "email profile").split(),
+        token_verifier=token_verifier,
+        authorization_servers=[AnyHttpUrl(auth_server)],
+        base_url=os.getenv("SYSTEMMANAGER_BASE_URL", "http://localhost:8080"),
     )
     mcp = FastMCP("SystemManager", auth=auth)
 else:
