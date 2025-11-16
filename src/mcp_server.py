@@ -9,11 +9,15 @@ from datetime import datetime
 from typing import Optional, Literal, Union
 from fastmcp import FastMCP
 from src.utils.toon import model_to_toon
+from src.services.package_manager import PackageManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 mcp = FastMCP("SystemManager")
+
+# Initialize services
+package_manager = PackageManager()
 
 # Cache decorator for system stats
 _cache = {}
@@ -780,6 +784,118 @@ async def traceroute(host: str, max_hops: int = 15) -> dict:
     except Exception as e:
         return format_error(e, "traceroute")
 
+# System Package Management Tools
+
+@mcp.tool()
+async def check_system_updates() -> dict:
+    """Check for available system package updates without installing.
+    
+    Returns list of packages that can be upgraded with version information.
+    Supports apt (Debian/Ubuntu) and yum (RHEL/CentOS) based systems.
+    """
+    try:
+        result = await package_manager.check_updates()
+        return result
+    except Exception as e:
+        return format_error(e, "check_system_updates")
+
+@mcp.tool()
+async def update_system_packages(auto_approve: bool = False) -> dict:
+    """Update all system packages (apt-get upgrade or yum update).
+    
+    Args:
+        auto_approve: If True, automatically approve updates without prompting.
+                     Use with caution in production environments.
+    
+    Note: Requires sudo privileges. May take several minutes.
+    """
+    try:
+        result = await package_manager.update_system(auto_approve)
+        return result
+    except Exception as e:
+        return format_error(e, "update_system_packages")
+
+@mcp.tool()
+async def install_package(package_name: str, auto_approve: bool = False) -> dict:
+    """Install a specific system package.
+    
+    Args:
+        package_name: Name of the package to install
+        auto_approve: If True, automatically approve installation without prompting
+    
+    Note: Requires sudo privileges.
+    """
+    try:
+        result = await package_manager.install_package(package_name, auto_approve)
+        return result
+    except Exception as e:
+        return format_error(e, "install_package")
+
+# Docker Image Management Tools
+
+@mcp.tool()
+async def pull_docker_image(image_name: str, tag: str = "latest") -> dict:
+    """Pull a Docker image from registry.
+    
+    Args:
+        image_name: Name of the image (e.g., 'nginx', 'mysql', 'ubuntu')
+        tag: Image tag (default: 'latest')
+    
+    Returns image ID, tags, and size information.
+    """
+    try:
+        import docker
+        client = docker.from_env()
+        from src.services.docker_manager import DockerManager
+        dm = DockerManager()
+        dm.client = client
+        result = await dm.pull_image(image_name, tag)
+        return result
+    except Exception as e:
+        return format_error(e, "pull_docker_image")
+
+@mcp.tool()
+async def update_docker_container(name_or_id: str, pull_latest: bool = True) -> dict:
+    """Update a Docker container by pulling latest image and recreating it.
+    
+    This stops the container, pulls the latest image (if requested), 
+    removes the old container, and creates a new one with the same configuration.
+    
+    Args:
+        name_or_id: Container name or ID to update
+        pull_latest: Whether to pull latest image first (default: True)
+    
+    Warning: Container will be stopped and recreated. Ensure data is in volumes.
+    """
+    try:
+        import docker
+        client = docker.from_env()
+        from src.services.docker_manager import DockerManager
+        dm = DockerManager()
+        dm.client = client
+        result = await dm.update_container(name_or_id, pull_latest)
+        return result
+    except Exception as e:
+        return format_error(e, "update_docker_container")
+
+@mcp.tool()
+async def list_docker_images() -> dict:
+    """List all Docker images on the system.
+    
+    Returns image IDs, tags, sizes, and creation dates.
+    """
+    try:
+        import docker
+        client = docker.from_env()
+        from src.services.docker_manager import DockerManager
+        dm = DockerManager()
+        dm.client = client
+        result = await dm.list_images()
+        return result
+    except Exception as e:
+        return format_error(e, "list_docker_images")
+
 if __name__ == "__main__":
     logger.info("Starting SystemManager MCP Server on http://0.0.0.0:8080")
     mcp.run(transport="sse", host="0.0.0.0", port=8080)
+
