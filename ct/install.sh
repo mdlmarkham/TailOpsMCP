@@ -146,10 +146,26 @@ fi
 chmod 600 $INSTALL_DIR/.env
 msg_ok "Configured Authentication ($AUTH_MODE)"
 
+msg_info "Creating Dedicated Service User"
+# Create systemmanager user if it doesn't exist
+if ! id -u systemmanager >/dev/null 2>&1; then
+  useradd --system --no-create-home --shell /usr/sbin/nologin systemmanager
+  msg_ok "Created systemmanager user"
+else
+  msg_ok "systemmanager user already exists"
+fi
+
+# Add systemmanager user to docker group for container management
+usermod -aG docker systemmanager
+
 msg_info "Creating Inventory Directory"
 mkdir -p /var/lib/systemmanager
-chown root:root /var/lib/systemmanager
+chown systemmanager:systemmanager /var/lib/systemmanager
 chmod 755 /var/lib/systemmanager
+
+# Fix ownership of installation directory
+chown -R systemmanager:systemmanager $INSTALL_DIR
+chmod 600 $INSTALL_DIR/.env
 msg_ok "Created Inventory Directory"
 
 msg_info "Creating Systemd Service"
@@ -162,8 +178,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=root
-Group=root
+User=systemmanager
+Group=systemmanager
 WorkingDirectory=$INSTALL_DIR
 Environment="PATH=$INSTALL_DIR/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
@@ -180,8 +196,17 @@ StandardError=journal
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=$INSTALL_DIR /var/lib/systemmanager
+ReadWritePaths=/var/lib/systemmanager
 NoNewPrivileges=true
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
 
 [Install]
 WantedBy=multi-user.target

@@ -46,11 +46,15 @@ Perfect for **home lab enthusiasts**, **self-hosters**, and **DevOps engineers**
 
 ### 🔒 **Security First**
 
+⚠️ **[Read the Security Advisory](./docs/SECURITY_ADVISORY.md)** before production deployment
+
+- ✅ **Tailscale Required** - Encrypted transport mandatory (no built-in TLS)
 - ✅ **OAuth 2.1 with TSIDP** - Tailscale Identity Provider authentication
-- ✅ **Token Introspection** - RFC 7662 compliant token validation
-- ✅ **Systemd Hardening** - Secrets in environment files, not command line
+- ✅ **Non-Root Service** - Runs as dedicated `systemmanager` user
+- ✅ **Systemd Hardening** - Full sandboxing with ProtectSystem, ProtectHome
 - ✅ **Audit Logging** - Complete tracking of all operations
 - ✅ **Scope-Based Access** - Fine-grained permission control
+- ⚠️ **Approval Gates** - Requires external webhook (not built-in)
 
 ### 🔮 **Roadmap** (See [HOMELAB_FEATURES.md](./HOMELAB_FEATURES.md))
 

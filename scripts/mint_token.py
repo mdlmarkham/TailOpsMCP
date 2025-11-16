@@ -39,6 +39,7 @@ def main():
     p.add_argument("--agent", required=True)
     p.add_argument("--scopes", required=True, help="Comma separated scopes")
     p.add_argument("--expiry", default=None, help="ISO8601 expiry, e.g. 2025-12-31T00:00:00")
+    p.add_argument("--ttl", default=None, help="Time-to-live (e.g., 30d, 7d, 1h) - alternative to --expiry")
     p.add_argument("--secret", default=None, help="Shared secret (or set SYSTEMMANAGER_SHARED_SECRET env var)")
 
     args = p.parse_args()
@@ -51,7 +52,31 @@ def main():
         "agent": args.agent,
         "scopes": parse_scopes(args.scopes),
     }
-    if args.expiry:
+    
+    # Handle --ttl (e.g., "30d", "7d", "1h") or --expiry (ISO8601)
+    if args.ttl and args.expiry:
+        raise SystemExit("Cannot specify both --ttl and --expiry")
+    
+    if args.ttl:
+        # Parse TTL format: e.g., "30d", "7d", "1h", "2h"
+        import re
+        match = re.match(r'^(\d+)([dhm])$', args.ttl)
+        if not match:
+            raise SystemExit(f"Invalid TTL format: {args.ttl}. Use format like: 30d, 7d, 1h")
+        
+        amount, unit = match.groups()
+        amount = int(amount)
+        
+        if unit == 'd':
+            delta = datetime.timedelta(days=amount)
+        elif unit == 'h':
+            delta = datetime.timedelta(hours=amount)
+        elif unit == 'm':
+            delta = datetime.timedelta(minutes=amount)
+        
+        expiry_dt = datetime.datetime.utcnow() + delta
+        claims["expiry"] = expiry_dt.isoformat() + "Z"
+    elif args.expiry:
         # Validate ISO format
         try:
             datetime.datetime.fromisoformat(args.expiry)

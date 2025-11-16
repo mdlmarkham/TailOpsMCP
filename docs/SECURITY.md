@@ -38,9 +38,10 @@ TailOpsMCP implements **defense-in-depth** security for tailnet deployments:
                             ▼ (if attacker gets token)
 ┌─────────────────────────────────────────────────────────────┐
 │ Defense Layer 3: Approval Gates (High-Risk Operations)     │
-│ - Critical ops require interactive approval                │
+│ ⚠️  REQUIRES EXTERNAL WEBHOOK - NOT IMPLEMENTED BY DEFAULT │
+│ - Set SYSTEMMANAGER_APPROVAL_WEBHOOK to enable             │
+│ - Without webhook: approval-required ops are DENIED         │
 │ - Examples: install_package, update_docker_container       │
-│ - Prevents accidental misuse by legitimate users           │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼ (all operations)
@@ -55,8 +56,24 @@ TailOpsMCP implements **defense-in-depth** security for tailnet deployments:
 
 ## Security Assumptions
 
+### ⚠️ CRITICAL: Tailscale is MANDATORY
+
+**TailOpsMCP does NOT implement TLS/HTTPS.** The server runs plain HTTP on port 8080.
+
+- ✅ **Safe**: Running inside Tailscale (encrypted tunnel, ACL-protected)
+- ❌ **UNSAFE**: Exposing port 8080 to public internet or untrusted networks
+- ❌ **UNSAFE**: Port forwarding 8080 through a firewall
+- ❌ **UNSAFE**: Running on a network with untrusted devices
+
+**All authentication tokens are sent in plaintext HTTP headers.** Without Tailscale's encryption, tokens can be intercepted.
+
+**Do not bypass this requirement.** If you cannot use Tailscale, you MUST:
+1. Place TailOpsMCP behind a TLS-terminating reverse proxy (nginx, Caddy, Traefik)
+2. Configure the proxy to add TLS and forward to localhost:8080
+3. Never expose port 8080 directly
+
 ### What Tailscale Provides ✅
-- **Encrypted transport**: TLS-equivalent encryption between nodes
+- **Encrypted transport**: TLS-equivalent encryption between nodes (WireGuard-based)
 - **Network segmentation**: ACLs limit which nodes can connect
 - **Identity-aware networking**: Know WHO is connecting
 - **Service discovery**: Stable DNS names via Tailscale Services
