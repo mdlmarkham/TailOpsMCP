@@ -31,21 +31,32 @@ AUTH_MODE = os.getenv("SYSTEMMANAGER_AUTH_MODE", "token").lower()
 
 # Create FastMCP instance
 if AUTH_MODE == "oidc":
-    # TSIDP OIDC Authentication
+    # TSIDP OIDC Authentication using JWT Verifier
     tsidp_url = os.getenv("TSIDP_URL", "https://tsidp.tailf9480.ts.net")
     base_url = os.getenv("SYSTEMMANAGER_BASE_URL", "http://localhost:8080")
+    client_id = os.getenv("TSIDP_CLIENT_ID")
+    client_secret = os.getenv("TSIDP_CLIENT_SECRET")
+    
+    if not client_id or not client_secret:
+        raise ValueError("TSIDP_CLIENT_ID and TSIDP_CLIENT_SECRET required for OIDC mode")
     
     logger.info(f"Configuring OIDC authentication with TSIDP: {tsidp_url}")
     
-    from fastmcp.server.auth.providers.oidc import OIDCProvider
+    from fastmcp.server.auth import RemoteAuthProvider
+    from fastmcp.server.auth.providers.jwt import JWTVerifier
+    from pydantic import AnyHttpUrl
     
-    # TSIDP configuration - standard OIDC discovery
-    auth = OIDCProvider(
-        config_url=f"{tsidp_url}/.well-known/openid-configuration",
-        client_id=os.getenv("TSIDP_CLIENT_ID"),  # From TSIDP admin UI
-        client_secret=os.getenv("TSIDP_CLIENT_SECRET"),  # From TSIDP admin UI
+    # TSIDP JWT verification using JWKS
+    token_verifier = JWTVerifier(
+        jwks_uri=f"{tsidp_url}/.well-known/jwks.json",
+        issuer=tsidp_url,
+        audience=client_id  # TSIDP issues tokens for the client_id
+    )
+    
+    auth = RemoteAuthProvider(
+        token_verifier=token_verifier,
+        authorization_servers=[AnyHttpUrl(tsidp_url)],
         base_url=base_url,
-        redirect_path="/auth/callback"
     )
     mcp = FastMCP("SystemManager", auth=auth)
     logger.info("OIDC authentication enabled - users will authenticate via Tailscale")
