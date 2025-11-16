@@ -23,8 +23,10 @@ from src.auth.middleware import secure_tool
 from src.tools import stack_tools
 from src.services.log_analyzer import LogAnalyzer
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+# Enable FastMCP auth debugging
+logging.getLogger("fastmcp.server.auth").setLevel(logging.DEBUG)
 
 # Determine authentication mode
 AUTH_MODE = os.getenv("SYSTEMMANAGER_AUTH_MODE", "token").lower()
