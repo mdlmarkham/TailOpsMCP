@@ -1,84 +1,70 @@
 #!/usr/bin/env python3
-"""Test the new package management and Docker image tools"""
+"""Remote integration tests for package/system tools exposed via FastMCP."""
 
-import requests
+from __future__ import annotations
+
+import asyncio
 import json
+import os
+from typing import Any, Dict
 
-SERVER_URL = "http://dev1.tailf9480.ts.net:8080/sse"
+import pytest
+from fastmcp import Client
 
-def call_tool(tool_name: str, arguments: dict = None):
-    """Call an MCP tool and return the result"""
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "tools/call",
-        "params": {
-            "name": tool_name,
-            "arguments": arguments or {}
-        },
-        "id": 1
-    }
-    
-    response = requests.post(SERVER_URL, json=payload)
-    data = response.json()
-    
-    if "result" in data:
-        return data["result"]["content"][0]["text"]
-    elif "error" in data:
-        return f"Error: {data['error']}"
-    return data
 
-def test_check_system_updates():
-    """Test checking for system updates"""
-    print("\n=== Testing check_system_updates ===")
-    result = call_tool("check_system_updates")
-    print(json.dumps(json.loads(result), indent=2))
+REMOTE_SSE_URL = os.getenv("SYSTEMMANAGER_REMOTE_SSE_URL")
 
-def test_list_docker_images():
-    """Test listing Docker images"""
-    print("\n=== Testing list_docker_images ===")
-    result = call_tool("list_docker_images")
-    print(json.dumps(json.loads(result), indent=2))
 
-def test_pull_docker_image():
-    """Test pulling a Docker image"""
-    print("\n=== Testing pull_docker_image (alpine:latest) ===")
-    result = call_tool("pull_docker_image", {"image_name": "alpine", "tag": "latest"})
-    print(json.dumps(json.loads(result), indent=2))
+def _require_remote_url() -> str:
+    if not REMOTE_SSE_URL:
+        pytest.skip("Set SYSTEMMANAGER_REMOTE_SSE_URL to run remote tool tests")
+    return REMOTE_SSE_URL
 
-def list_all_tools():
-    """List all available tools"""
-    print("\n=== Listing All Tools ===")
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "tools/list",
-        "id": 1
-    }
-    
-    response = requests.post(SERVER_URL, json=payload)
-    data = response.json()
-    
-    if "result" in data:
-        tools = data["result"]["tools"]
-        print(f"Total tools: {len(tools)}\n")
-        
-        # Filter for new tools
-        new_tools = [t for t in tools if any(keyword in t["name"] for keyword in 
-                     ["package", "update", "install", "docker_image", "pull_docker"])]
-        
-        print("New package/Docker tools:")
-        for tool in new_tools:
-            print(f"  - {tool['name']}: {tool['description'][:80]}...")
+
+async def _call_remote_tool(tool: str, arguments: Dict[str, Any] | None = None):
+    url = _require_remote_url()
+    try:
+        async with Client(url) as client:
+            result = await client.call_tool(tool, arguments or {})
+            assert result.content, f"{tool} returned no content"
+            payload = result.content[0].text
+            try:
+                return json.loads(payload)
+            except json.JSONDecodeError:
+                return payload
+    except OSError as exc:  # pragma: no cover - network specific
+        pytest.skip(f"Remote MCP server unreachable: {exc}")
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_check_system_updates_tool():
+    data = await _call_remote_tool("check_system_updates")
+    assert isinstance(data, (dict, list, str))
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_list_docker_images_tool():
+    data = await _call_remote_tool("list_docker_images")
+    if isinstance(data, dict):
+        assert "containers" in data or "images" in data or data.get("success") is False
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_pull_docker_image_tool():
+    data = await _call_remote_tool("pull_docker_image", {"image_name": "alpine", "tag": "latest"})
+    assert data, "pull_docker_image returned empty payload"
+
+
+async def main() -> None:
+    await _call_remote_tool("check_system_updates")
+    await _call_remote_tool("list_docker_images")
+    await _call_remote_tool("pull_docker_image", {"image_name": "alpine", "tag": "latest"})
+
 
 if __name__ == "__main__":
-    try:
-        list_all_tools()
-        test_check_system_updates()
-        test_list_docker_images()
-        test_pull_docker_image()
-        
-        print("\n✅ All tests completed!")
-        
-    except Exception as e:
-        print(f"\n❌ Error: {e}")
-        import traceback
-        traceback.print_exc()
+    if not REMOTE_SSE_URL:
+        raise SystemExit("SYSTEMMANAGER_REMOTE_SSE_URL is required to run this harness")
+    asyncio.run(main())

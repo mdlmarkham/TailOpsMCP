@@ -6,11 +6,12 @@ import logging
 import functools
 import time
 from datetime import datetime
-from typing import Optional, Literal, Union
+from typing import Optional, Literal, Union, Any, Dict
 from fastmcp import FastMCP
 from src.utils.toon import model_to_toon
 from src.services.package_manager import PackageManager
 from src.auth.middleware import secure_tool
+from src.tools import stack_tools
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -318,6 +319,23 @@ async def file_operations(
         return {"path": path, "exists": False, "error": "File or directory not found"}
     except Exception as e:
         return format_error(e, "file_operations")
+
+
+@mcp.tool()
+@secure_tool("get_stack_network_info")
+async def get_stack_network_info(
+    host: str,
+    stack_name: str,
+    format: Literal["json", "toon"] = "json",
+) -> Union[dict, str]:
+    """Return Docker stack network metadata via the stack_tools helper."""
+
+    try:
+        info = await stack_tools.get_stack_network_info(host, stack_name)
+        return format_response(info, format)
+    except Exception as e:
+        logger.exception("get_stack_network_info failed for host=%s stack=%s", host, stack_name)
+        return format_error(e, "get_stack_network_info")
 
 @mcp.tool()
 @secure_tool("get_network_status")

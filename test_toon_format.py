@@ -2,7 +2,9 @@
 """Test TOON format integration - compare JSON vs TOON token efficiency"""
 
 import json
-import sys
+
+import pytest
+
 from src.utils.toon import model_to_toon
 
 # Sample test data matching MCP responses
@@ -69,53 +71,46 @@ test_data = {
     }
 }
 
-def count_tokens_estimate(text):
-    """Rough token count estimate (chars / 4)"""
+def count_tokens_estimate(text: str) -> int:
+    """Rough token count estimate (chars / 4)."""
+
     return len(text) // 4
 
-def test_format(name, data):
-    """Test both JSON and TOON formats, show token savings"""
-    print(f"\n{'='*80}")
-    print(f"Testing: {name}")
-    print('='*80)
-    
-    # JSON format (pretty)
+
+def _compare_format(name: str, data):
     json_pretty = json.dumps(data, indent=2)
-    json_pretty_tokens = count_tokens_estimate(json_pretty)
-    
-    # JSON format (compact)
-    json_compact = json.dumps(data, separators=(',', ':'))
-    json_compact_tokens = count_tokens_estimate(json_compact)
-    
-    # TOON format
+    json_compact = json.dumps(data, separators=(",", ":"))
     toon = model_to_toon(data)
+
+    json_pretty_tokens = count_tokens_estimate(json_pretty)
+    json_compact_tokens = count_tokens_estimate(json_compact)
     toon_tokens = count_tokens_estimate(toon)
-    
-    # Calculate savings
+
     savings_vs_pretty = ((json_pretty_tokens - toon_tokens) / json_pretty_tokens) * 100
     savings_vs_compact = ((json_compact_tokens - toon_tokens) / json_compact_tokens) * 100
-    
-    print(f"\n📊 Format Comparison:")
-    print(f"  JSON (pretty):  {len(json_pretty):6} chars → ~{json_pretty_tokens:4} tokens")
-    print(f"  JSON (compact): {len(json_compact):6} chars → ~{json_compact_tokens:4} tokens")
-    print(f"  TOON:           {len(toon):6} chars → ~{toon_tokens:4} tokens")
-    
-    print(f"\n💰 Token Savings:")
-    print(f"  vs JSON (pretty):  {savings_vs_pretty:5.1f}% reduction")
-    print(f"  vs JSON (compact): {savings_vs_compact:5.1f}% reduction")
-    
-    print(f"\n📝 TOON Output Preview:")
-    preview = toon[:200] + ("..." if len(toon) > 200 else "")
-    print(f"  {preview}")
-    
+
     return {
         "name": name,
         "json_pretty_tokens": json_pretty_tokens,
         "json_compact_tokens": json_compact_tokens,
         "toon_tokens": toon_tokens,
         "savings_vs_pretty": savings_vs_pretty,
-        "savings_vs_compact": savings_vs_compact
+        "savings_vs_compact": savings_vs_compact,
+        "preview": toon[:200],
     }
+
+
+@pytest.mark.parametrize("name,data", test_data.items())
+def test_toon_format_is_more_efficient(name, data):
+    result = _compare_format(name, data)
+    assert result["toon_tokens"] < result["json_compact_tokens"]
+    assert result["savings_vs_pretty"] > 0
+    assert result["savings_vs_compact"] > 0
+
+
+def test_toon_preview_contains_expected_keywords():
+    result = _compare_format("system_status", test_data["system_status"])
+    assert "cpu" in result["preview"].lower()
 
 if __name__ == "__main__":
     print("🧪 SystemManager TOON Format Testing")
@@ -125,7 +120,7 @@ if __name__ == "__main__":
     
     # Test each dataset
     for key, data in test_data.items():
-        result = test_format(key, data)
+        result = _compare_format(key, data)
         results.append(result)
     
     # Summary

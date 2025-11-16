@@ -7,6 +7,8 @@ from types import SimpleNamespace
 import pytest
 
 from src.mcp_server import mcp
+from src.auth.token_auth import TokenClaims
+from src.auth import middleware as auth_middleware
 
 
 def _make_completed(stdout: str, returncode: int = 0):
@@ -53,14 +55,23 @@ def test_mcp_wrapper_get_stack_network_info_cli(monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    # find mcp tool wrapper
-    tool = next((t for t in mcp.tools if t.name == "get_stack_network_info"), None)
+    # bypass auth middleware for test-only execution
+    dummy_claims = TokenClaims(agent="pytest", scopes=["container:read"], expiry=None)
+    monkeypatch.setattr(
+        auth_middleware.SecurityMiddleware,
+        "get_claims_from_context",
+        lambda self, **kwargs: dummy_claims,
+    )
+
+    tools_dict = asyncio.get_event_loop().run_until_complete(mcp.get_tools())
+    tool = tools_dict.get("get_stack_network_info")
     assert tool is not None
 
-    res = asyncio.get_event_loop().run_until_complete(tool.function(host="node-1", stack_name=stack_name))
-    assert res["success"] is True
-    data = res["data"]
-    assert data["stack_name"] == stack_name
-    assert len(data["containers"]) == 1
+    res = asyncio.get_event_loop().run_until_complete(
+        tool.fn(host="node-1", stack_name=stack_name, format="json")
+    )
+
+    assert res["stack_name"] == stack_name
+    assert len(res["containers"]) == 1
 
     remove_inventory()

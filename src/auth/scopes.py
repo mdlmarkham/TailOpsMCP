@@ -94,6 +94,12 @@ TOOL_SCOPES = {
         risk_level="low",
         description="List Docker containers"
     ),
+    "get_stack_network_info": ToolScopeRequirement(
+        tool_name="get_stack_network_info",
+        required_scopes=[Scope.CONTAINER_READ],
+        risk_level="low",
+        description="Inspect Docker stack containers and network metadata"
+    ),
     "manage_container": ToolScopeRequirement(
         tool_name="manage_container",
         required_scopes=[Scope.CONTAINER_WRITE],

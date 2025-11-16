@@ -1,88 +1,109 @@
 import pytest
-import asyncio
+
 from src.mcp_server import mcp
+from src.auth.token_auth import TokenClaims
+from src.auth import middleware as auth_middleware
+
+
+@pytest.fixture(autouse=True)
+def grant_contract_test_access(monkeypatch):
+    """Bypass auth for contract tests so MCP tools can run in CI."""
+    claims = TokenClaims(agent="contract-tests", scopes=["admin"], expiry=None)
+
+    def _fake_get_claims(self, **kwargs):  # pragma: no cover - test helper
+        return claims
+
+    monkeypatch.setattr(
+        auth_middleware.SecurityMiddleware,
+        "get_claims_from_context",
+        _fake_get_claims,
+    )
 
 
 class TestMCPProtocol:
     """Test MCP protocol compliance."""
-    
-    def test_initialization(self):
-        """Test MCP server initialization."""
+
+    @pytest.mark.asyncio
+    async def test_initialization(self):
+        tools = await mcp.get_tools()
         assert mcp.name == "SystemManager"
-        assert len(mcp.tools) > 0
-    
-    def test_tool_registration(self):
-        """Test that tools are properly registered."""
-        tool_names = [tool.name for tool in mcp.tools]
-        expected_tools = [
+        assert len(tools) > 0
+
+    @pytest.mark.asyncio
+    async def test_tool_registration(self):
+        tools = await mcp.get_tools()
+        tool_names = set(tools.keys())
+        expected_tools = {
             "get_system_status",
-            "get_container_list", 
-            "list_directory",
+            "get_container_list",
+            "file_operations",
             "get_network_status",
-            "search_files"
-        ]
-        
-        for tool_name in expected_tools:
-            assert tool_name in tool_names, f"Tool {tool_name} not registered"
-    
-    def test_tool_schemas(self):
-        """Test tool schemas are properly defined."""
-        for tool in mcp.tools:
-            assert tool.name is not None
-            assert tool.description is not None
-            assert hasattr(tool, 'inputSchema') or tool.inputSchema is None
+            "get_stack_network_info",
+        }
+
+        missing = expected_tools - tool_names
+        assert not missing, f"Missing tools: {missing}"
+
+    @pytest.mark.asyncio
+    async def test_tool_schemas(self):
+        tools = await mcp.get_tools()
+        for tool in tools.values():
+            assert tool.name
+            assert tool.description
+            assert callable(tool.fn)
 
 
 @pytest.mark.asyncio
 async def test_system_status_tool():
-    """Test get_system_status tool."""
-    # Find the tool
-    tool = next((t for t in mcp.tools if t.name == "get_system_status"), None)
+    tools = await mcp.get_tools()
+    tool = tools.get("get_system_status")
     assert tool is not None
-    
-    # Test basic functionality
-    result = await tool.function()
-    assert "success" in result
-    assert "data" in result or "error" in result
+
+    result = await tool.fn(format="json")
+    assert isinstance(result, dict)
+    assert "cpu_percent" in result
+    assert "memory_usage" in result
 
 
 @pytest.mark.asyncio
 async def test_container_list_tool():
-    """Test get_container_list tool."""
-    tool = next((t for t in mcp.tools if t.name == "get_container_list"), None)
+    tools = await mcp.get_tools()
+    tool = tools.get("get_container_list")
     assert tool is not None
-    
-    # Test with default parameters
-    result = await tool.function()
-    assert "success" in result
+
+    result = await tool.fn(format="json")
+    assert isinstance(result, dict)
+    assert "containers" in result or "error" in result
 
 
 @pytest.mark.asyncio
-async def test_list_directory_tool():
-    """Test list_directory tool."""
-    tool = next((t for t in mcp.tools if t.name == "list_directory"), None)
+async def test_file_operations_list_tool():
+    tools = await mcp.get_tools()
+    tool = tools.get("file_operations")
     assert tool is not None
-    
-    # Test with root directory
-    result = await tool.function(path="/")
-    assert "success" in result
+
+    result = await tool.fn(action="list", path=".")
+    assert isinstance(result, dict)
+    assert result.get("path") == "."
 
 
 @pytest.mark.asyncio
 async def test_network_status_tool():
-    """Test get_network_status tool."""
-    tool = next((t for t in mcp.tools if t.name == "get_network_status"), None)
+    tools = await mcp.get_tools()
+    tool = tools.get("get_network_status")
     assert tool is not None
-    
-    result = await tool.function()
-    assert "success" in result
+
+    result = await tool.fn(format="json")
+    assert isinstance(result, dict)
+    assert "interfaces" in result
 
 
 @pytest.mark.asyncio
-async def test_search_files_tool():
-    """Test search_files tool."""
-    tool = next((t for t in mcp.tools if t.name == "search_files"), None)
+async def test_file_search_tool():
+    tools = await mcp.get_tools()
+    tool = tools.get("file_operations")
     assert tool is not None
-    
-    result = await tool.function(pattern="*.py", path="/")
-    assert "success" in result
+
+    result = await tool.fn(action="search", path=".", pattern="*.py")
+    assert isinstance(result, dict)
+    assert result.get("pattern") == "*.py"

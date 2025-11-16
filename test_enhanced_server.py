@@ -1,40 +1,65 @@
-"""Test the enhanced SystemManager MCP server"""
+"""Integration harness for the enhanced SystemManager MCP server."""
+
+from __future__ import annotations
+
 import asyncio
+import os
+
+import pytest
 from fastmcp import Client
 
-async def test_enhanced_server():
-    async with Client("http://dev1.tailf9480.ts.net:8080/sse") as client:
-        # List all tools
-        tools = await client.list_tools()
-        print(f"\n✅ Total Tools Available: {len(tools)}\n")
-        for tool in tools:
-            print(f"  • {tool.name}")
-        
-        print("\n" + "="*60)
-        
-        # Test system overview (new batch tool)
-        print("\n🔍 Testing get_system_overview (NEW)...")
-        result = await client.call_tool("get_system_overview", {})
-        print(f"✅ Success - Got system, containers, network, and processes in one call")
-        
-        # Test file info (new)
-        print("\n📁 Testing get_file_info (NEW)...")
-        result = await client.call_tool("get_file_info", {"path": "/opt/systemmanager/README.md"})
-        print(f"Result: {result.content[0].text}")
-        
-        # Test tail file (new)
-        print("\n📄 Testing tail_file (NEW)...")
-        result = await client.call_tool("tail_file", {"path": "/var/log/syslog", "lines": 5})
-        content = result.content[0].text
-        print(f"✅ Got last 5 lines from syslog")
-        
-        # Test container logs (new)
-        print("\n🐳 Testing get_container_logs (NEW)...")
-        result = await client.call_tool("get_container_logs", {"name_or_id": "grafana", "lines": 10})
-        print(f"✅ Retrieved container logs")
-        
-        print("\n" + "="*60)
-        print("\n✨ All new features working!\n")
+
+REMOTE_SSE_URL = os.getenv("SYSTEMMANAGER_REMOTE_SSE_URL")
+
+
+def _require_remote_url() -> str:
+    if not REMOTE_SSE_URL:
+        pytest.skip("Set SYSTEMMANAGER_REMOTE_SSE_URL to run enhanced server integration tests")
+    return REMOTE_SSE_URL
+
+
+async def _run_enhanced_scenario(client: Client) -> dict:
+    tools = await client.list_tools()
+    assert tools, "Remote MCP server returned no tools"
+
+    overview = await client.call_tool("get_system_overview", {})
+    file_info = await client.call_tool("get_file_info", {"path": "/opt/systemmanager/README.md"})
+    tail_result = await client.call_tool("tail_file", {"path": "/var/log/syslog", "lines": 5})
+    logs_result = await client.call_tool("get_container_logs", {"name_or_id": "grafana", "lines": 5})
+
+    return {
+        "tool_count": len(tools),
+        "overview": overview,
+        "file_info": file_info,
+        "tail": tail_result,
+        "logs": logs_result,
+    }
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_enhanced_server_features():
+    url = _require_remote_url()
+    try:
+        async with Client(url) as client:
+            results = await _run_enhanced_scenario(client)
+    except OSError as exc:  # pragma: no cover - network specific
+        pytest.skip(f"Remote MCP server unreachable: {exc}")
+
+    assert results["tool_count"] > 0
+    assert results["overview"].content, "Overview tool returned empty content"
+    assert results["file_info"].content, "File info tool returned empty content"
+    assert results["tail"].content, "tail_file returned no content"
+    assert results["logs"].content, "get_container_logs returned no content"
+
+
+async def main() -> None:
+    url = os.getenv("SYSTEMMANAGER_REMOTE_SSE_URL")
+    if not url:
+        raise SystemExit("SYSTEMMANAGER_REMOTE_SSE_URL is required to run this harness")
+    async with Client(url) as client:
+        await _run_enhanced_scenario(client)
+
 
 if __name__ == "__main__":
-    asyncio.run(test_enhanced_server())
+    asyncio.run(main())
