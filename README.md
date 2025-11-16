@@ -1,164 +1,745 @@
 # SystemManager MCP Server
 
-A secure Model Context Protocol (MCP) server for remote system management and monitoring. Provides AI agents with tools to monitor system health, manage Docker containers, explore file systems, and check network status.
+> **AI-Powered Infrastructure Management for Home Labs**  
+> Secure Model Context Protocol (MCP) server for managing Proxmox LXC containers, Docker stacks, and system administration - all through natural language with AI assistants.
 
-**Security Model**: Designed for **Tailscale-only deployment** with defense-in-depth security. Tailscale ACLs provide network-level security, while application-level authorization (bearer tokens + scopes) and audit logging provide additional protection. See [Security Documentation](docs/SECURITY.md) for details.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-compatible-blue.svg)](https://www.docker.com/)
+[![Proxmox](https://img.shields.io/badge/proxmox-LXC-orange.svg)](https://www.proxmox.com/)
+[![Tailscale](https://img.shields.io/badge/tailscale-integrated-blue.svg)](https://tailscale.com/)
 
-## Features
+---
 
-- **System Monitoring**: Real-time CPU, memory, disk, and network metrics
-- **Docker Management**: Container lifecycle operations and status monitoring
-- **🆕 Intelligent Log Analysis**: AI-powered log analysis with root cause detection and recommendations
-- **File System Exploration**: Directory listing and file search capabilities
-- **Network Status**: Interface monitoring and connectivity testing
-- **Defense-in-Depth Security**: 
-  - **Network Layer**: Tailscale ACLs control WHO can reach server
-  - **Application Layer**: Bearer tokens + scopes control WHAT they can do
-  - **Audit Layer**: Comprehensive logging tracks WHO did WHAT with Tailscale identity
-  - **Approval Gates**: Critical operations require interactive approval
-- **Multiple Transports**: stdio and HTTP SSE protocol support
-- **Tailscale Integration**: Native Tailscale Services deployment support
+## 🎯 What is SystemManager?
 
-## Quick Start
+SystemManager is an MCP (Model Context Protocol) server that lets you manage your home lab infrastructure using AI assistants like Claude, ChatGPT, or any MCP-compatible client. Instead of remembering complex commands, just ask:
 
-### Prerequisites
+- *"Deploy my monitoring stack from GitHub"*
+- *"Analyze the auth logs for security issues"*
+- *"What's using all the CPU on dev1?"*
+- *"Update all packages on the server"*
 
-- Python 3.11+
-- Docker (for container management features)
-- Tailscale (optional, for Tailscale Services deployment)
+Perfect for **home lab enthusiasts**, **self-hosters**, and **DevOps engineers** running Proxmox, Docker, and Tailscale.
 
-### Installation
+---
+
+## ✨ Key Features
+
+### 🚀 **Current Capabilities**
+
+- ✅ **Docker Compose Stack Management** - Deploy GitOps-style stacks from repos (like Portainer/Komodo)
+- ✅ **Proxmox LXC Detection** - Automatic virtualization environment detection
+- ✅ **AI-Powered Log Analysis** - Root cause detection with actionable recommendations
+- ✅ **System Monitoring** - CPU, memory, disk, network with historical metrics
+- ✅ **Docker Container Management** - Start/stop/restart/logs for all containers
+- ✅ **Systemd Service Management** - Control system services
+- ✅ **Package Management** - Update systems, install packages
+- ✅ **Security Auditing** - AI-powered security log analysis
+- ✅ **File Operations** - Read, search, and analyze system files
+- ✅ **Network Diagnostics** - Interface status, connectivity tests
+
+### 🔒 **Security First**
+
+- ✅ **OAuth 2.1 with TSIDP** - Tailscale Identity Provider authentication
+- ✅ **Token Introspection** - RFC 7662 compliant token validation
+- ✅ **Systemd Hardening** - Secrets in environment files, not command line
+- ✅ **Audit Logging** - Complete tracking of all operations
+- ✅ **Scope-Based Access** - Fine-grained permission control
+
+### 🔮 **Roadmap** (See [HOMELAB_FEATURES.md](./HOMELAB_FEATURES.md))
+
+- 🔄 **LXC Network Auditing** - Review and audit container network configs
+- 🔄 **Backup & Snapshots** - Automated backups with verification
+- 🔄 **Certificate Management** - Let's Encrypt automation
+- 🔄 **Reverse Proxy Management** - Traefik/Nginx/Caddy configuration
+- 🔄 **Proxmox API Integration** - Full VM/container management
+- 🔄 **Security Scanning** - Container vulnerability detection
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│  AI Assistant (Claude/ChatGPT/etc)             │
+│  - Natural language commands                   │
+│  - Context-aware suggestions                   │
+└──────────────────┬──────────────────────────────┘
+                   │ MCP Protocol
+┌──────────────────▼──────────────────────────────┐
+│  SystemManager MCP Server                      │
+│  ┌──────────────────────────────────────────┐  │
+│  │ OAuth/OIDC (Tailscale Identity)         │  │
+│  └──────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────┐  │
+│  │ AI-Powered Analysis                      │  │
+│  │ - Log analysis with root cause detection│  │
+│  │ - Security auditing                      │  │
+│  │ - Performance recommendations            │  │
+│  └──────────────────────────────────────────┘  │
+└──────────────────┬──────────────────────────────┘
+                   │
+    ┌──────────────┼──────────────┬──────────────┐
+    │              │              │              │
+┌───▼────┐  ┌─────▼─────┐  ┌────▼─────┐  ┌────▼─────┐
+│Proxmox │  │  Docker   │  │ Systemd  │  │Tailscale │
+│  LXC   │  │ Compose   │  │ Services │  │  Network │
+└────────┘  └───────────┘  └──────────┘  └──────────┘
+```
+
+---
+
+## 🚀 Quick Start
+
+### Method 1: Proxmox LXC (Recommended)
+
+Use the automated Proxmox installer script (inspired by [tteck's scripts](https://community-scripts.github.io/ProxmoxVE/)):
+
+```bash
+bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/ct/build.func)"
+```
+
+This will:
+- Create a Debian 12 LXC container (2GB RAM, 2 CPU cores, 4GB disk)
+- Install Python 3.12, Docker, and all dependencies
+- Walk you through Tailscale OAuth setup
+- Configure and start the systemd service
+- Provide complete installation summary
+
+### Method 2: Manual Installation (Any Linux)
+
+#### Prerequisites
+
+- **OS**: Linux (Ubuntu 22.04+, Debian 11+, Proxmox LXC)
+- **Python**: 3.11 or higher
+- **Docker**: For container management features (optional)
+- **Tailscale**: For secure OAuth authentication (optional but recommended)
+
+#### Installation Steps
+
+```bash
+# 1. Download and run the installer
+curl -fsSL https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/install.sh | sudo bash
+
+# Or clone and run manually
+git clone https://github.com/mdlmarkham/SystemManager.git
+cd SystemManager
+sudo bash install.sh
+```
+
+The interactive installer will:
+1. ✅ Check system requirements (Python, Docker, Tailscale)
+2. 🔧 Choose authentication method (OAuth or Token)
+3. 🔐 Configure Tailscale OAuth (with step-by-step guide)
+4. 📦 Install SystemManager and dependencies
+5. ⚙️ Create systemd service
+6. 🚀 Start and verify the server
+
+#### Post-Installation
+
+```bash
+# Check service status
+sudo systemctl status systemmanager-mcp
+
+# View logs
+sudo journalctl -u systemmanager-mcp -f
+
+# Test the server
+curl http://localhost:8080/.well-known/oauth-protected-resource/mcp
+```
+
+### One-Shot Installation
+
+```bash
+# Download and run the installer
+curl -fsSL https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/install.sh | sudo bash
+```
+
+The installer will:
+1. ✅ Check system requirements
+2. ✅ Install Python dependencies
+3. ✅ Set up systemd service
+4. ✅ Configure Tailscale OAuth (if available)
+5. ✅ Create secure environment file
+6. ✅ Start the server
+
+### Manual Installation
+
+```bash
+# 1. Clone repository
+git clone https://github.com/mdlmarkham/SystemManager.git
+cd SystemManager
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Configure authentication (choose one)
+
+# Option A: Tailscale OAuth (Recommended)
+cp deploy/.env.template .env
+nano .env  # Add your TSIDP credentials
+chmod 600 .env
+
+# Option B: Token-based auth (Simpler)
+export SYSTEMMANAGER_AUTH_MODE=token
+export SYSTEMMANAGER_SHARED_SECRET="your-secret-here"
+
+# 4. Start the server
+python -m src.mcp_server
+```
+
+---
+
+## 🔐 Tailscale Integration
+
+SystemManager supports **Tailscale Identity Provider (TSIDP)** for OAuth 2.1 authentication.
+
+### Setup TSIDP
+
+1. **Enable TSIDP** in your Tailscale admin console:
+   ```
+   Settings → OAuth → Identity Provider → Enable
+   ```
+
+2. **Register OAuth client**:
+   - Navigate to OAuth applications
+   - Create new application
+   - Set redirect URI: `https://vscode.dev/redirect`
+   - Note the Client ID and Secret
+
+3. **Configure SystemManager**:
+   ```bash
+   # Edit /opt/systemmanager/.env
+   SYSTEMMANAGER_AUTH_MODE=oidc
+   TSIDP_URL=https://tsidp.tail12345.ts.net
+   TSIDP_CLIENT_ID=your-client-id
+   TSIDP_CLIENT_SECRET=your-client-secret
+   SYSTEMMANAGER_BASE_URL=http://your-server.tail12345.ts.net:8080
+   ```
+
+4. **Restart service**:
+   ```bash
+   sudo systemctl restart systemmanager-mcp
+   ```
+
+### Tailscale ACLs
+
+Add to your `tailscale-acl.json`:
+```json
+{
+  "acls": [
+    {
+      "action": "accept",
+      "src": ["group:admins"],
+      "dst": ["tag:infrastructure:8080"]
+    }
+  ],
+  "tagOwners": {
+    "tag:infrastructure": ["group:admins"]
+  }
+}
+```
+
+---
+
+## 🐳 Proxmox Integration
+
+### LXC Container Detection
+
+SystemManager automatically detects when running inside a Proxmox LXC container:
+
+```json
+{
+  "virtualization": {
+    "type": "lxc",
+    "method": "systemd-detect-virt"
+  }
+}
+```
+
+### Recommended LXC Configuration
+
+```bash
+# /etc/pve/lxc/103.conf
+arch: amd64
+cores: 2
+memory: 2048
+net0: name=eth0,bridge=vmbr0,firewall=1,ip=dhcp
+rootfs: local-lvm:vm-103-disk-0,size=8G
+
+# Enable Docker in LXC
+features: nesting=1,keyctl=1
+lxc.apparmor.profile: unconfined
+lxc.cgroup2.devices.allow: c 10:200 rwm  # /dev/net/tun for Tailscale
+```
+
+### Network Auditing (Coming Soon)
+
+```python
+# Audit LXC network configuration
+audit_lxc_network(container_id=103)
+
+# Output:
+# - Network interfaces and bridges
+# - Firewall rules
+# - Port forwards
+# - Security recommendations
+```
+
+---
+
+## 🐋 Docker Integration
+
+### Docker Compose Stack Management
+
+Deploy and manage stacks like Portainer/Komodo:
+
+```python
+# Deploy stack from GitHub
+deploy_stack(
+    stack_name="monitoring",
+    repo_url="https://github.com/user/prometheus-stack",
+    branch="main",
+    env_vars={"DOMAIN": "metrics.home.lab"}
+)
+
+# Update stack (git pull + docker compose up)
+update_stack("monitoring")
+
+# List all stacks
+list_stacks()
+```
+
+### Container Management
+
+```python
+# AI-powered log analysis
+analyze_container_logs(
+    name_or_id="nginx",
+    context="Why is it restarting?"
+)
+
+# Start/stop/restart
+manage_container(action="restart", name_or_id="nginx")
+
+# Get container list with status
+get_container_list()
+```
+
+---
+
+## 📊 Usage Examples
+
+### With Claude Desktop
+
+Add to your `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "systemmanager": {
+      "type": "http",
+      "url": "http://your-server.tail12345.ts.net:8080/mcp"
+    }
+  }
+}
+```
+
+Then ask Claude:
+- *"Show me system status"*
+- *"What are the top processes by CPU usage?"*
+- *"Analyze the syslog for security issues"*
+- *"Check if my web server container is running"*
+- *"Test connectivity to database.home.lab:5432"*
+- *"Pull the latest nginx image"*
+
+### With GitHub Copilot Chat (VS Code)
+
+The MCP protocol is supported natively - just install and reload VS Code.
+
+Example prompts:
+- *"@systemmanager what containers are running?"*
+- *"@systemmanager analyze Docker logs for my app container"*
+- *"@systemmanager check system resource usage"*
+
+### Programmatic Access (Python)
+
+```python
+import requests
+
+# Token-based auth
+headers = {"Authorization": f"Bearer {token}"}
+
+# OAuth-based auth
+# (OAuth flow handled by MCP client)
+
+response = requests.post(
+    "http://your-server:8080/mcp",
+    json={
+        "method": "tools/call",
+        "params": {
+            "name": "get_system_status",
+            "arguments": {"format": "json"}
+        }
+    },
+    headers=headers
+)
+
+print(response.json())
+```
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+SystemManager is configured via `/opt/systemmanager/.env`:
+
+```bash
+# Authentication Mode (oidc or token)
+SYSTEMMANAGER_AUTH_MODE=oidc
+SYSTEMMANAGER_REQUIRE_AUTH=true
+
+# Tailscale OAuth (TSIDP)
+TSIDP_URL=https://tsidp.tail12345.ts.net
+TSIDP_CLIENT_ID=your_client_id
+TSIDP_CLIENT_SECRET=your_client_secret
+SYSTEMMANAGER_BASE_URL=http://server.tail12345.ts.net:8080
+
+# Or Token-based
+# SYSTEMMANAGER_SHARED_SECRET=your_secret_here
+
+# Logging
+LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR
+```
+
+### Service Management
+
+```bash
+# Check status
+sudo systemctl status systemmanager-mcp
+
+# View logs
+sudo journalctl -u systemmanager-mcp -f
+
+# Restart
+sudo systemctl restart systemmanager-mcp
+
+# Enable/disable auto-start
+sudo systemctl enable systemmanager-mcp
+sudo systemctl disable systemmanager-mcp
+```
+
+### Update to Latest Version
+
+```bash
+# Run the update script (Proxmox LXC only)
+pct exec 103 -- bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/ct/build.func)" -s --update
+
+# Or manually
+cd /opt/systemmanager
+sudo systemctl stop systemmanager-mcp
+git pull
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+sudo systemctl start systemmanager-mcp
+```
+
+---
+
+## 🛠️ Advanced Usage
+
+### Custom Scopes and Permissions
+
+SystemManager supports fine-grained scope-based authorization:
+
+```python
+# Define scopes for different users/teams
+SCOPES = {
+    "system:read": "Read system status",
+    "system:write": "Modify system settings",
+    "docker:read": "View containers",
+    "docker:write": "Manage containers",
+    "network:read": "View network info",
+    "network:write": "Modify network settings"
+}
+```
+
+Configure in TSIDP OAuth application or token claims.
+
+### AI-Powered Log Analysis
+
+SystemManager uses MCP sampling for intelligent log analysis:
+
+```bash
+# Analyze container logs
+analyze_container_logs(
+    name_or_id="nginx",
+    lines=500,
+    context="Why is the container crashing?",
+    use_ai=True
+)
+
+# Analyze system logs (syslog, journal)
+analyze_container_logs(
+    name_or_id="/var/log/syslog",
+    context="Find security issues"
+)
+```
+
+Returns:
+- **Summary**: Overview of log contents
+- **Errors**: Identified errors with severity
+- **Root Cause**: AI-determined likely causes
+- **Recommendations**: Actionable fixes
+
+### Docker Compose GitOps Workflow
+
+```python
+# Deploy stack from GitHub repo
+deploy_stack(
+    stack_name="monitoring",
+    repo_url="https://github.com/user/prometheus-stack",
+    branch="main",
+    compose_file="docker-compose.yml",
+    env_vars={
+        "GRAFANA_DOMAIN": "grafana.home.lab",
+        "PROMETHEUS_RETENTION": "30d"
+    }
+)
+
+# Update stack (git pull + redeploy)
+update_stack("monitoring")
+
+# Remove stack
+remove_stack("monitoring", remove_volumes=False)
+```
+
+### Systemd Service Management (Roadmap)
+
+```python
+# Manage systemd services
+manage_service(
+    action="restart",  # start, stop, restart, enable, disable
+    service_name="nginx"
+)
+
+# Get service status
+get_service_status("nginx")
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Service Won't Start
+
+```bash
+# Check logs for errors
+sudo journalctl -u systemmanager-mcp -n 100 --no-pager
+
+# Common issues:
+# 1. Python not found - check venv path in service file
+# 2. Missing dependencies - reinstall: pip install -r requirements.txt
+# 3. Port already in use - check: sudo lsof -i :8080
+```
+
+### OAuth Authentication Failing
+
+```bash
+# Verify TSIDP configuration
+curl https://tsidp.tail12345.ts.net/.well-known/openid-configuration
+
+# Test token introspection
+curl -X POST https://tsidp.tail12345.ts.net/api/v2/oauth/introspect \
+  -u "client_id:client_secret" \
+  -d "token=your_access_token"
+
+# Check server logs
+sudo journalctl -u systemmanager-mcp -f | grep -i oauth
+```
+
+### Container Management Not Working
+
+```bash
+# Verify Docker socket permissions
+ls -la /var/run/docker.sock
+
+# If permission denied, add systemmanager user to docker group
+# (Current version runs as root, but for non-root:)
+sudo usermod -aG docker systemmanager
+
+# Test Docker access
+docker ps
+```
+
+### Tailscale Connectivity Issues
+
+```bash
+# Check Tailscale status
+tailscale status
+
+# Verify DNS resolution
+dig server.tail12345.ts.net
+
+# Test local access first
+curl http://localhost:8080/.well-known/oauth-protected-resource/mcp
+
+# Then test via Tailscale hostname
+curl http://server.tail12345.ts.net:8080/.well-known/oauth-protected-resource/mcp
+```
+
+### High Memory Usage
+
+SystemManager is lightweight but Docker containers add up:
+
+```bash
+# Check memory usage
+free -h
+
+# Limit systemmanager memory (edit service file)
+sudo nano /etc/systemd/system/systemmanager-mcp.service
+
+# Add under [Service]:
+MemoryMax=512M
+MemoryHigh=384M
+
+sudo systemctl daemon-reload
+sudo systemctl restart systemmanager-mcp
+```
+
+---
+
+## 🗺️ Roadmap
+
+### ✅ Current Features (v1.0)
+
+- [x] System monitoring (CPU, memory, disk, network)
+- [x] Docker container management
+- [x] AI-powered log analysis (Docker + system logs)
+- [x] Network diagnostics (ping, traceroute, port testing)
+- [x] SSL certificate checking
+- [x] Tailscale OAuth (TSIDP) authentication
+- [x] Token-based authentication
+- [x] HTTP streaming transport (MCP)
+- [x] Proxmox LXC detection
+
+### 🚧 Phase 2 (Q1 2025)
+
+- [ ] Docker Compose stack management (deploy/update/remove)
+- [ ] Systemd service management
+- [ ] LXC network auditing
+- [ ] Package management (apt/yum update/install)
+- [ ] File operations (read/write/search)
+- [ ] Enhanced security scopes
+
+### 🔮 Phase 3 (Q2 2025)
+
+- [ ] Proxmox API integration (VM/CT management)
+- [ ] Backup and snapshot management
+- [ ] Resource usage alerts and notifications
+- [ ] Multi-node cluster support
+- [ ] Web UI dashboard (optional)
+
+### 💡 Phase 4 (Future)
+
+- [ ] Ansible playbook execution
+- [ ] Infrastructure-as-Code validation
+- [ ] Cost tracking and optimization
+- [ ] Security scanning and compliance
+- [ ] Integration with Home Assistant
+- [ ] Mobile app for emergency access
+
+See [HOMELAB_FEATURES.md](./HOMELAB_FEATURES.md) for detailed roadmap.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from the home lab community!
+
+### Ways to Contribute
+
+1. **Report Bugs**: Open an issue with details about the problem
+2. **Feature Requests**: Suggest new tools or improvements
+3. **Code Contributions**: Submit pull requests
+4. **Documentation**: Help improve docs and examples
+5. **Share Your Setup**: Tell us how you're using SystemManager
+
+### Development Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/systemmanager-mcp-server.git
-cd systemmanager-mcp-server
+git clone https://github.com/mdlmarkham/SystemManager.git
+cd SystemManager
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the server
+# Run tests
+pytest
+
+# Run server in development mode
 python -m src.mcp_server
 ```
 
-### Docker Deployment
+### Code Style
 
-```bash
-# Build and run with Docker
-docker build -t systemmanager-mcp-server .
-docker run -d \
-  --name systemmanager-mcp \
-  -p 8080:8080 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  systemmanager-mcp-server
-```
+- Follow PEP 8 guidelines
+- Add type hints to all functions
+- Write docstrings for new tools
+- Include tests for new features
 
-### TOON Format (Token-Efficient Responses)
+### Pull Request Process
 
-SystemManager supports TOON (Token-Oriented Object Notation) for 15-40% token savings:
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests (`pytest`)
+5. Commit with clear message (`git commit -m 'Add amazing feature'`)
+6. Push to branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
-```python
-# Use format parameter on any MCP tool
-response = await mcp.call_tool(
-    "get_top_processes",
-    {"limit": 10, "format": "toon"}  # vs "json" (default)
-)
+---
 
-# JSON response: ~177 tokens
-# TOON response: ~117 tokens  (33.9% savings!)
-```
+## 📜 License
 
-**Token Savings by Data Type:**
-- **Processes/Connections**: 30-52% reduction (tabular format)
-- **Container Lists**: 9-30% reduction
-- **System Status**: 2-10% reduction (nested structures)
-- **Overall Average**: 15-40% fewer tokens
+MIT License - see [LICENSE](LICENSE) file for details.
 
-**Example TOON Output:**
-```javascript
-// Instead of:
-{"processes":[{"pid":1,"name":"systemd","cpu":0.0},...],"timestamp":"..."}
+---
 
-// TOON format:
-{"processes":"[pid,name,cpu][1,\"systemd\",0.0]...","timestamp":"..."}
-```
+## 🙏 Acknowledgments
 
-**Documentation**: See [TOON_INTEGRATION.md](./TOON_INTEGRATION.md) for benchmarks and usage
+- **[Proxmox VE](https://www.proxmox.com/)** - Best open-source hypervisor for home labs
+- **[Tailscale](https://tailscale.com/)** - Zero-config VPN that just works
+- **[FastMCP](https://github.com/jlowin/fastmcp)** - Python framework for MCP servers
+- **[Model Context Protocol](https://modelcontextprotocol.io/)** - Standard for AI assistant integrations
+- **[Community Scripts](https://community-scripts.github.io/ProxmoxVE/)** - Inspiration for the installer
+- **[Home Lab Community](https://www.reddit.com/r/homelab/)** - For all the inspiration and support
 
-### Configuration
+---
 
-Create `/etc/systemmanager/config.yaml`:
+## 📞 Support
 
-```yaml
-server:
-  host: "localhost"
-  port: 8080
-  transport: "http-sse"
-  auth_required: true
+- **Documentation**: [https://github.com/mdlmarkham/SystemManager](https://github.com/mdlmarkham/SystemManager)
+- **Issues**: [GitHub Issues](https://github.com/mdlmarkham/SystemManager/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mdlmarkham/SystemManager/discussions)
 
-security:
-  auth_tokens:
-    - "your-secret-token-here"
-  rate_limit: 100
+---
 
-logging:
-  level: "INFO"
-```
+<div align="center">
 
-**⚠️ IMPORTANT SECURITY NOTE**: 
-This configuration shows basic settings. For production deployments:
-1. **Always deploy behind Tailscale** - Never expose directly to internet
-2. **Enable authentication** - Set `SYSTEMMANAGER_REQUIRE_AUTH=true`
-3. **Use scoped tokens** - Grant minimum required privileges
-4. **Enable audit logging** - Track who did what
-5. **See [Security Documentation](docs/SECURITY.md)** for complete security model
+**Built with ❤️ for the Home Lab Community**
 
-## Security
+If you find this useful, please ⭐ star the repo!
 
-SystemManager implements **defense-in-depth** for tailnet deployments:
-
-```
-Network Layer (Tailscale ACLs)
-  ↓ Controls WHO can reach server
-Application Layer (Bearer Tokens + Scopes)
-  ↓ Controls WHAT they can do
-Approval Layer (Interactive Gates)
-  ↓ Prevents unauthorized critical operations
-Audit Layer (Tailscale Identity Logging)
-  ↓ Tracks WHO did WHAT for forensics
-```
-
-### Quick Security Setup
-
-```bash
-# 1. Deploy behind Tailscale (REQUIRED)
-tailscale up --advertise-tags=tag:systemmanager-server
-
-# 2. Generate authentication secret
-export SYSTEMMANAGER_SHARED_SECRET="$(openssl rand -hex 32)"
-
-# 3. Enable authentication
-export SYSTEMMANAGER_REQUIRE_AUTH=true
-
-# 4. Generate scoped tokens
-python scripts/mint_token.py --agent "monitoring" --scopes "readonly" --ttl 30d
-python scripts/mint_token.py --agent "admin" --scopes "admin" --ttl 24h
-```
-
-### Token Scopes
-
-| Scope | Permissions | Use Case |
-|-------|------------|----------|
-| `readonly` | View metrics, containers, logs | Monitoring, observability |
-| `container:write` | Start/stop/restart containers | Container orchestration |
-| `container:admin` | Update containers, pull images | Deployment automation |
-| `system:admin` | Install packages, update system | Patch management |
-| `admin` | All permissions | Emergency access only |
-
-**Documentation**: 
-- [Complete Security Model](docs/SECURITY.md)
-- [Token Generation Examples](docs/security-configs/example-tokens.md)
-- [Security Configurations](docs/security-configs/)
+</div>
 
 ## Usage
 
