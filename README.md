@@ -28,7 +28,9 @@ Perfect for **home lab enthusiasts**, **self-hosters**, and **DevOps engineers**
 
 ### 🚀 **Current Capabilities**
 
-- ✅ **MCP Prompts** - Pre-configured workflows for common tasks (security audit, health check, troubleshooting)
+- ✅ **Smart Inventory Management** - Auto-detect and track applications running on LXC (Jellyfin, Pi-hole, Ollama, PostgreSQL, etc.)
+- ✅ **Multi-System Support** - Identify systems by hostname + container ID for managing multiple LXCs with one AI
+- ✅ **MCP Prompts** - Pre-configured workflows for common tasks (security audit, health check, troubleshooting, inventory setup)
 - ✅ **Docker Compose Stack Management** - Deploy GitOps-style stacks from repos (like Portainer/Komodo)
 - ✅ **Proxmox LXC Detection** - Automatic virtualization environment detection
 - ✅ **AI-Powered Log Analysis** - Root cause detection with actionable recommendations
@@ -287,6 +289,86 @@ audit_lxc_network(container_id=103)
 # - Port forwards
 # - Security recommendations
 ```
+
+---
+
+## 📦 Application Inventory
+
+SystemManager can track what applications are running directly on your LXC container (not just Docker), providing context-aware assistance.
+
+### Initial Setup
+
+Use the interactive **setup_inventory** prompt to configure your system:
+
+```
+You: "Let's set up the inventory for this system"
+
+AI will guide you through:
+1. System identification (hostname, container ID, type)
+2. Auto-scan for installed applications
+3. Manual additions if needed
+4. Review and save
+```
+
+### Auto-Detection
+
+SystemManager can auto-detect these applications:
+
+- **Media Servers**: Jellyfin, Plex
+- **Network Services**: Pi-hole, AdGuard Home, WireGuard
+- **Databases**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis
+- **Web Servers**: Nginx, Apache
+- **Home Automation**: Home Assistant
+- **Monitoring**: Prometheus, Grafana
+- **AI/LLM**: Ollama
+- **Other**: Nextcloud, Portainer, and more
+
+### API Examples
+
+```python
+# Scan for installed applications
+scan_installed_applications(save_to_inventory=True)
+
+# View complete inventory
+get_inventory()
+# Returns: system identity, applications, Docker stacks
+
+# Manually add an application
+add_application_to_inventory(
+    name="ollama",
+    app_type="ai-llm",
+    version="0.1.14",
+    port=11434,
+    service_name="ollama",
+    config_path="/etc/ollama",
+    notes="Running Llama 3.2 model"
+)
+
+# Update system identity (for multi-system setups)
+set_system_identity(
+    hostname="dev1",
+    container_id="103",
+    container_type="lxc",
+    mcp_server_name="dev1-103"  # Unique name for this MCP instance
+)
+```
+
+### Multi-System Management
+
+When managing multiple LXC containers with a single AI:
+
+1. Each system gets a unique identifier: `hostname-containerID` (e.g., `dev1-103`)
+2. The inventory tracks what's running on each system
+3. AI provides context-aware suggestions based on what you have installed
+4. Inventory stored in `/opt/systemmanager/inventory.json` per system
+
+### Benefits
+
+✓ **Context-Aware Help**: AI knows what apps you're running  
+✓ **Better Troubleshooting**: Targeted recommendations based on your stack  
+✓ **Documentation**: Auto-generated infrastructure documentation  
+✓ **Security Audits**: Application-specific security checks  
+✓ **Performance Analysis**: Understanding resource usage by app  
 
 ---
 

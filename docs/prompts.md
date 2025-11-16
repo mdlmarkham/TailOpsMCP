@@ -145,6 +145,34 @@ Help me create a backup plan using the backup_planning prompt
 
 ---
 
+### 📦 Setup Inventory
+**Name:** `setup_inventory`  
+**Tags:** inventory, setup, homelab
+
+Interactive workflow to set up the system inventory for application tracking:
+- System identity configuration (hostname, container ID, MCP name)
+- Auto-scan for installed applications (Jellyfin, Pi-hole, Ollama, PostgreSQL, etc.)
+- Manual application additions
+- Complete inventory review
+
+This prompt helps SystemManager understand what applications are running on your LXC container
+(not just Docker), enabling context-aware assistance for troubleshooting, security, and monitoring.
+
+**Usage:**
+```
+Let's set up the inventory for this system
+```
+
+**Why Use This:**
+- **Context-Aware Help**: AI knows what apps you're running
+- **Better Troubleshooting**: Targeted recommendations based on your stack
+- **Multi-System Support**: Unique identifiers when managing multiple LXC containers
+- **Documentation**: Auto-generated infrastructure documentation
+
+**See Also:** [Inventory Documentation](./inventory.md)
+
+---
+
 ## How Prompts Work
 
 MCP Prompts are reusable, parameterized templates that guide AI assistants through complex multi-step workflows. When you invoke a prompt in an MCP-compatible client (like Claude Desktop or VS Code with Copilot), the prompt:

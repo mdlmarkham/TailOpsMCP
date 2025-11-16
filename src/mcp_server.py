@@ -76,6 +76,53 @@ log_analyzer = LogAnalyzer()
 # Initialize services
 package_manager = PackageManager()
 
+# Initialize inventory
+from src.inventory import Inventory, SystemIdentity, ApplicationMetadata
+from src.services.app_scanner import ApplicationScanner
+inventory = Inventory()
+app_scanner = ApplicationScanner()
+
+# Try to load or detect system identity at startup
+system_identity = inventory.get_system_identity()
+if not system_identity:
+    # Auto-detect on first run
+    import socket
+    import platform
+    hostname = socket.gethostname()
+    
+    # Try to detect if running in Proxmox LXC
+    container_id = None
+    container_type = None
+    try:
+        # Check for Proxmox container ID in /proc/self/cgroup
+        with open('/proc/self/cgroup', 'r') as f:
+            content = f.read()
+            if 'lxc' in content:
+                container_type = 'lxc'
+                # Try to extract VMID/CTID
+                import re
+                match = re.search(r'/lxc/(\d+)/', content)
+                if match:
+                    container_id = match.group(1)
+    except (FileNotFoundError, PermissionError):
+        # Running on bare metal or can't detect
+        container_type = 'bare-metal' if platform.system() != 'Windows' else None
+    
+    system_identity = SystemIdentity(
+        hostname=hostname,
+        container_id=container_id,
+        container_type=container_type
+    )
+    inventory.set_system_identity(system_identity)
+    logger.info(f"Auto-detected system identity: {system_identity.get_display_name()}")
+else:
+    logger.info(f"Loaded system identity: {system_identity.get_display_name()}")
+
+# Update MCP server name if configured
+if system_identity and system_identity.get_display_name() != "SystemManager":
+    # Note: FastMCP name is set during instantiation, so this is for logging
+    logger.info(f"MCP Server ID: {system_identity.get_display_name()}")
+
 # Docker client singleton (P1 optimization)
 _docker_client = None
 
@@ -1061,6 +1108,251 @@ async def list_docker_images(format: Literal["json", "toon"] = "json") -> Union[
         return format_error(e, "list_docker_images")
 
 # ============================================================================
+# INVENTORY MANAGEMENT - Track system identity and installed applications
+# ============================================================================
+
+@mcp.tool()
+@secure_tool("scan_installed_applications")
+async def scan_installed_applications(save_to_inventory: bool = True) -> dict:
+    """Scan the system for installed applications (Jellyfin, Pi-hole, Ollama, PostgreSQL, etc.).
+    
+    This auto-detects common home lab applications running directly on the LXC container,
+    not just Docker containers. Useful for initial system discovery.
+    
+    Args:
+        save_to_inventory: If True, automatically save detected apps to inventory
+    
+    Returns:
+        Dictionary with detected applications and their metadata
+    """
+    try:
+        detected = app_scanner.scan()
+        
+        result = {
+            "scanned_at": datetime.now().isoformat(),
+            "system": system_identity.get_display_name() if system_identity else "unknown",
+            "detected_count": len(detected),
+            "applications": []
+        }
+        
+        for app in detected:
+            app_data = {
+                "name": app.name,
+                "type": app.type,
+                "version": app.version,
+                "port": app.port,
+                "service_name": app.service_name,
+                "config_path": app.config_path,
+                "data_path": app.data_path,
+                "confidence": app.confidence
+            }
+            result["applications"].append(app_data)
+            
+            # Save to inventory if requested
+            if save_to_inventory:
+                app_meta = ApplicationMetadata(
+                    name=app.name,
+                    type=app.type,
+                    version=app.version,
+                    port=app.port,
+                    service_name=app.service_name,
+                    config_path=app.config_path,
+                    data_path=app.data_path,
+                    auto_detected=True
+                )
+                inventory.add_application(app.name, app_meta)
+        
+        if save_to_inventory and detected:
+            result["saved_to_inventory"] = True
+            logger.info(f"Saved {len(detected)} detected applications to inventory")
+        
+        return result
+    except Exception as e:
+        return format_error(e, "scan_installed_applications")
+
+@mcp.tool()
+@secure_tool("get_inventory")
+async def get_inventory() -> dict:
+    """Get the complete system inventory including identity, applications, and stacks.
+    
+    Returns:
+        Complete inventory with system identity, applications, and Docker stacks
+    """
+    try:
+        system = inventory.get_system_identity()
+        apps = inventory.list_applications()
+        stacks = inventory.list_stacks()
+        
+        return {
+            "system": {
+                "hostname": system.hostname if system else "unknown",
+                "container_id": system.container_id if system else None,
+                "container_type": system.container_type if system else None,
+                "display_name": system.get_display_name() if system else "unknown",
+                "mcp_server_name": system.mcp_server_name if system else None
+            } if system else None,
+            "applications": apps,
+            "stacks": stacks,
+            "inventory_path": inventory.path,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "get_inventory")
+
+@mcp.tool()
+@secure_tool("add_application_to_inventory")
+async def add_application_to_inventory(
+    name: str,
+    app_type: str,
+    version: Optional[str] = None,
+    port: Optional[int] = None,
+    service_name: Optional[str] = None,
+    config_path: Optional[str] = None,
+    data_path: Optional[str] = None,
+    notes: Optional[str] = None
+) -> dict:
+    """Manually add an application to the inventory.
+    
+    Use this when you want to document an application that wasn't auto-detected,
+    or to add custom metadata about an application.
+    
+    Args:
+        name: Application name (e.g., "jellyfin", "pihole")
+        app_type: Type/category (e.g., "media-server", "dns", "database")
+        version: Application version (optional)
+        port: Primary port number (optional)
+        service_name: systemd service name (optional)
+        config_path: Configuration directory (optional)
+        data_path: Data directory (optional)
+        notes: Custom notes about this application (optional)
+    
+    Returns:
+        Confirmation with the added application details
+    """
+    try:
+        app_meta = ApplicationMetadata(
+            name=name,
+            type=app_type,
+            version=version,
+            port=port,
+            service_name=service_name,
+            config_path=config_path,
+            data_path=data_path,
+            auto_detected=False,
+            notes=notes
+        )
+        
+        inventory.add_application(name, app_meta)
+        
+        return {
+            "success": True,
+            "action": "added",
+            "application": name,
+            "details": {
+                "name": name,
+                "type": app_type,
+                "version": version,
+                "port": port,
+                "service_name": service_name,
+                "config_path": config_path,
+                "data_path": data_path,
+                "notes": notes
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "add_application_to_inventory")
+
+@mcp.tool()
+@secure_tool("remove_application_from_inventory")
+async def remove_application_from_inventory(name: str) -> dict:
+    """Remove an application from the inventory.
+    
+    Args:
+        name: Application name to remove
+    
+    Returns:
+        Confirmation of removal
+    """
+    try:
+        # Check if exists first
+        app = inventory.get_application(name)
+        if not app:
+            return {
+                "success": False,
+                "error": f"Application '{name}' not found in inventory"
+            }
+        
+        inventory.remove_application(name)
+        
+        return {
+            "success": True,
+            "action": "removed",
+            "application": name,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "remove_application_from_inventory")
+
+@mcp.tool()
+@secure_tool("set_system_identity")
+async def set_system_identity(
+    hostname: Optional[str] = None,
+    container_id: Optional[str] = None,
+    container_type: Optional[str] = None,
+    mcp_server_name: Optional[str] = None
+) -> dict:
+    """Set or update the system identity for this MCP server instance.
+    
+    This is useful when managing multiple systems with a single LLM, as each
+    system can have a unique identifier (hostname + container ID).
+    
+    Args:
+        hostname: System hostname (auto-detected if not provided)
+        container_id: Proxmox VMID/CTID (e.g., "103")
+        container_type: "lxc", "vm", or "bare-metal"
+        mcp_server_name: Custom name for this MCP server instance
+    
+    Returns:
+        Updated system identity
+    """
+    try:
+        import socket
+        
+        # Use current identity as base if it exists
+        current = inventory.get_system_identity()
+        
+        new_identity = SystemIdentity(
+            hostname=hostname or (current.hostname if current else socket.gethostname()),
+            container_id=container_id or (current.container_id if current else None),
+            container_type=container_type or (current.container_type if current else None),
+            mcp_server_name=mcp_server_name or (current.mcp_server_name if current else None)
+        )
+        
+        inventory.set_system_identity(new_identity)
+        
+        # Update global reference
+        global system_identity
+        system_identity = new_identity
+        
+        logger.info(f"Updated system identity: {new_identity.get_display_name()}")
+        
+        return {
+            "success": True,
+            "action": "updated",
+            "system_identity": {
+                "hostname": new_identity.hostname,
+                "container_id": new_identity.container_id,
+                "container_type": new_identity.container_type,
+                "display_name": new_identity.get_display_name(),
+                "mcp_server_name": new_identity.mcp_server_name
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "set_system_identity")
+
+# ============================================================================
 # PROMPTS - Pre-configured workflows for common home lab tasks
 # ============================================================================
 
@@ -1368,6 +1660,64 @@ Provide:
 - Restore procedure documentation
 - Testing checklist
 - Monitoring alerts for backup failures
+"""
+
+@mcp.prompt(
+    description="Interactive setup to discover and document applications running on this system",
+    tags={"inventory", "setup", "homelab"}
+)
+def setup_inventory() -> str:
+    """Guide user through setting up the system inventory."""
+    return """Let's set up the inventory for this system to track what's running here.
+
+This helps me provide better context-aware assistance since I'll know what applications
+you have installed (Jellyfin, Pi-hole, Ollama, PostgreSQL, etc.) and can tailor my
+recommendations accordingly.
+
+**Step 1: System Identity**
+
+First, let's identify this system for multi-system tracking:
+- Use `get_inventory` to see current system identity
+- If needed, use `set_system_identity` to configure:
+  - hostname (auto-detected)
+  - container_id (Proxmox VMID/CTID if applicable)
+  - container_type ("lxc", "vm", or "bare-metal")
+  - mcp_server_name (custom name for this MCP instance)
+
+**Step 2: Auto-Scan Applications**
+
+Run an automatic scan to detect installed applications:
+- Use `scan_installed_applications` to auto-detect common apps
+- This will scan for: Jellyfin, Pi-hole, Ollama, PostgreSQL, MySQL, Nginx, 
+  Home Assistant, Plex, Nextcloud, Prometheus, Grafana, and more
+- Detected apps are automatically saved to inventory
+
+**Step 3: Manual Additions**
+
+Add any applications that weren't auto-detected:
+- Use `add_application_to_inventory` for each application
+- Include useful metadata like:
+  - name and type
+  - version
+  - port numbers
+  - systemd service name
+  - config and data paths
+  - custom notes
+
+**Step 4: Review**
+
+- Use `get_inventory` to see the complete inventory
+- This creates a local scratchpad at `inventory.json`
+- I'll use this context to provide better assistance
+
+**Benefits:**
+✓ Context-aware troubleshooting (I know what apps you're running)
+✓ Better security audit recommendations
+✓ Targeted performance analysis
+✓ Multi-system tracking (if you have multiple LXC containers)
+✓ Documentation of your infrastructure
+
+Let's start! What would you like to do first?
 """
 
 if __name__ == "__main__":
