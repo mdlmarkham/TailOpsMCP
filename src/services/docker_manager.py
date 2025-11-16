@@ -219,16 +219,22 @@ class DockerManager:
             container.remove()
             
             # Create new container with same config
-            new_container = self.client.containers.run(
-                image=f"{image}:{tag}",
-                name=container_name,
-                environment=env_vars,
-                volumes=volumes,
-                ports=port_bindings,
-                network_mode=network_mode,
-                restart_policy=restart_policy,
-                detach=True
-            )
+            # Note: host network mode is incompatible with port bindings
+            run_kwargs = {
+                "image": f"{image}:{tag}",
+                "name": container_name,
+                "environment": env_vars,
+                "volumes": volumes,
+                "network_mode": network_mode,
+                "restart_policy": restart_policy,
+                "detach": True
+            }
+            
+            # Only add ports if not using host network
+            if network_mode != 'host':
+                run_kwargs['ports'] = port_bindings
+            
+            new_container = self.client.containers.run(**run_kwargs)
             
             return {
                 "success": True,
