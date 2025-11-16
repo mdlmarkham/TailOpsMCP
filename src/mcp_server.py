@@ -2,11 +2,9 @@
 SystemManager MCP Server - FastMCP with HTTP Transport
 """
 
-import asyncio
 import logging
 from datetime import datetime
 from fastmcp import FastMCP
-import uvicorn
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -138,14 +136,6 @@ async def health_check() -> dict:
     """Health check."""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
-async def main():
-    logger.info("Starting SystemManager MCP Server on http://0.0.0.0:8080")
-    config = uvicorn.Config(mcp.app, host="0.0.0.0", port=8080, log_level="info")
-    server = uvicorn.Server(config)
-    await server.serve()
-
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("Shutting down...")
+    logger.info("Starting SystemManager MCP Server on http://0.0.0.0:8080")
+    mcp.run(transport="sse", host="0.0.0.0", port=8080)
