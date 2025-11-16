@@ -3,7 +3,10 @@ SystemManager MCP Server - FastMCP with HTTP Transport
 """
 
 import logging
+import functools
+import time
 from datetime import datetime
+from typing import Optional
 from fastmcp import FastMCP
 
 logging.basicConfig(level=logging.INFO)
@@ -11,50 +14,95 @@ logger = logging.getLogger(__name__)
 
 mcp = FastMCP("SystemManager")
 
-@mcp.tool()
-async def get_system_status() -> dict:
-    """Get comprehensive system status."""
-    import psutil
-    import os
-    
-    cpu_percent = psutil.cpu_percent(interval=None)
-    memory = psutil.virtual_memory()
-    disk = psutil.disk_usage('/')
-    boot_time = psutil.boot_time()
-    uptime = int(datetime.now().timestamp() - boot_time)
-    
-    load_avg = {}
-    if hasattr(os, 'getloadavg'):
-        load_avg = {
-            "1m": os.getloadavg()[0],
-            "5m": os.getloadavg()[1],
-            "15m": os.getloadavg()[2]
-        }
-    else:
-        load_avg = {"note": "Not available on this platform"}
-    
+# Cache decorator for system stats
+_cache = {}
+def cached(ttl_seconds: int = 5):
+    """Cache function results for ttl_seconds"""
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            cache_key = f"{func.__name__}:{args}:{kwargs}"
+            now = time.time()
+            
+            if cache_key in _cache:
+                result, timestamp = _cache[cache_key]
+                if now - timestamp < ttl_seconds:
+                    return result
+            
+            result = await func(*args, **kwargs)
+            _cache[cache_key] = (result, now)
+            return result
+        return wrapper
+    return decorator
+
+def format_error(e: Exception, tool_name: str) -> dict:
+    """Format error with context"""
     return {
-        "cpu_percent": cpu_percent,
-        "load_average": load_avg,
-        "memory_usage": {
-            "total": memory.total,
-            "available": memory.available,
-            "used": memory.used,
-            "percent": memory.percent
-        },
-        "disk_usage": {
-            "total": disk.total,
-            "used": disk.used,
-            "free": disk.free,
-            "percent": disk.percent
-        },
-        "uptime": uptime,
-        "timestamp": datetime.now().isoformat()
+        "error": str(e),
+        "error_type": type(e).__name__,
+        "tool": tool_name
     }
 
 @mcp.tool()
+@cached(ttl_seconds=5)
+async def get_system_status() -> dict:
+    """Get comprehensive system status with CPU, memory, disk, and uptime."""
+    import psutil
+    import os
+    
+    try:
+        # Non-blocking CPU measurement
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        memory = psutil.virtual_memory()
+        boot_time = psutil.boot_time()
+        uptime = int(datetime.now().timestamp() - boot_time)
+        
+        # Get all disk partitions
+        disk_info = []
+        for partition in psutil.disk_partitions(all=False):
+            try:
+                usage = psutil.disk_usage(partition.mountpoint)
+                disk_info.append({
+                    "mountpoint": partition.mountpoint,
+                    "device": partition.device,
+                    "fstype": partition.fstype,
+                    "total": usage.total,
+                    "used": usage.used,
+                    "free": usage.free,
+                    "percent": usage.percent
+                })
+            except (PermissionError, OSError):
+                continue
+        
+        load_avg = {}
+        if hasattr(os, 'getloadavg'):
+            load_avg = {
+                "1m": os.getloadavg()[0],
+                "5m": os.getloadavg()[1],
+                "15m": os.getloadavg()[2]
+            }
+        else:
+            load_avg = {"note": "Not available on this platform"}
+        
+        return {
+            "cpu_percent": cpu_percent,
+            "load_average": load_avg,
+            "memory_usage": {
+                "total": memory.total,
+                "available": memory.available,
+                "used": memory.used,
+                "percent": memory.percent
+            },
+            "disk_usage": disk_info,
+            "uptime": uptime,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "get_system_status")
+
+@mcp.tool()
 async def get_container_list() -> dict:
-    """List all Docker containers."""
+    """List all Docker containers with status and image information."""
     try:
         import docker
         client = docker.from_env()
@@ -67,16 +115,86 @@ async def get_container_list() -> dict:
                 "id": container.id[:12],
                 "name": container.name,
                 "status": container.status,
-                "image": image_name
+                "image": image_name,
+                "created": container.attrs['Created'],
+                "ports": container.ports
             })
         
         return {"containers": result, "count": len(result)}
     except Exception as e:
-        return {"error": str(e), "containers": [], "count": 0}
+        return format_error(e, "get_container_list")
+
+@mcp.tool()
+async def start_container(name_or_id: str) -> dict:
+    """Start a Docker container by name or ID."""
+    try:
+        import docker
+        client = docker.from_env()
+        container = client.containers.get(name_or_id)
+        container.start()
+        return {
+            "success": True,
+            "container": name_or_id,
+            "status": "started",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "start_container")
+
+@mcp.tool()
+async def stop_container(name_or_id: str) -> dict:
+    """Stop a Docker container by name or ID."""
+    try:
+        import docker
+        client = docker.from_env()
+        container = client.containers.get(name_or_id)
+        container.stop()
+        return {
+            "success": True,
+            "container": name_or_id,
+            "status": "stopped",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "stop_container")
+
+@mcp.tool()
+async def restart_container(name_or_id: str) -> dict:
+    """Restart a Docker container by name or ID."""
+    try:
+        import docker
+        client = docker.from_env()
+        container = client.containers.get(name_or_id)
+        container.restart()
+        return {
+            "success": True,
+            "container": name_or_id,
+            "status": "restarted",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "restart_container")
+
+@mcp.tool()
+async def get_container_logs(name_or_id: str, lines: int = 100) -> dict:
+    """Get recent logs from a Docker container."""
+    try:
+        import docker
+        client = docker.from_env()
+        container = client.containers.get(name_or_id)
+        logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
+        return {
+            "container": name_or_id,
+            "lines": lines,
+            "logs": logs,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "get_container_logs")
 
 @mcp.tool()
 async def list_directory(path: str = "/tmp") -> dict:
-    """List directory contents."""
+    """List directory contents with file and directory names."""
     import os
     
     try:
@@ -91,31 +209,107 @@ async def list_directory(path: str = "/tmp") -> dict:
         
         return result
     except Exception as e:
-        return {"error": str(e), "path": path, "files": [], "directories": []}
+        return format_error(e, "list_directory")
+
+@mcp.tool()
+async def get_file_info(path: str) -> dict:
+    """Get detailed information about a file or directory."""
+    import os
+    
+    try:
+        stat_info = os.stat(path)
+        is_dir = os.path.isdir(path)
+        
+        return {
+            "path": path,
+            "exists": True,
+            "type": "directory" if is_dir else "file",
+            "size": stat_info.st_size,
+            "modified": datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
+            "created": datetime.fromtimestamp(stat_info.st_ctime).isoformat(),
+            "permissions": oct(stat_info.st_mode)[-3:],
+            "owner_uid": stat_info.st_uid,
+            "group_gid": stat_info.st_gid
+        }
+    except FileNotFoundError:
+        return {"path": path, "exists": False}
+    except Exception as e:
+        return format_error(e, "get_file_info")
+
+@mcp.tool()
+async def read_file(path: str, lines: int = 50, offset: int = 0) -> dict:
+    """Read file contents with line limit and offset."""
+    try:
+        with open(path, 'r', encoding='utf-8', errors='replace') as f:
+            all_lines = f.readlines()
+            selected_lines = all_lines[offset:offset + lines]
+            
+            return {
+                "path": path,
+                "total_lines": len(all_lines),
+                "offset": offset,
+                "lines_returned": len(selected_lines),
+                "content": ''.join(selected_lines),
+                "has_more": offset + lines < len(all_lines)
+            }
+    except Exception as e:
+        return format_error(e, "read_file")
+
+@mcp.tool()
+async def tail_file(path: str, lines: int = 100) -> dict:
+    """Get the last N lines from a file (useful for logs)."""
+    try:
+        with open(path, 'r', encoding='utf-8', errors='replace') as f:
+            all_lines = f.readlines()
+            tail_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+            
+            return {
+                "path": path,
+                "total_lines": len(all_lines),
+                "lines_returned": len(tail_lines),
+                "content": ''.join(tail_lines)
+            }
+    except Exception as e:
+        return format_error(e, "tail_file")
 
 @mcp.tool()
 async def get_network_status() -> dict:
-    """Get network interface status."""
+    """Get network interface status with addresses and statistics."""
     import psutil
     
     try:
         result = {"interfaces": []}
-        interfaces = psutil.net_if_stats()
-        for name, stats in interfaces.items():
-            result["interfaces"].append({
+        stats = psutil.net_if_stats()
+        addrs = psutil.net_if_addrs()
+        
+        for name, stat in stats.items():
+            interface_info = {
                 "name": name,
-                "isup": stats.isup,
-                "speed": stats.speed,
-                "mtu": stats.mtu
-            })
+                "isup": stat.isup,
+                "speed": stat.speed,
+                "mtu": stat.mtu
+            }
+            
+            # Add IP addresses if available
+            if name in addrs:
+                interface_info["addresses"] = []
+                for addr in addrs[name]:
+                    interface_info["addresses"].append({
+                        "family": str(addr.family),
+                        "address": addr.address,
+                        "netmask": addr.netmask if addr.netmask else None
+                    })
+            
+            result["interfaces"].append(interface_info)
+        
         result["timestamp"] = datetime.now().isoformat()
         return result
     except Exception as e:
-        return {"error": str(e), "interfaces": []}
+        return format_error(e, "get_network_status")
 
 @mcp.tool()
 async def search_files(pattern: str, directory: str = "/tmp") -> dict:
-    """Search for files by pattern."""
+    """Search for files by pattern (supports wildcards like *.log)."""
     import os
     import fnmatch
     
@@ -126,10 +320,58 @@ async def search_files(pattern: str, directory: str = "/tmp") -> dict:
                 if fnmatch.fnmatch(filename, pattern):
                     result["files"].append(os.path.join(root, filename))
                     if len(result["files"]) >= 100:
+                        result["truncated"] = True
                         return result
         return result
     except Exception as e:
-        return {"error": str(e), "pattern": pattern, "files": []}
+        return format_error(e, "search_files")
+
+@mcp.tool()
+async def get_top_processes(limit: int = 10, sort_by: str = "cpu") -> dict:
+    """Get top processes by CPU or memory usage."""
+    import psutil
+    
+    try:
+        processes = []
+        for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent', 'status', 'username']):
+            try:
+                processes.append(proc.info)
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        
+        # Sort by requested metric
+        if sort_by == "memory":
+            processes.sort(key=lambda p: p.get('memory_percent', 0), reverse=True)
+        else:  # default to cpu
+            processes.sort(key=lambda p: p.get('cpu_percent', 0), reverse=True)
+        
+        return {
+            "processes": processes[:limit],
+            "sort_by": sort_by,
+            "total_processes": len(processes),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "get_top_processes")
+
+@mcp.tool()
+async def get_system_overview() -> dict:
+    """Get comprehensive system overview (system stats, containers, network) in one call."""
+    try:
+        system = await get_system_status()
+        containers = await get_container_list()
+        network = await get_network_status()
+        processes = await get_top_processes(limit=5)
+        
+        return {
+            "system": system,
+            "containers": containers,
+            "network": network,
+            "top_processes": processes,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return format_error(e, "get_system_overview")
 
 @mcp.tool()
 async def health_check() -> dict:
