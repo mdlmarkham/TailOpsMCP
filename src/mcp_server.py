@@ -134,15 +134,45 @@ def format_response(data: dict, format: str = "json") -> Union[dict, str]:
 @secure_tool("get_system_status")
 @cached(ttl_seconds=5)
 async def get_system_status(format: Literal["json", "toon"] = "json") -> Union[dict, str]:
-    """Get comprehensive system status with CPU, memory, disk, and uptime.
+    """Get comprehensive system status with CPU, memory, disk, uptime, and virtualization.
     
     Args:
         format: Response format - 'json' (default) or 'toon' (compact, token-efficient)
     """
     import psutil
     import os
+    import subprocess
     
     try:
+        # Detect virtualization
+        virt_type = "none"
+        virt_method = "no detection"
+        try:
+            result = subprocess.run(
+                ['systemd-detect-virt'],
+                capture_output=True,
+                text=True,
+                timeout=2
+            )
+            if result.returncode == 0:
+                detected = result.stdout.strip()
+                if detected and detected != 'none':
+                    virt_type = detected
+                    virt_method = "systemd-detect-virt"
+        except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+            # Fallback: check /proc/1/cgroup
+            try:
+                with open('/proc/1/cgroup', 'r') as f:
+                    cgroup = f.read().lower()
+                    if 'lxc' in cgroup:
+                        virt_type = "lxc"
+                        virt_method = "/proc/1/cgroup"
+                    elif 'docker' in cgroup:
+                        virt_type = "docker"
+                        virt_method = "/proc/1/cgroup"
+            except (FileNotFoundError, PermissionError):
+                pass
+        
         # Non-blocking CPU measurement (returns cached value from previous call)
         cpu_percent = psutil.cpu_percent(interval=None)
         memory = psutil.virtual_memory()
@@ -186,6 +216,10 @@ async def get_system_status(format: Literal["json", "toon"] = "json") -> Union[d
                 "percent": memory.percent
             },
             "disk_usage": disk_info,
+            "virtualization": {
+                "type": virt_type,
+                "method": virt_method
+            },
             "uptime": uptime,
             "timestamp": datetime.now().isoformat()
         }
