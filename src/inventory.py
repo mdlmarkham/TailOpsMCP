@@ -64,7 +64,8 @@ class Inventory:
     """
 
     def __init__(self, path: Optional[str] = None):
-        self.path = path or os.getenv("SYSTEMMANAGER_INVENTORY", "./inventory.json")
+        default_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "inventory.json")
+        self.path = path or os.getenv("SYSTEMMANAGER_INVENTORY", default_path)
         self._data: Dict = {
             "system": None,
             "hosts": {}, 
