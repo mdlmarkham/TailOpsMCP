@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SystemManager MCP Server - Deployment CLI
+TailOpsMCP - Deployment CLI
 """
 
 import argparse
@@ -14,7 +14,7 @@ from src.mcp_server import mcp
 def create_parser():
     """Create command-line argument parser."""
     parser = argparse.ArgumentParser(
-        description="SystemManager MCP Server Deployment Tool"
+        description="TailOpsMCP Deployment Tool"
     )
     
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
@@ -48,7 +48,7 @@ def create_parser():
 
 async def handle_serve(args):
     """Handle serve command."""
-    print(f"Starting SystemManager MCP Server on {args.transport}://{args.host}:{args.port}")
+    print(f"Starting TailOpsMCP on {args.transport}://{args.host}:{args.port}")
     
     if args.transport == "http-sse":
         # Run HTTP SSE server

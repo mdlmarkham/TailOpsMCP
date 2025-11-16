@@ -1,4 +1,4 @@
-# SystemManager MCP - Home Lab Features Roadmap
+# TailOpsMCP - Home Lab Features Roadmap
 
 ## **Your Use Cases** 🎯
 

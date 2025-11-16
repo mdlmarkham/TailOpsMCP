@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented **AI-powered intelligent log analysis** for the SystemManager MCP server using MCP sampling capabilities. This feature transforms raw Docker container logs into actionable insights with root cause analysis and specific recommendations.
+Successfully implemented **AI-powered intelligent log analysis** for the TailOpsMCP server using MCP sampling capabilities. This feature transforms raw Docker container logs into actionable insights with root cause analysis and specific recommendations.
 
 ## What Was Implemented
 
@@ -102,7 +102,7 @@ async def analyze_container_logs(
                │ Call: analyze_container_logs
                ▼
 ┌─────────────────────────────────────┐
-│ SystemManager MCP Server            │
+│ TailOpsMCP Server                   │
 │                                     │
 │  1. Fetch logs from Docker         │
 │  2. Build analysis prompt          │
@@ -304,7 +304,7 @@ With this foundation, we can now add:
 
 ## Conclusion
 
-Successfully implemented **intelligent log analysis** using MCP sampling, transforming the SystemManager MCP server from a simple data provider into an **intelligent diagnostic agent**. The feature:
+Successfully implemented **intelligent log analysis** using MCP sampling, transforming the TailOpsMCP server from a simple data provider into an **intelligent diagnostic agent**. The feature:
 
 - ✅ Works seamlessly with existing infrastructure
 - ✅ Provides significant value over basic log retrieval

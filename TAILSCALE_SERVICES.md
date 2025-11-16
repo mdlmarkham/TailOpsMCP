@@ -23,7 +23,7 @@ Your existing `tailscale-service.json`:
       "endpoints": {
         "tcp:8080": "localhost:8080"
       },
-      "description": "SystemManager MCP Server - Remote system management and monitoring"
+      "description": "TailOpsMCP Server - Remote system management and monitoring"
     }
   }
 }
@@ -38,7 +38,7 @@ Your existing `tailscale-service.json`:
 # Click "Advertise" → "Define a Service"
 # 
 # Name: systemmanager-mcp
-# Description: SystemManager MCP Server - Remote system management and monitoring
+# Description: TailOpsMCP Server - Remote system management and monitoring
 # Endpoints: tcp:8080
 # Tags: tag:systemmanager (optional but recommended)
 ```
@@ -117,7 +117,7 @@ http://systemmanager-mcp.yourtailnet.ts.net:8080/sse
 # VS Code MCP config update (.vscode/mcp.json)
 {
   "mcpServers": {
-    "SystemManager": {
+    "TailOpsMCP": {
       "url": "http://systemmanager-mcp.yourtailnet.ts.net:8080/sse"
     }
   }
@@ -168,7 +168,7 @@ Create `scripts/setup_tailscale_service.sh`:
 #!/bin/bash
 set -e
 
-echo "🔧 Setting up SystemManager MCP as Tailscale Service..."
+echo "🔧 Setting up TailOpsMCP as Tailscale Service..."
 
 # Check if already configured
 if tailscale serve status --json | jq -e '.services."svc:systemmanager-mcp"' > /dev/null 2>&1; then
@@ -198,7 +198,7 @@ tailscale serve status
 
 ```python
 #!/usr/bin/env python3
-"""Test Tailscale Service discovery for SystemManager MCP"""
+"""Test Tailscale Service discovery for TailOpsMCP"""
 
 import socket
 import requests
@@ -314,7 +314,7 @@ tailscale serve status
 // .vscode/mcp.json
 {
   "mcpServers": {
-    "SystemManager": {
+    "TailOpsMCP": {
       "url": "http://dev1.tailf9480.ts.net:8080/sse"
     }
   }
@@ -326,7 +326,7 @@ tailscale serve status
 // .vscode/mcp.json
 {
   "mcpServers": {
-    "SystemManager": {
+    "TailOpsMCP": {
       "url": "http://systemmanager-mcp.king-grouse.ts.net:8080/sse"
     }
   }

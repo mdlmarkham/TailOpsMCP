@@ -1,4 +1,4 @@
-# SystemManager Security Configuration Examples
+# TailOpsMCP Security Configuration Examples
 
 This directory contains example security configurations for different deployment scenarios.
 

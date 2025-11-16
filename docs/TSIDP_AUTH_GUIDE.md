@@ -12,7 +12,7 @@ SystemManager now supports OAuth 2.1 authentication using your existing Tailscal
 
 ## Authentication Methods
 
-SystemManager supports two authentication modes via the `SYSTEMMANAGER_AUTH_MODE` environment variable:
+TailOpsMCP supports two authentication modes via the `SYSTEMMANAGER_AUTH_MODE` environment variable:
 
 ### 1. TSIDP OAuth (Recommended)
 
@@ -51,7 +51,7 @@ Grant your MCP server permission to use TSIDP:
 tailscale set -auto-approve --grant="tag:mcp-server" --allow="email,profile"
 ```
 
-### Step 2: Run SystemManager with OAuth
+### Step 2: Run TailOpsMCP with OAuth
 
 ```bash
 cd /opt/systemmanager

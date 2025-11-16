@@ -1,4 +1,4 @@
-# Data Model: SystemManager MCP Server Improvements
+# Data Model: TailOpsMCP Server Improvements
 
 **Date**: 2025-11-15  
 **Purpose**: Define structured data models for production-ready MCP server
@@ -274,4 +274,4 @@ class PaginatedResponse(BaseModel):
     next_cursor: Optional[str] = Field(None, description="Cursor for next page")
 ```
 
-This data model provides a comprehensive foundation for the SystemManager MCP server with type-safe, validated data structures that align with the MCP protocol and production requirements.
+This data model provides a comprehensive foundation for the TailOpsMCP server with type-safe, validated data structures that align with the MCP protocol and production requirements.

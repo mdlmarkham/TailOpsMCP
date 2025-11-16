@@ -1,7 +1,9 @@
-# SystemManager MCP Server
+# TailOpsMCP
 
-> **AI-Powered Infrastructure Management for Home Labs**  
-> Secure Model Context Protocol (MCP) server for managing Proxmox LXC containers, Docker stacks, and system administration - all through natural language with AI assistants.
+🛰️ **TailOpsMCP — A secure MCP control surface for Tailscale-connected homelabs**
+
+> **Secure remote monitoring and AI-assisted operations for your homelab over Tailscale — powered by MCP**  
+> Model Context Protocol (MCP) server for managing Proxmox LXC containers, Docker stacks, and system administration - all through natural language with AI assistants.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -11,9 +13,9 @@
 
 ---
 
-## 🎯 What is SystemManager?
+## 🎯 What is TailOpsMCP?
 
-SystemManager is an MCP (Model Context Protocol) server that lets you manage your home lab infrastructure using AI assistants like Claude, ChatGPT, or any MCP-compatible client. Instead of remembering complex commands, just ask:
+TailOpsMCP is an MCP (Model Context Protocol) server that lets you manage your home lab infrastructure using AI assistants like Claude, ChatGPT, or any MCP-compatible client. Instead of remembering complex commands, just ask:
 
 - *"Deploy my monitoring stack from GitHub"*
 - *"Analyze the auth logs for security issues"*
@@ -71,7 +73,7 @@ Perfect for **home lab enthusiasts**, **self-hosters**, and **DevOps engineers**
 └──────────────────┬──────────────────────────────┘
                    │ MCP Protocol
 ┌──────────────────▼──────────────────────────────┐
-│  SystemManager MCP Server                      │
+│  TailOpsMCP MCP Server                          │
 │  ┌──────────────────────────────────────────┐  │
 │  │ OAuth/OIDC (Tailscale Identity)         │  │
 │  └──────────────────────────────────────────┘  │
@@ -100,7 +102,7 @@ Perfect for **home lab enthusiasts**, **self-hosters**, and **DevOps engineers**
 Use the automated Proxmox installer script (inspired by [tteck's scripts](https://community-scripts.github.io/ProxmoxVE/)):
 
 ```bash
-bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/ct/build.func)"
+bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/ct/build.func)"
 ```
 
 This will:
@@ -123,11 +125,11 @@ This will:
 
 ```bash
 # 1. Download and run the installer
-curl -fsSL https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/install.sh | sudo bash
 
 # Or clone and run manually
-git clone https://github.com/mdlmarkham/SystemManager.git
-cd SystemManager
+git clone https://github.com/mdlmarkham/TailOpsMCP.git
+cd TailOpsMCP
 sudo bash install.sh
 ```
 
@@ -135,7 +137,7 @@ The interactive installer will:
 1. ✅ Check system requirements (Python, Docker, Tailscale)
 2. 🔧 Choose authentication method (OAuth or Token)
 3. 🔐 Configure Tailscale OAuth (with step-by-step guide)
-4. 📦 Install SystemManager and dependencies
+4. 📦 Install TailOpsMCP and dependencies
 5. ⚙️ Create systemd service
 6. 🚀 Start and verify the server
 
@@ -156,7 +158,7 @@ curl http://localhost:8080/.well-known/oauth-protected-resource/mcp
 
 ```bash
 # Download and run the installer
-curl -fsSL https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/install.sh | sudo bash
 ```
 
 The installer will:
@@ -171,8 +173,8 @@ The installer will:
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/mdlmarkham/SystemManager.git
-cd SystemManager
+git clone https://github.com/mdlmarkham/TailOpsMCP.git
+cd TailOpsMCP
 
 # 2. Install dependencies
 pip install -r requirements.txt
@@ -196,7 +198,7 @@ python -m src.mcp_server
 
 ## 🔐 Tailscale Integration
 
-SystemManager supports **Tailscale Identity Provider (TSIDP)** for OAuth 2.1 authentication.
+TailOpsMCP supports **Tailscale Identity Provider (TSIDP)** for OAuth 2.1 authentication.
 
 ### Setup TSIDP
 
@@ -211,7 +213,7 @@ SystemManager supports **Tailscale Identity Provider (TSIDP)** for OAuth 2.1 aut
    - Set redirect URI: `https://vscode.dev/redirect`
    - Note the Client ID and Secret
 
-3. **Configure SystemManager**:
+3. **Configure TailOpsMCP**:
    ```bash
    # Edit /opt/systemmanager/.env
    SYSTEMMANAGER_AUTH_MODE=oidc
@@ -250,7 +252,7 @@ Add to your `tailscale-acl.json`:
 
 ### LXC Container Detection
 
-SystemManager automatically detects when running inside a Proxmox LXC container:
+TailOpsMCP automatically detects when running inside a Proxmox LXC container:
 
 ```json
 {
@@ -294,7 +296,7 @@ audit_lxc_network(container_id=103)
 
 ## 📦 Application Inventory
 
-SystemManager can track what applications are running directly on your LXC container (not just Docker), providing context-aware assistance.
+TailOpsMCP can track what applications are running directly on your LXC container (not just Docker), providing context-aware assistance.
 
 ### Initial Setup
 
@@ -312,7 +314,7 @@ AI will guide you through:
 
 ### Auto-Detection
 
-SystemManager can auto-detect these applications:
+TailOpsMCP can auto-detect these applications:
 
 - **Media Servers**: Jellyfin, Plex
 - **Network Services**: Pi-hole, AdGuard Home, WireGuard
@@ -420,7 +422,7 @@ Add to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "systemmanager": {
+    "tailopsmcp": {
       "type": "http",
       "url": "http://your-server.tail12345.ts.net:8080/mcp"
     }
@@ -441,9 +443,9 @@ Then ask Claude:
 The MCP protocol is supported natively - just install and reload VS Code.
 
 Example prompts:
-- *"@systemmanager what containers are running?"*
-- *"@systemmanager analyze Docker logs for my app container"*
-- *"@systemmanager check system resource usage"*
+- *"@tailopsmcp what containers are running?"*
+- *"@tailopsmcp analyze Docker logs for my app container"*
+- *"@tailopsmcp check system resource usage"*
 
 ### Programmatic Access (Python)
 
@@ -477,7 +479,7 @@ print(response.json())
 
 ### Environment Variables
 
-SystemManager is configured via `/opt/systemmanager/.env`:
+TailOpsMCP is configured via `/opt/systemmanager/.env`:
 
 ```bash
 # Authentication Mode (oidc or token)
@@ -518,7 +520,7 @@ sudo systemctl disable systemmanager-mcp
 
 ```bash
 # Run the update script (Proxmox LXC only)
-pct exec 103 -- bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/ct/build.func)" -s --update
+pct exec 103 -- bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/ct/build.func)" -s --update
 
 # Or manually
 cd /opt/systemmanager
@@ -536,7 +538,7 @@ sudo systemctl start systemmanager-mcp
 
 ### Custom Scopes and Permissions
 
-SystemManager supports fine-grained scope-based authorization:
+TailOpsMCP supports fine-grained scope-based authorization:
 
 ```python
 # Define scopes for different users/teams
@@ -554,7 +556,7 @@ Configure in TSIDP OAuth application or token claims.
 
 ### AI-Powered Log Analysis
 
-SystemManager uses MCP sampling for intelligent log analysis:
+TailOpsMCP uses MCP sampling for intelligent log analysis:
 
 ```bash
 # Analyze container logs
@@ -676,7 +678,7 @@ curl http://server.tail12345.ts.net:8080/.well-known/oauth-protected-resource/mc
 
 ### High Memory Usage
 
-SystemManager is lightweight but Docker containers add up:
+TailOpsMCP is lightweight but Docker containers add up:
 
 ```bash
 # Check memory usage
@@ -749,14 +751,14 @@ We welcome contributions from the home lab community!
 2. **Feature Requests**: Suggest new tools or improvements
 3. **Code Contributions**: Submit pull requests
 4. **Documentation**: Help improve docs and examples
-5. **Share Your Setup**: Tell us how you're using SystemManager
+5. **Share Your Setup**: Tell us how you're using TailOpsMCP
 
 ### Development Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/mdlmarkham/SystemManager.git
-cd SystemManager
+git clone https://github.com/mdlmarkham/TailOpsMCP.git
+cd TailOpsMCP
 
 # Create virtual environment
 python3 -m venv venv
@@ -810,9 +812,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 📞 Support
 
-- **Documentation**: [https://github.com/mdlmarkham/SystemManager](https://github.com/mdlmarkham/SystemManager)
-- **Issues**: [GitHub Issues](https://github.com/mdlmarkham/SystemManager/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/mdlmarkham/SystemManager/discussions)
+- **Documentation**: [https://github.com/mdlmarkham/TailOpsMCP](https://github.com/mdlmarkham/TailOpsMCP)
+- **Issues**: [GitHub Issues](https://github.com/mdlmarkham/TailOpsMCP/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mdlmarkham/TailOpsMCP/discussions)
 
 ---
 
@@ -1011,6 +1013,6 @@ MIT License - see LICENSE file for details.
 
 ## Support
 
-- Repository: [github.com/mdlmarkham/SystemManager](https://github.com/mdlmarkham/SystemManager)
-- Issues: [GitHub Issues](https://github.com/mdlmarkham/SystemManager/issues)
-- Discussions: [GitHub Discussions](https://github.com/mdlmarkham/SystemManager/discussions)
+- Repository: [github.com/mdlmarkham/TailOpsMCP](https://github.com/mdlmarkham/TailOpsMCP)
+- Issues: [GitHub Issues](https://github.com/mdlmarkham/TailOpsMCP/issues)
+- Discussions: [GitHub Discussions](https://github.com/mdlmarkham/TailOpsMCP/discussions)

@@ -2,7 +2,9 @@
 
 ## Overview
 
-SystemManager implements **defense-in-depth** security for tailnet deployments:
+# Security Architecture
+
+TailOpsMCP implements **defense-in-depth** security for tailnet deployments:
 
 1. **Network Layer**: Tailscale ACLs control WHO can reach the server
 2. **Application Layer**: Bearer tokens + scopes control WHAT they can do

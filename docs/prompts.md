@@ -1,6 +1,6 @@
-# SystemManager MCP Prompts
+# TailOpsMCP Prompts
 
-SystemManager includes pre-configured MCP prompts for common home lab management tasks. These prompts provide ready-to-use workflows that combine multiple tools into comprehensive operations.
+TailOpsMCP includes pre-configured MCP prompts for common home lab management tasks. These prompts provide ready-to-use workflows that combine multiple tools into comprehensive operations.
 
 ## Available Prompts
 
@@ -155,7 +155,7 @@ Interactive workflow to set up the system inventory for application tracking:
 - Manual application additions
 - Complete inventory review
 
-This prompt helps SystemManager understand what applications are running on your LXC container
+This prompt helps TailOpsMCP understand what applications are running on your LXC container
 (not just Docker), enabling context-aware assistance for troubleshooting, security, and monitoring.
 
 **Usage:**
@@ -185,7 +185,7 @@ MCP Prompts are reusable, parameterized templates that guide AI assistants throu
 
 ### Claude Desktop
 
-1. Make sure SystemManager is configured in your MCP settings
+1. Make sure TailOpsMCP is configured in your MCP settings
 2. Use natural language to invoke prompts:
    - "Use the security_audit prompt"
    - "Run health_check"
@@ -193,7 +193,7 @@ MCP Prompts are reusable, parameterized templates that guide AI assistants throu
 
 ### VS Code with GitHub Copilot
 
-1. Install SystemManager MCP server
+1. Install TailOpsMCP server
 2. Prompts appear in the Copilot chat interface
 3. Select from available prompts or type the prompt name
 
@@ -218,7 +218,7 @@ async with ClientSession(...) as session:
 
 ## Creating Custom Prompts
 
-You can add your own prompts to SystemManager by editing `src/mcp_server.py`:
+You can add your own prompts to TailOpsMCP by editing `src/mcp_server.py`:
 
 ```python
 @mcp.prompt(
@@ -306,4 +306,4 @@ database size.
 
 - **MCP Specification**: https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
 - **FastMCP Prompts Documentation**: https://gofastmcp.com/servers/prompts
-- **SystemManager GitHub**: https://github.com/mdlmarkham/SystemManager
+- **TailOpsMCP GitHub**: https://github.com/mdlmarkham/TailOpsMCP

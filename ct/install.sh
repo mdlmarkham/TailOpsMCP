@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2024 SystemManager Contributors
-# Author: SystemManager Team
+# Copyright (c) 2024 TailOpsMCP Contributors
+# Author: TailOpsMCP Team
 # License: MIT
-# https://github.com/mdlmarkham/SystemManager
+# https://github.com/mdlmarkham/TailOpsMCP
 
 source /dev/stdin <<< "$FUNCTIONS_FILE_PATH"
 color
@@ -37,19 +37,19 @@ $STD bash <(curl -fsSL https://get.docker.com)
 $STD systemctl enable --now docker
 msg_ok "Installed Docker"
 
-RELEASE=$(curl -s https://api.github.com/repos/mdlmarkham/SystemManager/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3) }')
+RELEASE=$(curl -s https://api.github.com/repos/mdlmarkham/TailOpsMCP/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3) }')
 
-msg_info "Installing SystemManager MCP Server ${RELEASE}"
+msg_info "Installing TailOpsMCP ${RELEASE}"
 INSTALL_DIR="/opt/systemmanager"
 mkdir -p $INSTALL_DIR
 cd $INSTALL_DIR
 
-$STD git clone https://github.com/mdlmarkham/SystemManager.git .
+$STD git clone https://github.com/mdlmarkham/TailOpsMCP.git .
 $STD python3 -m venv venv
 source venv/bin/activate
 $STD pip install --upgrade pip
 $STD pip install -r requirements.txt
-msg_ok "Installed SystemManager MCP Server"
+msg_ok "Installed TailOpsMCP"
 
 msg_info "Configuring Authentication"
 echo ""
@@ -77,7 +77,7 @@ if [[ $auth_choice == "1" ]]; then
   echo "2. Go to Settings → OAuth → Identity Provider"
   echo "3. Click 'Enable' if not already enabled"
   echo "4. Create a new OAuth application:"
-  echo "   • Name: SystemManager MCP"
+  echo "   • Name: TailOpsMCP"
   echo "   • Redirect URI: https://vscode.dev/redirect"
   echo "   • Scopes: openid, email, profile"
   echo "5. Copy the Client ID and Client Secret"
@@ -155,8 +155,8 @@ msg_ok "Created Inventory Directory"
 msg_info "Creating Systemd Service"
 cat > /etc/systemd/system/systemmanager-mcp.service << EOF
 [Unit]
-Description=SystemManager MCP Server with OAuth/OIDC
-Documentation=https://github.com/mdlmarkham/SystemManager
+Description=TailOpsMCP - Secure MCP control surface for Tailscale homelabs
+Documentation=https://github.com/mdlmarkham/TailOpsMCP
 After=network-online.target docker.service
 Wants=network-online.target
 

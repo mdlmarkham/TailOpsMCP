@@ -2,7 +2,7 @@
 
 ## Overview
 
-SystemManager's inventory system solves a common problem in home lab management: **knowing what's running where**. 
+TailOpsMCP's inventory system solves a common problem in home lab management: **knowing what's running where**. 
 
 When you have multiple Proxmox LXC containers, each potentially running different services (Jellyfin on one, PostgreSQL on another, Ollama on a third), it becomes hard for an AI assistant to provide context-aware help. The inventory system creates a "scratchpad" of what applications are deployed on each system.
 
@@ -10,14 +10,14 @@ When you have multiple Proxmox LXC containers, each potentially running differen
 
 ### System Identity
 
-Each SystemManager instance identifies itself with:
+Each TailOpsMCP instance identifies itself with:
 
 - **Hostname**: The system's hostname (e.g., `dev1`, `media-server`)
 - **Container ID**: Proxmox VMID/CTID if running in LXC (e.g., `103`)
 - **Container Type**: `lxc`, `vm`, or `bare-metal`
 - **MCP Server Name**: Optional custom name for this MCP instance
 
-This allows you to run multiple SystemManager instances (one per LXC) and have them uniquely identified.
+This allows you to run multiple TailOpsMCP instances (one per LXC) and have them uniquely identified.
 
 **Example**: `dev1-103` clearly identifies this as the `dev1` container with ID 103.
 
@@ -37,7 +37,7 @@ For each application, the inventory tracks:
 
 ## Auto-Detection
 
-SystemManager can automatically detect these applications:
+TailOpsMCP can automatically detect these applications:
 
 | Category | Applications |
 |----------|--------------|
@@ -326,7 +326,7 @@ Use this for initial setup or when onboarding a new system.
 
 ### 1. Set Up Inventory on First Run
 
-After installing SystemManager, immediately run:
+After installing TailOpsMCP, immediately run:
 ```
 You: "Let's set up the inventory for this system"
 ```
@@ -458,7 +458,7 @@ add_application_to_inventory(name="app-name", version="correct-version", ...)
 
 ### Multiple Systems Using Same Inventory File
 
-Each SystemManager instance should have its own inventory file. By default, it's stored at `/var/lib/systemmanager/inventory.json` on each LXC container.
+Each TailOpsMCP instance should have its own inventory file. By default, it's stored at `/var/lib/systemmanager/inventory.json` on each LXC container.
 
 If running multiple instances on the same host (not recommended), set different paths:
 

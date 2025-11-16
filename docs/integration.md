@@ -1,4 +1,4 @@
-# MCP Server Integration & Deployment Guide
+# TailOpsMCP Server Integration & Deployment Guide
 
 This guide explains how to deploy the MCP server across multiple hosts with a Tailscale-first access model, token fallback, and recommended security configuration.
 
@@ -20,7 +20,7 @@ This guide explains how to deploy the MCP server across multiple hosts with a Ta
 
 1. Clone and install
 ```bash
-git clone https://github.com/mdlmarkham/SystemManager.git /opt/systemmanager
+git clone https://github.com/mdlmarkham/TailOpsMCP.git /opt/systemmanager
 cd /opt/systemmanager
 python -m venv .venv
 . .venv/bin/activate
@@ -40,7 +40,7 @@ SYSTEMMANAGER_MAX_OUTPUT_BYTES=65536
 3. Systemd service (example)
 ```
 [Unit]
-Description=SystemManager MCP Server
+Description=TailOpsMCP Server
 After=network.target
 
 [Service]

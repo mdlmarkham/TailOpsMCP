@@ -206,7 +206,7 @@ pytest tests/test_toon.py tests/test_toon_extra.py
 
 - [TOON Format Specification](https://github.com/toon-format/toon)
 - [Token Efficiency Benchmarks](https://github.com/toon-format/toon#benchmarks)
-- [SystemManager TOON Implementation](./src/utils/toon.py)
+- [TailOpsMCP TOON Implementation](./src/utils/toon.py)
 
 ## Summary
 
@@ -215,4 +215,4 @@ pytest tests/test_toon.py tests/test_toon_extra.py
 ✅ **Deployed**: Running on dev1.tailf9480.ts.net:8080  
 ✅ **Backward Compatible**: Default JSON format preserved  
 
-**Result: SystemManager MCP Server responses are now up to 40% more token-efficient!**
+**Result: TailOpsMCP Server responses are now up to 40% more token-efficient!**

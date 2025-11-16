@@ -6,7 +6,7 @@ Replace your existing token-based config:
 
 ```json
 {
-  "Dev1-SystemManager": {
+  "Dev1-TailOpsMCP": {
     "type": "sse",
     "url": "https://dev1.tailf9480.ts.net:8080/sse"
   }

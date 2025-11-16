@@ -158,7 +158,7 @@ If AI sampling unavailable:
 
 ## Support
 
-File issues at: [github.com/mdlmarkham/SystemManager/issues](https://github.com/mdlmarkham/SystemManager/issues)
+File issues at: [github.com/mdlmarkham/TailOpsMCP/issues](https://github.com/mdlmarkham/TailOpsMCP/issues)
 
 ---
 

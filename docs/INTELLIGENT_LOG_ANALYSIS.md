@@ -2,7 +2,7 @@
 
 ## Overview
 
-The SystemManager MCP server now includes **intelligent log analysis** powered by AI sampling. This feature transforms raw Docker container logs into actionable insights, automatically identifying issues, determining root causes, and providing specific recommendations.
+The TailOpsMCP server now includes **intelligent log analysis** powered by AI sampling. This feature transforms raw Docker container logs into actionable insights, automatically identifying issues, determining root causes, and providing specific recommendations.
 
 ## What is MCP Sampling?
 
@@ -155,7 +155,7 @@ Recommendations:
 
 ### 1. Update Server Code
 
-The code is already integrated. Simply restart your SystemManager MCP server:
+The code is already integrated. Simply restart your TailOpsMCP server:
 
 ```bash
 ssh dev1.tailf9480.ts.net
@@ -170,7 +170,7 @@ The MCP client configuration already supports sampling - no changes needed:
 
 ```json
 {
-  "Dev1-SystemManager": {
+  "Dev1-TailOpsMCP": {
     "type": "sse",
     "url": "http://dev1.tailf9480.ts.net:8080/sse",
     "headers": {
@@ -187,7 +187,7 @@ The MCP client configuration already supports sampling - no changes needed:
 ssh dev1.tailf9480.ts.net "tail -f /opt/systemmanager/logs/mcp_server.log"
 
 # Should see:
-# [INFO] Starting SystemManager MCP Server on http://0.0.0.0:8080
+# [INFO] Starting TailOpsMCP Server on http://0.0.0.0:8080
 # [INFO] Intelligent log analysis with AI sampling enabled
 ```
 
@@ -271,7 +271,7 @@ analyze_container_logs(
                  │ analyze_container_logs(name_or_id="nginx")
                  ▼
 ┌─────────────────────────────────────────────────┐
-│ SystemManager MCP Server                        │
+│ TailOpsMCP Server                         │
 │                                                 │
 │  ┌─────────────────────────────────────────┐   │
 │  │ 1. Fetch container logs (Docker API)   │   │
@@ -344,5 +344,5 @@ This ensures the tool always provides value, even without AI.
 
 - [MCP Sampling Specification](https://modelcontextprotocol.io/docs/concepts/sampling)
 - [FastMCP Documentation](https://github.com/jlowin/fastmcp)
-- [SystemManager Quick Reference](../QUICK_REFERENCE.md)
+- [TailOpsMCP Quick Reference](../QUICK_REFERENCE.md)
 - [Security Configuration](./SECURITY.md)

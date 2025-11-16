@@ -1,4 +1,4 @@
-# Quickstart: SystemManager MCP Server Improvements
+# Quickstart: TailOpsMCP Server Improvements
 
 **Date**: 2025-11-15  
 **Purpose**: Quick implementation guide for production-ready MCP server improvements
@@ -25,8 +25,8 @@ pip install pytest pytest-asyncio black mypy
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/systemmanager-mcp-server.git
-cd systemmanager-mcp-server
+git clone https://github.com/your-org/tailopsmcp-server.git
+cd tailopsmcp-server
 
 # Install in development mode
 pip install -e .
@@ -67,7 +67,7 @@ from typing import Dict
 import psutil
 
 # Initialize MCP server with structured output
-mcp = FastMCP("SystemManager")
+mcp = FastMCP("TailOpsMCP")
 
 # Define structured response models
 class SystemStatus(BaseModel):
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 
-class SystemManagerTokenVerifier(TokenVerifier):
+class TailOpsMCPTokenVerifier(TokenVerifier):
     async def verify_token(self, token: str) -> AccessToken | None:
         # Implement your token validation logic
         if validate_token(token):
@@ -118,8 +118,8 @@ class SystemManagerTokenVerifier(TokenVerifier):
 
 # Create protected server
 mcp = FastMCP(
-    "SystemManager",
-    token_verifier=SystemManagerTokenVerifier(),
+    "TailOpsMCP",
+    token_verifier=TailOpsMCPTokenVerifier(),
     auth=AuthSettings(
         issuer_url="https://auth.example.com",
         required_scopes=["system:read"]
@@ -330,7 +330,7 @@ from mcp.server.fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-mcp = FastMCP("SystemManager")
+mcp = FastMCP("TailOpsMCP")
 
 @mcp.custom_route(path="/health", methods=["GET"])
 async def health_check(request: Request) -> JSONResponse:
@@ -370,7 +370,7 @@ security_settings = TransportSecuritySettings(
     allowed_origins=["https://app.example.com"]
 )
 
-mcp = FastMCP("SystemManager", transport_security=security_settings)
+mcp = FastMCP("TailOpsMCP", transport_security=security_settings)
 ```
 
 ### **Rate Limiting**
@@ -379,7 +379,7 @@ mcp = FastMCP("SystemManager", transport_security=security_settings)
 from mcp.server.middleware import RateLimitMiddleware
 
 mcp = FastMCP(
-    "SystemManager",
+    "TailOpsMCP",
     middleware=[
         RateLimitMiddleware(max_requests=100, window_seconds=60)
     ]
@@ -421,4 +421,4 @@ logging.basicConfig(level=logging.DEBUG)
 mcp.run(transport="stdio", debug=True)
 ```
 
-This quickstart guide provides a comprehensive foundation for implementing production-ready improvements to the SystemManager MCP server with security, monitoring, and deployment best practices.
+This quickstart guide provides a comprehensive foundation for implementing production-ready improvements to the TailOpsMCP server with security, monitoring, and deployment best practices.

@@ -1,6 +1,6 @@
 # Extra Features: Inventory, Stacks, Snapshots, Network Exposure
 
-This document summarizes the new feature set added to `SystemManager`:
+This document summarizes the new feature set added to `TailOpsMCP`:
 
 - Host & Stack Inventory (`src/inventory.py`)
   - Lightweight JSON-backed inventory for hosts and stacks.

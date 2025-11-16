@@ -1,4 +1,4 @@
-# Remote System Testing Guide for SystemManager MCP Server
+# Remote System Testing Guide for TailOpsMCP Server
 
 **Last Updated**: November 15, 2025
 
@@ -14,7 +14,7 @@
 
 ## Project Overview
 
-**SystemManager MCP Server** is an async Python application implementing the Model Context Protocol (MCP) for secure remote system management. It provides AI agents with tools to monitor system health, manage Docker containers, explore filesystems, and check network status.
+**TailOpsMCP Server** is an async Python application implementing the Model Context Protocol (MCP) for secure remote system management. It provides AI agents with tools to monitor system health, manage Docker containers, explore filesystems, and check network status.
 
 **Key Characteristics:**
 - Protocol: Model Context Protocol (MCP)

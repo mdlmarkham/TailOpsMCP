@@ -1,5 +1,5 @@
 """
-SystemManager MCP Server - FastMCP with HTTP Transport
+TailOpsMCP - FastMCP with HTTP Transport
 
 Supports two authentication modes:
 1. TSIDP OIDC - Uses Tailscale Identity Provider for zero-trust SSO
@@ -62,12 +62,12 @@ if AUTH_MODE == "oidc":
         authorization_servers=[AnyHttpUrl(tsidp_url)],
         base_url=base_url,
     )
-    mcp = FastMCP("SystemManager", auth=auth)
+    mcp = FastMCP("TailOpsMCP", auth=auth)
     logger.info("OIDC authentication enabled - users will authenticate via Tailscale")
     logger.info(f"Token introspection endpoint: {tsidp_url}/introspect")
 else:
     # Token-based authentication (default)
-    mcp = FastMCP("SystemManager")
+    mcp = FastMCP("TailOpsMCP")
     logger.info("Token-based authentication enabled")
 
 # Initialize log analyzer
@@ -119,7 +119,7 @@ else:
     logger.info(f"Loaded system identity: {system_identity.get_display_name()}")
 
 # Update MCP server name if configured
-if system_identity and system_identity.get_display_name() != "SystemManager":
+if system_identity and system_identity.get_display_name() != "TailOpsMCP":
     # Note: FastMCP name is set during instantiation, so this is for logging
     logger.info(f"MCP Server ID: {system_identity.get_display_name()}")
 
@@ -1721,7 +1721,7 @@ Let's start! What would you like to do first?
 """
 
 if __name__ == "__main__":
-    logger.info("Starting SystemManager MCP Server on http://0.0.0.0:8080")
+    logger.info("Starting TailOpsMCP on http://0.0.0.0:8080")
     logger.info(f"Authentication mode: {AUTH_MODE}")
     
     if AUTH_MODE == "oidc":

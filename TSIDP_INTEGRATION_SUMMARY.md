@@ -1,4 +1,4 @@
-# SystemManager TSIDP Integration - Summary
+# TailOpsMCP TSIDP Integration - Summary
 
 ## What Changed
 

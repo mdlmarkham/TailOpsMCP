@@ -1,17 +1,17 @@
-# Contributing to SystemManager
+# Contributing to TailOpsMCP
 
-Thank you for your interest in contributing to SystemManager! We welcome contributions from the home lab community.
+Thank you for your interest in contributing to TailOpsMCP! We welcome contributions from the home lab community.
 
 ## 🎯 Ways to Contribute
 
 ### 1. Report Bugs
-- Check [existing issues](https://github.com/mdlmarkham/SystemManager/issues) first
+- Check [existing issues](https://github.com/mdlmarkham/TailOpsMCP/issues) first
 - Use the bug report template
 - Include system details (OS, Python version, Docker version)
 - Provide logs: `journalctl -u systemmanager-mcp -n 100`
 
 ### 2. Suggest Features
-- Open a [feature request](https://github.com/mdlmarkham/SystemManager/issues/new)
+- Open a [feature request](https://github.com/mdlmarkham/TailOpsMCP/issues/new)
 - Explain the use case and benefit
 - Link to examples if applicable
 - Consider contributing the implementation!
@@ -30,7 +30,7 @@ Thank you for your interest in contributing to SystemManager! We welcome contrib
 ### 5. Share Your Setup
 - Write blog posts or create videos
 - Share your configuration and automations
-- Join discussions in [GitHub Discussions](https://github.com/mdlmarkham/SystemManager/discussions)
+- Join discussions in [GitHub Discussions](https://github.com/mdlmarkham/TailOpsMCP/discussions)
 
 ---
 
@@ -40,8 +40,8 @@ Thank you for your interest in contributing to SystemManager! We welcome contrib
 
 ```bash
 # 1. Fork and clone the repository
-git clone https://github.com/YOUR-USERNAME/SystemManager.git
-cd SystemManager
+git clone https://github.com/YOUR-USERNAME/TailOpsMCP.git
+cd TailOpsMCP
 
 # 2. Create virtual environment
 python3 -m venv venv
@@ -81,8 +81,8 @@ pct start 999
 pct enter 999
 
 # Clone your fork and test
-git clone https://github.com/YOUR-USERNAME/SystemManager.git
-cd SystemManager
+git clone https://github.com/YOUR-USERNAME/TailOpsMCP.git
+cd TailOpsMCP
 bash install.sh
 ```
 
@@ -334,7 +334,7 @@ pytest -m integration
 **DO NOT** open a public issue for security vulnerabilities.
 
 Instead:
-1. Email: security@systemmanager.dev (or create a private security advisory)
+1. Email: security@tailopsmcp.dev (or create a private security advisory)
 2. Include detailed description
 3. Provide steps to reproduce
 4. Suggest a fix if possible
@@ -374,4 +374,4 @@ Contributors are recognized in:
 - Release notes for their contributions
 - GitHub contributor stats
 
-Thank you for helping make SystemManager better for the home lab community! 🚀
+Thank you for helping make TailOpsMCP better for the home lab community! 🚀

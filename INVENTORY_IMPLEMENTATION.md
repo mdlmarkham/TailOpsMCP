@@ -8,9 +8,9 @@
 
 ## 🎯 Problem Solved
 
-**Before:** SystemManager couldn't differentiate between systems or track applications running directly on LXC containers (outside Docker). When managing multiple Proxmox containers, the AI had no context about what was deployed where.
+**Before:** TailOpsMCP couldn't differentiate between systems or track applications running directly on LXC containers (outside Docker). When managing multiple Proxmox containers, the AI had no context about what was deployed where.
 
-**After:** Each SystemManager instance can identify itself (e.g., `dev1-103`) and maintain an inventory of installed applications (Jellyfin, Pi-hole, Ollama, PostgreSQL, etc.), enabling context-aware assistance.
+**After:** Each TailOpsMCP instance can identify itself (e.g., `dev1-103`) and maintain an inventory of installed applications (Jellyfin, Pi-hole, Ollama, PostgreSQL, etc.), enabling context-aware assistance.
 
 ---
 
@@ -31,7 +31,7 @@ class SystemIdentity:
         # Returns "dev1-103" or custom name
 ```
 
-**Purpose:** Uniquely identify this SystemManager instance when managing multiple LXC containers.
+**Purpose:** Uniquely identify this TailOpsMCP instance when managing multiple LXC containers.
 
 #### ApplicationMetadata
 ```python
