@@ -994,51 +994,35 @@ async def traceroute(host: str, max_hops: int = 15) -> dict:
 
 @mcp.tool()
 @secure_tool("check_system_updates")
-async def check_system_updates() -> dict:
-    """Check for available system package updates without installing.
+async def manage_packages(
+    action: Literal["check", "update", "install"],
+    package_name: str = None,
+    auto_approve: bool = False
+) -> dict:
+    """Manage system packages: check updates, update all, or install specific package.
     
-    Returns list of packages that can be upgraded with version information.
+    Args:
+        action: Operation to perform (check|update|install)
+        package_name: Package name (required for 'install' action)
+        auto_approve: Auto-approve without prompting (for update/install)
+    
+    Note: update/install require sudo privileges and may take several minutes.
     Supports apt (Debian/Ubuntu) and yum (RHEL/CentOS) based systems.
     """
     try:
-        result = await package_manager.check_updates()
+        if action == "check":
+            result = await package_manager.check_updates()
+        elif action == "update":
+            result = await package_manager.update_system(auto_approve)
+        elif action == "install":
+            if not package_name:
+                return {"error": "package_name required for install action"}
+            result = await package_manager.install_package(package_name, auto_approve)
+        else:
+            return {"error": f"Invalid action: {action}"}
         return result
     except Exception as e:
-        return format_error(e, "check_system_updates")
-
-@mcp.tool()
-@secure_tool("update_system_packages")
-async def update_system_packages(auto_approve: bool = False) -> dict:
-    """Update all system packages (apt-get upgrade or yum update).
-    
-    Args:
-        auto_approve: If True, automatically approve updates without prompting.
-                     Use with caution in production environments.
-    
-    Note: Requires sudo privileges. May take several minutes.
-    """
-    try:
-        result = await package_manager.update_system(auto_approve)
-        return result
-    except Exception as e:
-        return format_error(e, "update_system_packages")
-
-@mcp.tool()
-@secure_tool("install_package")
-async def install_package(package_name: str, auto_approve: bool = False) -> dict:
-    """Install a specific system package.
-    
-    Args:
-        package_name: Name of the package to install
-        auto_approve: If True, automatically approve installation without prompting
-    
-    Note: Requires sudo privileges.
-    """
-    try:
-        result = await package_manager.install_package(package_name, auto_approve)
-        return result
-    except Exception as e:
-        return format_error(e, "install_package")
+        return format_error(e, "manage_packages")
 
 # Docker Image Management Tools
 
@@ -1201,9 +1185,10 @@ async def get_inventory() -> dict:
 
 @mcp.tool()
 @secure_tool("add_application_to_inventory")
-async def add_application_to_inventory(
+async def manage_inventory(
+    action: Literal["add", "remove"],
     name: str,
-    app_type: str,
+    app_type: str = None,
     version: Optional[str] = None,
     port: Optional[int] = None,
     service_name: Optional[str] = None,
@@ -1211,88 +1196,77 @@ async def add_application_to_inventory(
     data_path: Optional[str] = None,
     notes: Optional[str] = None
 ) -> dict:
-    """Manually add an application to the inventory.
-    
-    Use this when you want to document an application that wasn't auto-detected,
-    or to add custom metadata about an application.
+    """Add or remove applications from the inventory.
     
     Args:
+        action: Operation to perform (add|remove)
         name: Application name (e.g., "jellyfin", "pihole")
-        app_type: Type/category (e.g., "media-server", "dns", "database")
-        version: Application version (optional)
-        port: Primary port number (optional)
-        service_name: systemd service name (optional)
-        config_path: Configuration directory (optional)
-        data_path: Data directory (optional)
-        notes: Custom notes about this application (optional)
-    
-    Returns:
-        Confirmation with the added application details
+        app_type: Type/category (required for add: "media-server", "dns", "database")
+        version: Application version (optional, for add)
+        port: Primary port number (optional, for add)
+        service_name: systemd service name (optional, for add)
+        config_path: Configuration directory (optional, for add)
+        data_path: Data directory (optional, for add)
+        notes: Custom notes (optional, for add)
     """
     try:
-        app_meta = ApplicationMetadata(
-            name=name,
-            type=app_type,
-            version=version,
-            port=port,
-            service_name=service_name,
-            config_path=config_path,
-            data_path=data_path,
-            auto_detected=False,
-            notes=notes
-        )
-        
-        inventory.add_application(name, app_meta)
-        
-        return {
-            "success": True,
-            "action": "added",
-            "application": name,
-            "details": {
-                "name": name,
-                "type": app_type,
-                "version": version,
-                "port": port,
-                "service_name": service_name,
-                "config_path": config_path,
-                "data_path": data_path,
-                "notes": notes
-            },
-            "timestamp": datetime.now().isoformat()
-        }
-    except Exception as e:
-        return format_error(e, "add_application_to_inventory")
-
-@mcp.tool()
-@secure_tool("remove_application_from_inventory")
-async def remove_application_from_inventory(name: str) -> dict:
-    """Remove an application from the inventory.
-    
-    Args:
-        name: Application name to remove
-    
-    Returns:
-        Confirmation of removal
-    """
-    try:
-        # Check if exists first
-        app = inventory.get_application(name)
-        if not app:
+        if action == "add":
+            if not app_type:
+                return {"error": "app_type required for add action"}
+            
+            app_meta = ApplicationMetadata(
+                name=name,
+                type=app_type,
+                version=version,
+                port=port,
+                service_name=service_name,
+                config_path=config_path,
+                data_path=data_path,
+                auto_detected=False,
+                notes=notes
+            )
+            
+            inventory.add_application(name, app_meta)
+            
             return {
-                "success": False,
-                "error": f"Application '{name}' not found in inventory"
+                "success": True,
+                "action": "added",
+                "application": name,
+                "details": {
+                    "name": name,
+                    "type": app_type,
+                    "version": version,
+                    "port": port,
+                    "service_name": service_name,
+                    "config_path": config_path,
+                    "data_path": data_path,
+                    "notes": notes
+                },
+                "timestamp": datetime.now().isoformat()
             }
         
-        inventory.remove_application(name)
+        elif action == "remove":
+            app = inventory.get_application(name)
+            if not app:
+                return {
+                    "success": False,
+                    "error": f"Application '{name}' not found in inventory"
+                }
+            
+            inventory.remove_application(name)
+            
+            return {
+                "success": True,
+                "action": "removed",
+                "application": name,
+                "timestamp": datetime.now().isoformat()
+            }
         
-        return {
-            "success": True,
-            "action": "removed",
-            "application": name,
-            "timestamp": datetime.now().isoformat()
-        }
+        else:
+            return {"error": f"Invalid action: {action}"}
+            
     except Exception as e:
-        return format_error(e, "remove_application_from_inventory")
+        return format_error(e, "manage_inventory")
 
 @mcp.tool()
 @secure_tool("set_system_identity")
