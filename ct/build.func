@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+# Fetch community-scripts build.func and modify it to use TailOpsMCP install script
+source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func | \
+  sed 's|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/${var_install}.sh|https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/ct/install.sh|')
 # Copyright (c) 2024 SystemManager Contributors
 # Author: SystemManager Team
 # License: MIT
