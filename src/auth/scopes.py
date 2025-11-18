@@ -37,7 +37,13 @@ class Scope(str, Enum):
     CONTAINER_ADMIN = "container:admin"   # Update containers, pull images
     SYSTEM_ADMIN = "system:admin"        # Install packages, system updates
     DOCKER_ADMIN = "docker:admin"        # Full Docker access
-    
+
+    # Security scopes
+    SECURITY_READ = "security:read"      # View security scans, assessments
+    SECURITY_SCAN = "security:scan"      # Run vulnerability scans
+    SECURITY_WRITE = "security:write"    # Modify firewall rules (high risk)
+    SECURITY_ADMIN = "security:admin"    # Full security management
+
     # Meta scopes
     ADMIN = "admin"                      # All permissions
     READ_ONLY = "readonly"               # All read permissions
@@ -210,6 +216,84 @@ TOOL_SCOPES = {
         requires_approval=True,
         description="Install system packages (code execution risk)"
     ),
+
+    # Security Tools - Vulnerability Scanning
+    "scan_container_vulnerabilities": ToolScopeRequirement(
+        tool_name="scan_container_vulnerabilities",
+        required_scopes=[Scope.SECURITY_SCAN],
+        risk_level="low",
+        description="Scan containers for vulnerabilities"
+    ),
+    "scan_filesystem_vulnerabilities": ToolScopeRequirement(
+        tool_name="scan_filesystem_vulnerabilities",
+        required_scopes=[Scope.SECURITY_SCAN],
+        risk_level="moderate",
+        description="Scan filesystem for vulnerabilities"
+    ),
+
+    # Security Tools - Secrets Scanning
+    "scan_secrets_in_file": ToolScopeRequirement(
+        tool_name="scan_secrets_in_file",
+        required_scopes=[Scope.SECURITY_SCAN],
+        risk_level="moderate",
+        description="Scan file for exposed secrets"
+    ),
+    "scan_secrets_in_directory": ToolScopeRequirement(
+        tool_name="scan_secrets_in_directory",
+        required_scopes=[Scope.SECURITY_SCAN],
+        risk_level="moderate",
+        description="Scan directory for exposed secrets"
+    ),
+    "scan_docker_config_secrets": ToolScopeRequirement(
+        tool_name="scan_docker_config_secrets",
+        required_scopes=[Scope.SECURITY_SCAN],
+        risk_level="moderate",
+        description="Scan Docker config for credentials"
+    ),
+
+    # Security Tools - Firewall Management
+    "get_firewall_status": ToolScopeRequirement(
+        tool_name="get_firewall_status",
+        required_scopes=[Scope.SECURITY_READ],
+        risk_level="low",
+        description="View firewall status"
+    ),
+    "list_firewall_rules": ToolScopeRequirement(
+        tool_name="list_firewall_rules",
+        required_scopes=[Scope.SECURITY_READ],
+        risk_level="low",
+        description="List firewall rules"
+    ),
+    "add_firewall_rule": ToolScopeRequirement(
+        tool_name="add_firewall_rule",
+        required_scopes=[Scope.SECURITY_WRITE],
+        risk_level="critical",
+        requires_approval=True,
+        description="Add firewall rule (can lock out access)"
+    ),
+    "delete_firewall_rule": ToolScopeRequirement(
+        tool_name="delete_firewall_rule",
+        required_scopes=[Scope.SECURITY_WRITE],
+        risk_level="critical",
+        requires_approval=True,
+        description="Delete firewall rule (can expose services)"
+    ),
+
+    # Security Tools - CIS Benchmarks
+    "run_cis_benchmark": ToolScopeRequirement(
+        tool_name="run_cis_benchmark",
+        required_scopes=[Scope.SECURITY_READ],
+        risk_level="low",
+        description="Run CIS security assessment"
+    ),
+
+    # Security Tools - Utility
+    "get_security_scanner_info": ToolScopeRequirement(
+        tool_name="get_security_scanner_info",
+        required_scopes=[Scope.SECURITY_READ],
+        risk_level="low",
+        description="Get security scanner availability"
+    ),
 }
 
 
@@ -235,6 +319,7 @@ def expand_scopes(scopes: List[str]) -> Set[str]:
             Scope.NETWORK_READ,
             Scope.CONTAINER_READ,
             Scope.FILE_READ,
+            Scope.SECURITY_READ,
         ])
     
     return expanded
