@@ -26,6 +26,9 @@ share/python-wheels/
 *.egg
 PIPFILE.lock
 
+# Exception: Keep scripts/install/lib/ (shell script library)
+!scripts/install/lib/
+
 # PyInstaller
 *.manifest
 *.spec

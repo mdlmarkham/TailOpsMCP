@@ -116,6 +116,33 @@ This will:
 - Configure and start the systemd service
 - Provide complete installation summary
 
+### Method 1b: Proxmox Multi-Container (Deploy to Multiple LXCs)
+
+Deploy TailOpsMCP to multiple LXC containers from your Proxmox host in a single operation:
+
+```bash
+# On your Proxmox host
+curl -fsSL https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/main/scripts/install/install-proxmox-multi.sh -o install-proxmox-multi.sh
+chmod +x install-proxmox-multi.sh
+
+# Quick deploy to existing containers
+./install-proxmox-multi.sh --containers 101,102,103 --auth token
+
+# Or use a configuration file for complex setups
+wget https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/main/scripts/install/templates/proxmox-multi.conf
+nano proxmox-multi.conf  # Edit configuration
+./install-proxmox-multi.sh --config proxmox-multi.conf
+```
+
+**Features:**
+- ✅ Deploy to multiple containers (existing or create new ones)
+- ✅ Sequential or parallel deployment strategies
+- ✅ Auto-configure container features (nesting, TUN device)
+- ✅ Per-container configuration overrides
+- ✅ Comprehensive validation and health checks
+
+**See [PROXMOX_MULTI_CONTAINER_INSTALL.md](./docs/PROXMOX_MULTI_CONTAINER_INSTALL.md) for complete documentation.**
+
 ### Method 2: Manual Installation (Any Linux)
 
 #### Prerequisites
