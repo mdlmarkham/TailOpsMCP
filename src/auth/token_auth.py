@@ -109,8 +109,16 @@ class TokenVerifier:
                 raise SystemManagerError("invalid token claims", category=ErrorCategory.UNAUTHORIZED)
 
             # Check expiry if present
-            if claims.expiry and claims.expiry < datetime.datetime.utcnow():
-                raise SystemManagerError("token expired", category=ErrorCategory.UNAUTHORIZED)
+            # Use timezone-aware datetime comparison
+            now = datetime.datetime.now(datetime.timezone.utc)
+            # Handle both naive and aware datetimes
+            if claims.expiry:
+                expiry = claims.expiry
+                if expiry.tzinfo is None:
+                    # Assume UTC for naive datetimes
+                    expiry = expiry.replace(tzinfo=datetime.timezone.utc)
+                if expiry < now:
+                    raise SystemManagerError("token expired", category=ErrorCategory.UNAUTHORIZED)
 
             return claims
 

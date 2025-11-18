@@ -15,7 +15,15 @@ def create_mcp_instance() -> FastMCP:
 
     if auth_mode == "oidc":
         # TSIDP OIDC Authentication
-        tsidp_url = os.getenv("TSIDP_URL", "https://tsidp.tailf9480.ts.net")
+        # Require explicit TSIDP configuration - no hardcoded defaults
+        tsidp_url = os.getenv("TSIDP_URL")
+        if not tsidp_url:
+            raise ValueError(
+                "TSIDP_URL must be configured when using OIDC authentication. "
+                "Set TSIDP_URL to your Tailscale Identity Provider URL. "
+                "Example: TSIDP_URL=https://tsidp.YOUR-TAILNET.ts.net"
+            )
+
         base_url = os.getenv("SYSTEMMANAGER_BASE_URL", "http://localhost:8080")
         client_id = os.getenv("TSIDP_CLIENT_ID")
         client_secret = os.getenv("TSIDP_CLIENT_SECRET")

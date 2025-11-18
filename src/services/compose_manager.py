@@ -8,15 +8,50 @@ import yaml
 import subprocess
 from typing import Dict, List, Optional
 from pathlib import Path
+from urllib.parse import urlparse
 import git
 
 
 class ComposeStackManager:
     """Manage Docker Compose stacks from Git repositories."""
-    
+
     def __init__(self, stacks_dir: str = "/opt/stacks"):
         self.stacks_dir = Path(stacks_dir)
         self.stacks_dir.mkdir(parents=True, exist_ok=True)
+
+    def _validate_repo_url(self, url: str) -> bool:
+        """Validate repository URL is from allowed sources.
+
+        Args:
+            url: Git repository URL to validate
+
+        Returns:
+            True if URL is allowed, False otherwise
+        """
+        # Get allowed hosts from environment, default to common git providers
+        allowed_hosts_str = os.getenv(
+            "SYSTEMMANAGER_ALLOWED_GIT_HOSTS",
+            "github.com,gitlab.com,bitbucket.org"
+        )
+        allowed_hosts = [h.strip() for h in allowed_hosts_str.split(",") if h.strip()]
+
+        try:
+            parsed = urlparse(url)
+
+            # Only allow https and git protocols
+            if parsed.scheme not in ['https', 'git']:
+                return False
+
+            # Extract hostname (handle git@host:repo format)
+            if '@' in parsed.netloc:
+                host = parsed.netloc.split('@')[-1].split(':')[0]
+            else:
+                host = parsed.netloc.split(':')[0]
+
+            # Check if host is in allowed list
+            return any(host == allowed or host.endswith('.' + allowed) for allowed in allowed_hosts)
+        except Exception:
+            return False
     
     async def deploy_stack(
         self,
@@ -39,8 +74,16 @@ class ComposeStackManager:
             Deployment status and details
         """
         stack_path = self.stacks_dir / stack_name
-        
+
         try:
+            # Validate repository URL
+            if not self._validate_repo_url(repo_url):
+                return {
+                    "success": False,
+                    "error": f"Repository URL not allowed: {repo_url}. Configure SYSTEMMANAGER_ALLOWED_GIT_HOSTS to allow this host.",
+                    "stack": stack_name
+                }
+
             # Clone or pull repository
             if stack_path.exists():
                 repo = git.Repo(stack_path)
