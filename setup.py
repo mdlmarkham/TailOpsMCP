@@ -8,7 +8,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="systemmanager-mcp-server",
-    version="0.1.0",
+    version="1.0.0",
     author="SystemManager Team",
     author_email="team@systemmanager.local",
     description="MCP server for remote system management and monitoring",
