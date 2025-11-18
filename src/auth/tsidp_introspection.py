@@ -7,10 +7,10 @@ using RFC 7662 token introspection instead of JWT signature verification.
 import asyncio
 import requests
 from typing import Optional
-from fastmcp.server.auth import AccessToken
+from fastmcp.server.auth import AccessToken, TokenVerifier
 
 
-class TSIDPIntrospectionVerifier:
+class TSIDPIntrospectionVerifier(TokenVerifier):
     """Verify TSIDP access tokens using RFC 7662 token introspection."""
     
     def __init__(
