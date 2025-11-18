@@ -75,14 +75,109 @@ async def get_stack_status(host: str, stack_name: str, format: Optional[str] = N
 
 
 async def get_repo_status(stack_name: str) -> Dict[str, Any]:
-    """Return repo status for a stack (git info). Placeholder uses Inventory repo_url only."""
+    """Return repo status for a stack with actual git information."""
     inv = Inventory()
     stacks = inv.list_stacks()
     stack = stacks.get(stack_name)
-    repo = stack.get("repo_url") if stack else None
-    res = RepoStatus(repo_url=repo, branch=stack.get("branch") if stack else None, latest_commit=None, deployed_commit=stack.get("deployed_commit") if stack else None)
-    audit.log("get_repo_status", {"stack_name": stack_name}, {"success": True})
-    return res.dict()
+
+    if not stack:
+        audit.log("get_repo_status", {"stack_name": stack_name}, {"success": False, "error": "stack_not_found"})
+        return RepoStatus(repo_url=None).dict()
+
+    repo_url = stack.get("repo_url")
+    stack_path = stack.get("path")
+    deployed_commit = stack.get("deployed_commit")
+    branch = stack.get("branch", "main")
+
+    # If no path or git repo doesn't exist, return basic info
+    if not stack_path or not os.path.exists(os.path.join(stack_path, ".git")):
+        res = RepoStatus(
+            repo_url=repo_url,
+            branch=branch,
+            latest_commit=None,
+            deployed_commit=deployed_commit
+        )
+        audit.log("get_repo_status", {"stack_name": stack_name}, {"success": True, "no_git": True})
+        return res.dict()
+
+    try:
+        # Get latest commit from remote
+        await to_thread(
+            subprocess.run,
+            ["git", "fetch", "origin", branch],
+            cwd=stack_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        # Get remote HEAD commit
+        remote_rev = await to_thread(
+            subprocess.run,
+            ["git", "rev-parse", f"origin/{branch}"],
+            cwd=stack_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        latest_commit = remote_rev.stdout.strip()
+
+        # Get current HEAD commit
+        local_rev = await to_thread(
+            subprocess.run,
+            ["git", "rev-parse", "HEAD"],
+            cwd=stack_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        current_commit = local_rev.stdout.strip()
+
+        # Check if there are uncommitted changes
+        status_result = await to_thread(
+            subprocess.run,
+            ["git", "status", "--porcelain"],
+            cwd=stack_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        has_uncommitted_changes = bool(status_result.stdout.strip())
+
+        # Calculate ahead/behind
+        revlist = await to_thread(
+            subprocess.run,
+            ["git", "rev-list", "--left-right", "--count", f"HEAD...origin/{branch}"],
+            cwd=stack_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        ahead, behind = map(int, revlist.stdout.strip().split())
+
+        res = RepoStatus(
+            repo_url=repo_url,
+            branch=branch,
+            latest_commit=latest_commit,
+            deployed_commit=current_commit,
+            ahead_by=ahead,
+            behind_by=behind,
+            has_uncommitted_changes=has_uncommitted_changes
+        )
+
+        audit.log("get_repo_status", {"stack_name": stack_name}, {"success": True})
+        return res.dict()
+
+    except Exception as e:
+        # Fall back to basic info if git commands fail
+        res = RepoStatus(
+            repo_url=repo_url,
+            branch=branch,
+            latest_commit=None,
+            deployed_commit=deployed_commit
+        )
+        audit.log("get_repo_status", {"stack_name": stack_name}, {"success": False, "error": str(e)})
+        return res.dict()
 
 
 async def get_config_diff(stack_name: str) -> Dict[str, Any]:
@@ -93,24 +188,208 @@ async def get_config_diff(stack_name: str) -> Dict[str, Any]:
 
 
 async def deploy_stack(req: DeployRequest) -> Dict[str, Any]:
-    """Perform a deploy operation. For now this is a dry-run-only PoC.
+    """Perform a git-based stack deployment with docker-compose.
 
-    It returns planned changes and does not perform actual container operations
-    unless `dry_run` is False and a real implementation is provided.
+    This function:
+    - Clones or updates a git repository
+    - Checks out the specified commit/branch
+    - Runs docker-compose up (with optional image pull)
+    - Updates inventory with deployed commit info
     """
-    # Build a minimal planned change list
-    planned = [f"Would pull images for stack {req.stack_name}", f"Would restart services for {req.stack_name}"]
-    result = DeployResult(success=True, dry_run=req.dry_run, planned_changes=planned, errors=[], deployed_commit=req.target_commit)
+    errors = []
+    planned = []
 
-    audit.log("deploy_stack", req.dict(), {"success": True, "dry_run": req.dry_run})
+    # Get stack info from inventory
+    inv = Inventory()
+    stacks = inv.list_stacks()
+    stack = stacks.get(req.stack_name, {})
+
+    # Determine deployment path
+    deploy_base = os.getenv("STACK_DEPLOY_PATH", "/opt/stacks")
+    stack_path = stack.get("path") or os.path.join(deploy_base, req.stack_name)
+    repo_url = stack.get("repo_url")
+
+    if not repo_url:
+        errors.append(f"No repo_url configured for stack {req.stack_name}")
+        result = DeployResult(success=False, dry_run=req.dry_run, planned_changes=planned, errors=errors, deployed_commit=None)
+        audit.log("deploy_stack", req.dict(), {"success": False, "error": "no_repo_url"})
+        return result.dict()
+
+    # Plan the deployment
+    repo_exists = os.path.exists(os.path.join(stack_path, ".git"))
+    if repo_exists:
+        planned.append(f"Update repository in {stack_path}")
+        planned.append(f"Fetch latest changes from {repo_url}")
+    else:
+        planned.append(f"Clone repository {repo_url} to {stack_path}")
+
+    if req.target_commit:
+        planned.append(f"Checkout commit/branch: {req.target_commit}")
+
+    if req.pull_images:
+        planned.append(f"Pull Docker images for {req.stack_name}")
+
+    planned.append(f"Run docker-compose up -d for {req.stack_name}")
+
+    if req.dry_run:
+        result = DeployResult(success=True, dry_run=True, planned_changes=planned, errors=[], deployed_commit=req.target_commit)
+        audit.log("deploy_stack", req.dict(), {"success": True, "dry_run": True})
+        return result.dict()
+
+    # Execute deployment
+    try:
+        # Ensure base directory exists
+        os.makedirs(deploy_base, exist_ok=True)
+
+        # Clone or update repository
+        if repo_exists:
+            # Update existing repo
+            git_fetch = await to_thread(
+                subprocess.run,
+                ["git", "fetch", "--all"],
+                cwd=stack_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            git_reset = await to_thread(
+                subprocess.run,
+                ["git", "reset", "--hard", f"origin/{req.target_commit or stack.get('branch', 'main')}"],
+                cwd=stack_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+        else:
+            # Clone new repo
+            git_clone = await to_thread(
+                subprocess.run,
+                ["git", "clone", repo_url, stack_path],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+
+            if req.target_commit:
+                git_checkout = await to_thread(
+                    subprocess.run,
+                    ["git", "checkout", req.target_commit],
+                    cwd=stack_path,
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+
+        # Get current commit hash
+        git_rev = await to_thread(
+            subprocess.run,
+            ["git", "rev-parse", "HEAD"],
+            cwd=stack_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        deployed_commit = git_rev.stdout.strip()
+
+        # Pull images if requested
+        if req.pull_images:
+            compose_pull = await to_thread(
+                subprocess.run,
+                ["docker", "compose", "pull"],
+                cwd=stack_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+
+        # Deploy with docker-compose
+        compose_up = await to_thread(
+            subprocess.run,
+            ["docker", "compose", "up", "-d", "--remove-orphans"],
+            cwd=stack_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        # Update inventory
+        stack["deployed_commit"] = deployed_commit
+        stack["path"] = stack_path
+        stack["deployed_at"] = datetime.now().isoformat()
+        inv._data["stacks"][req.stack_name] = stack
+        inv._save()
+
+        result = DeployResult(
+            success=True,
+            dry_run=False,
+            planned_changes=planned,
+            errors=[],
+            deployed_commit=deployed_commit
+        )
+
+        audit.log("deploy_stack", req.dict(), {
+            "success": True,
+            "deployed_commit": deployed_commit,
+            "stack_path": stack_path
+        })
+
+    except subprocess.CalledProcessError as e:
+        errors.append(f"Command failed: {e.cmd}")
+        errors.append(f"Error: {e.stderr}")
+        result = DeployResult(
+            success=False,
+            dry_run=False,
+            planned_changes=planned,
+            errors=errors,
+            deployed_commit=None
+        )
+        audit.log("deploy_stack", req.dict(), {
+            "success": False,
+            "error": str(e)
+        })
+    except Exception as e:
+        errors.append(f"Deployment failed: {str(e)}")
+        result = DeployResult(
+            success=False,
+            dry_run=False,
+            planned_changes=planned,
+            errors=errors,
+            deployed_commit=None
+        )
+        audit.log("deploy_stack", req.dict(), {
+            "success": False,
+            "error": str(e)
+        })
+
     return result.dict()
 
 
 async def rollback_stack(host: str, stack_name: str, to_commit: str, dry_run: bool = True) -> Dict[str, Any]:
-    planned = [f"Would checkout {to_commit} for {stack_name}", f"Would redeploy {stack_name}"]
-    res = DeployResult(success=True, dry_run=dry_run, planned_changes=planned, errors=[], deployed_commit=to_commit)
-    audit.log("rollback_stack", {"host": host, "stack_name": stack_name, "to_commit": to_commit}, {"success": True, "dry_run": dry_run})
-    return res.dict()
+    """Rollback a stack to a previous commit."""
+    errors = []
+    planned = [
+        f"Checkout commit {to_commit} for {stack_name}",
+        f"Redeploy {stack_name} with docker-compose"
+    ]
+
+    if dry_run:
+        res = DeployResult(success=True, dry_run=True, planned_changes=planned, errors=[], deployed_commit=to_commit)
+        audit.log("rollback_stack", {"host": host, "stack_name": stack_name, "to_commit": to_commit}, {"success": True, "dry_run": True})
+        return res.dict()
+
+    # Execute rollback via deploy_stack
+    deploy_req = DeployRequest(
+        host=host,
+        stack_name=stack_name,
+        target_commit=to_commit,
+        pull_images=False,
+        force=True,
+        dry_run=False
+    )
+
+    result = await deploy_stack(deploy_req)
+    audit.log("rollback_stack", {"host": host, "stack_name": stack_name, "to_commit": to_commit}, {"success": result.get("success"), "dry_run": False})
+    return result
 
 
 async def get_stack_history(stack_name: str, limit: int = 20) -> List[Dict[str, Any]]:

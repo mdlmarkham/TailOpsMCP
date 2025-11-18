@@ -44,6 +44,20 @@ class Scope(str, Enum):
     SECURITY_WRITE = "security:write"    # Modify firewall rules (high risk)
     SECURITY_ADMIN = "security:admin"    # Full security management
 
+    # Database scopes
+    DATABASE_READ = "database:read"      # List backups
+    DATABASE_BACKUP = "database:backup"  # Create backups
+    DATABASE_RESTORE = "database:restore" # Restore from backups
+    DATABASE_ADMIN = "database:admin"    # Cleanup and management
+
+    # Certificate scopes
+    CERTIFICATE_READ = "certificate:read"   # View certificates
+    CERTIFICATE_ADMIN = "certificate:admin" # Request, renew, delete certificates
+
+    # Metrics scopes
+    METRICS_READ = "metrics:read"        # Export metrics
+    METRICS_ADMIN = "metrics:admin"      # Write metrics to files
+
     # Meta scopes
     ADMIN = "admin"                      # All permissions
     READ_ONLY = "readonly"               # All read permissions
@@ -294,6 +308,99 @@ TOOL_SCOPES = {
         risk_level="low",
         description="Get security scanner availability"
     ),
+
+    # Database Tools
+    "backup_database": ToolScopeRequirement(
+        tool_name="backup_database",
+        required_scopes=[Scope.DATABASE_BACKUP],
+        risk_level="moderate",
+        description="Backup PostgreSQL or MySQL database"
+    ),
+    "restore_database": ToolScopeRequirement(
+        tool_name="restore_database",
+        required_scopes=[Scope.DATABASE_RESTORE],
+        risk_level="critical",
+        requires_approval=True,
+        description="Restore database from backup (destructive)"
+    ),
+    "list_database_backups": ToolScopeRequirement(
+        tool_name="list_database_backups",
+        required_scopes=[Scope.DATABASE_READ],
+        risk_level="low",
+        description="List available database backups"
+    ),
+    "cleanup_database_backups": ToolScopeRequirement(
+        tool_name="cleanup_database_backups",
+        required_scopes=[Scope.DATABASE_ADMIN],
+        risk_level="high",
+        description="Clean up old database backups"
+    ),
+
+    # Certificate Tools
+    "check_ssl_certificate_status": ToolScopeRequirement(
+        tool_name="check_ssl_certificate_status",
+        required_scopes=[Scope.CERTIFICATE_READ],
+        risk_level="low",
+        description="Check SSL certificate status and expiration"
+    ),
+    "request_letsencrypt_certificate": ToolScopeRequirement(
+        tool_name="request_letsencrypt_certificate",
+        required_scopes=[Scope.CERTIFICATE_ADMIN],
+        risk_level="high",
+        requires_approval=True,
+        description="Obtain new Let's Encrypt certificate"
+    ),
+    "renew_letsencrypt_certificate": ToolScopeRequirement(
+        tool_name="renew_letsencrypt_certificate",
+        required_scopes=[Scope.CERTIFICATE_ADMIN],
+        risk_level="moderate",
+        description="Renew Let's Encrypt certificate"
+    ),
+    "list_letsencrypt_certificates": ToolScopeRequirement(
+        tool_name="list_letsencrypt_certificates",
+        required_scopes=[Scope.CERTIFICATE_READ],
+        risk_level="low",
+        description="List all Let's Encrypt certificates"
+    ),
+    "delete_letsencrypt_certificate": ToolScopeRequirement(
+        tool_name="delete_letsencrypt_certificate",
+        required_scopes=[Scope.CERTIFICATE_ADMIN],
+        risk_level="high",
+        requires_approval=True,
+        description="Delete Let's Encrypt certificate"
+    ),
+    "setup_certificate_auto_renewal": ToolScopeRequirement(
+        tool_name="setup_certificate_auto_renewal",
+        required_scopes=[Scope.CERTIFICATE_ADMIN],
+        risk_level="moderate",
+        description="Setup automatic certificate renewal"
+    ),
+
+    # Metrics Tools
+    "export_prometheus_metrics": ToolScopeRequirement(
+        tool_name="export_prometheus_metrics",
+        required_scopes=[Scope.METRICS_READ],
+        risk_level="low",
+        description="Export Prometheus metrics"
+    ),
+    "get_prometheus_system_metrics": ToolScopeRequirement(
+        tool_name="get_prometheus_system_metrics",
+        required_scopes=[Scope.METRICS_READ],
+        risk_level="low",
+        description="Export system metrics in Prometheus format"
+    ),
+    "get_prometheus_docker_metrics": ToolScopeRequirement(
+        tool_name="get_prometheus_docker_metrics",
+        required_scopes=[Scope.METRICS_READ],
+        risk_level="low",
+        description="Export Docker metrics in Prometheus format"
+    ),
+    "write_metrics_textfile": ToolScopeRequirement(
+        tool_name="write_metrics_textfile",
+        required_scopes=[Scope.METRICS_ADMIN],
+        risk_level="moderate",
+        description="Write metrics to textfile for node_exporter"
+    ),
 }
 
 
@@ -320,6 +427,9 @@ def expand_scopes(scopes: List[str]) -> Set[str]:
             Scope.CONTAINER_READ,
             Scope.FILE_READ,
             Scope.SECURITY_READ,
+            Scope.DATABASE_READ,
+            Scope.CERTIFICATE_READ,
+            Scope.METRICS_READ,
         ])
     
     return expanded

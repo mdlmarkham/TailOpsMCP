@@ -19,6 +19,9 @@ def register_all_tools(mcp: FastMCP):
         image_tools,
         inventory_tools,
         security_tools,
+        database_tools,
+        certificate_tools,
+        metrics_tools,
         prompts,
     )
 
@@ -31,6 +34,9 @@ def register_all_tools(mcp: FastMCP):
     image_tools.register_tools(mcp)
     inventory_tools.register_tools(mcp)
     security_tools.register_tools(mcp)
+    database_tools.register_tools(mcp)
+    certificate_tools.register_tools(mcp)
+    metrics_tools.register_tools(mcp)
     prompts.register_prompts(mcp)
 
     logger.info("All MCP tools registered successfully")
