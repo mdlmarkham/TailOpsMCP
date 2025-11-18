@@ -1,4 +1,7 @@
+auth
 cli
 models
+server
 services
+tools
 utils
