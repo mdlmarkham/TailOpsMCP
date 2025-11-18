@@ -23,10 +23,17 @@ from src.auth.middleware import secure_tool
 from src.tools import stack_tools
 from src.services.log_analyzer import LogAnalyzer
 
-logging.basicConfig(level=logging.DEBUG)
+# Configure logging - use environment variable for log level
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
-# Enable FastMCP auth debugging
-logging.getLogger("fastmcp.server.auth").setLevel(logging.DEBUG)
+
+# Enable FastMCP auth debugging only in development
+if os.getenv("SYSTEMMANAGER_ENV") == "development":
+    logging.getLogger("fastmcp.server.auth").setLevel(logging.DEBUG)
 
 # Determine authentication mode
 AUTH_MODE = os.getenv("SYSTEMMANAGER_AUTH_MODE", "token").lower()

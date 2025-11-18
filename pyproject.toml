@@ -12,7 +12,7 @@ dependencies = [
     "psutil>=5.9.0",
     "docker>=6.0.0",
     "pydantic>=2.0.0",
-    "cryptography>=41.0.0",
+    "cryptography>=42.0.0",  # Updated to match requirements.txt
 ]
 
 classifiers = [

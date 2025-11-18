@@ -16,11 +16,17 @@ from src.server.config import create_mcp_instance, get_auth_mode
 from src.server.dependencies import deps
 from src.tools import register_all_tools
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
+# Configure logging - use environment variable for log level
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
-# Enable FastMCP auth debugging
-logging.getLogger("fastmcp.server.auth").setLevel(logging.DEBUG)
+
+# Enable FastMCP auth debugging only in development
+if os.getenv("SYSTEMMANAGER_ENV") == "development":
+    logging.getLogger("fastmcp.server.auth").setLevel(logging.DEBUG)
 
 # Create FastMCP instance with auth
 mcp = create_mcp_instance()
