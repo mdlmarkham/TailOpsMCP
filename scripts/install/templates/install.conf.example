@@ -1,0 +1,69 @@
+# TailOpsMCP Installation Configuration Template
+# Copy this file and customize for non-interactive installations
+#
+# Usage:
+#   sudo bash install.sh --config /path/to/install.conf
+
+#######################################
+# Installation Directories
+#######################################
+
+# Installation directory (default: /opt/systemmanager)
+SYSTEMMANAGER_INSTALL_DIR="/opt/systemmanager"
+
+# Data directory (default: /var/lib/systemmanager)
+SYSTEMMANAGER_DATA_DIR="/var/lib/systemmanager"
+
+#######################################
+# Network Configuration
+#######################################
+
+# Port for MCP server (default: 8080)
+SYSTEMMANAGER_PORT=8080
+
+#######################################
+# Authentication Configuration
+#######################################
+
+# Authentication mode: oidc, token, or none
+SYSTEMMANAGER_AUTH_MODE="token"
+
+# For token-based auth: shared secret (generate with: openssl rand -hex 32)
+SYSTEMMANAGER_SHARED_SECRET="your-secret-token-here"
+
+# For OIDC auth: Tailscale OAuth configuration
+# SYSTEMMANAGER_AUTH_MODE="oidc"
+# TSIDP_URL="https://tsidp.tail12345.ts.net"
+# TSIDP_CLIENT_ID="your-client-id"
+# TSIDP_CLIENT_SECRET="your-client-secret"
+# SYSTEMMANAGER_BASE_URL="http://your-server.tail12345.ts.net:8080"
+
+#######################################
+# Installation Options
+#######################################
+
+# Run without interactive prompts
+NON_INTERACTIVE=true
+
+# Skip Docker installation (set to true if Docker not needed)
+SKIP_DOCKER=false
+
+# Force reinstall over existing installation
+FORCE_REINSTALL=false
+
+#######################################
+# Repository Configuration
+#######################################
+
+# Git repository URL
+SYSTEMMANAGER_REPO_URL="https://github.com/mdlmarkham/TailOpsMCP.git"
+
+# Git branch
+SYSTEMMANAGER_REPO_BRANCH="main"
+
+#######################################
+# Logging
+#######################################
+
+# Log level: DEBUG, INFO, WARNING, ERROR
+LOG_LEVEL="INFO"
