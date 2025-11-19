@@ -132,11 +132,27 @@ fix_container_features() {
     if ! grep -q "^features:" "$config_file"; then
         echo "features: nesting=1,keyctl=1" >> "$config_file"
     else
-        # Update existing features line
-        sed -i 's/^features:.*/&,nesting=1,keyctl=1/' "$config_file"
-        # Remove duplicate features
-        sed -i 's/nesting=1,nesting=1/nesting=1/g' "$config_file"
-        sed -i 's/keyctl=1,keyctl=1/keyctl=1/g' "$config_file"
+        # Update existing features line robustly (avoid duplicates)
+        current_features=$(grep '^features:' "$config_file" | head -n1 | cut -d':' -f2- | tr -d ' ')
+        new_features="$current_features"
+        # Add nesting=1 if missing
+        if ! echo ",$new_features," | grep -q ",nesting=1,"; then
+            if [ -n "$new_features" ]; then
+                new_features="$new_features,nesting=1"
+            else
+                new_features="nesting=1"
+            fi
+        fi
+        # Add keyctl=1 if missing
+        if ! echo ",$new_features," | grep -q ",keyctl=1,"; then
+            if [ -n "$new_features" ]; then
+                new_features="$new_features,keyctl=1"
+            else
+                new_features="keyctl=1"
+            fi
+        fi
+        # Replace the features line with the updated one
+        sed -i "s/^features:.*/features: $new_features/" "$config_file"
     fi
 
     # Enable TUN device for Tailscale
@@ -194,7 +210,12 @@ get_container_ip() {
     local ip
 
     # Try to get IP from container's network interface
-    ip=$(pct exec "$ctid" -- ip -4 addr show eth0 2>/dev/null | grep -oP 'inet \K[\d.]+' | head -1)
+    # Dynamically detect the primary network interface (excluding 'lo')
+    local iface
+    iface=$(pct exec "$ctid" -- ip -o -4 addr show 2>/dev/null | awk '!/ lo / {print $2; exit}')
+    if [ -n "$iface" ]; then
+        ip=$(pct exec "$ctid" -- ip -4 addr show "$iface" 2>/dev/null | grep -oP 'inet \K[\d.]+' | head -1)
+    fi
 
     if [ -n "$ip" ]; then
         echo "$ip"
@@ -354,10 +375,24 @@ validate_container_requirements() {
     local rootfs
     rootfs=$(get_container_config "$ctid" "rootfs")
     if [ -n "$rootfs" ]; then
-        local disk_size
-        disk_size=$(echo "$rootfs" | grep -oP 'size=\K\d+' || echo "0")
-        if [ "$disk_size" -gt 0 ] && [ "$disk_size" -lt "$min_disk" ]; then
-            issues+=("Disk space ($disk_size GB) is less than minimum ($min_disk GB)")
+        local disk_size_raw disk_size_num disk_size_unit disk_size_gb
+        disk_size_raw=$(echo "$rootfs" | grep -oP 'size=\K[0-9]+[KMGTP]?' || echo "0")
+        disk_size_num=$(echo "$disk_size_raw" | grep -oP '^\d+')
+        disk_size_unit=$(echo "$disk_size_raw" | grep -oP '[KMGTP]$')
+        # Default to G if no unit is specified
+        if [ -z "$disk_size_unit" ]; then
+            disk_size_unit="G"
+        fi
+        case "$disk_size_unit" in
+            K) disk_size_gb=$((disk_size_num / 1024 / 1024));;
+            M) disk_size_gb=$((disk_size_num / 1024));;
+            G) disk_size_gb=$((disk_size_num));;
+            T) disk_size_gb=$((disk_size_num * 1024));;
+            P) disk_size_gb=$((disk_size_num * 1024 * 1024));;
+            *) disk_size_gb=$((disk_size_num));; # fallback, treat as GB
+        esac
+        if [ "$disk_size_gb" -gt 0 ] && [ "$disk_size_gb" -lt "$min_disk" ]; then
+            issues+=("Disk space ($disk_size_gb GB) is less than minimum ($min_disk GB)")
         fi
     fi
 

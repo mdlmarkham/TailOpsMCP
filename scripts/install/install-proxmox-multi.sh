@@ -68,6 +68,15 @@ CONTAINER_START_TIMEOUT=30
 INSTALL_TIMEOUT=600
 NON_INTERACTIVE=false
 
+# Tarball exclusions for deployment
+TARBALL_EXCLUDES=(
+    '--exclude=.git'
+    '--exclude=*.pyc'
+    '--exclude=__pycache__'
+    '--exclude=venv'
+    '--exclude=.env'
+)
+
 # Deployment tracking
 declare -A DEPLOYMENT_STATUS
 declare -A DEPLOYMENT_IPS
@@ -224,7 +233,7 @@ resolve_container_ids() {
 
         # Merge with CONTAINERS if specified
         if [ -n "$CONTAINERS" ]; then
-            CONTAINERS="$CONTAINERS,${resolved_ids[*]}"
+            CONTAINERS="$CONTAINERS,$(IFS=,; echo "${resolved_ids[*]}")"
         else
             CONTAINERS=$(IFS=,; echo "${resolved_ids[*]}")
         fi
@@ -358,11 +367,7 @@ EOF
     # Create tarball and copy
     local tarball="$temp_dir/tailops.tar.gz"
     (cd "$PROJECT_ROOT" && tar czf "$tarball" \
-        --exclude='.git' \
-        --exclude='*.pyc' \
-        --exclude='__pycache__' \
-        --exclude='venv' \
-        --exclude='.env' \
+        "${TARBALL_EXCLUDES[@]}" \
         .)
 
     copy_to_container "$ctid" "$tarball" "/tmp/tailops.tar.gz" || return 1
