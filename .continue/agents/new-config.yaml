@@ -1,0 +1,33 @@
+name: Local Ollama Assistant
+version: 0.0.1
+schema: v1
+
+models:
+  # Main coding/chat model
+  - name: deepseek-v3.1:671b-cloud
+    provider: ollama
+    model: deepseek-v3.1:671b-cloud   # must match `ollama list`
+    apiBase: http://100.111.84.5:11434   # your remote Ollama host
+    roles:
+      - chat
+      - edit
+      - autocomplete
+      - apply
+      - summarize
+
+  # Embedding model for codebase search / RAG
+  - name: embeddingsProvider
+    provider: ollama
+    model: nomic-embed-text   # `ollama pull nomic-embed-text`
+    roles:
+      - embed
+
+# What context the assistant can see
+context:
+  - provider: code
+  - provider: docs
+  - provider: diff
+  - provider: terminal
+  - provider: problems
+  - provider: folder
+  - provider: codebase
