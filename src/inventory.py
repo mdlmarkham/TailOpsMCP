@@ -4,7 +4,7 @@ import json
 import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 
 @dataclass
@@ -72,9 +72,10 @@ class Inventory:
         self.path = path or os.getenv("SYSTEMMANAGER_INVENTORY", default_path)
         self._data: Dict = {
             "system": None,
-            "hosts": {}, 
+            "hosts": {},
             "stacks": {},
-            "applications": {}
+            "applications": {},
+            "targets": {}
         }
         if os.path.exists(self.path):
             try:
@@ -85,11 +86,12 @@ class Inventory:
                         "system": loaded.get("system"),
                         "hosts": loaded.get("hosts", {}),
                         "stacks": loaded.get("stacks", {}),
-                        "applications": loaded.get("applications", {})
+                        "applications": loaded.get("applications", {}),
+                        "targets": loaded.get("targets", {})
                     }
             except Exception:
                 # start fresh on error
-                self._data = {"system": None, "hosts": {}, "stacks": {}, "applications": {}}
+                self._data = {"system": None, "hosts": {}, "stacks": {}, "applications": {}, "targets": {}}
 
     def save(self) -> None:
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
@@ -129,6 +131,25 @@ class Inventory:
         if self._data.get("system"):
             return SystemIdentity(**self._data["system"])
         return None
+
+    # Target helpers
+    def add_target(self, target_id: str, target_data: Dict[str, Any]) -> None:
+        """Add a target to the inventory."""
+        self._data.setdefault("targets", {})[target_id] = target_data
+        self.save()
+
+    def remove_target(self, target_id: str) -> None:
+        """Remove a target from the inventory."""
+        self._data.get("targets", {}).pop(target_id, None)
+        self.save()
+
+    def list_targets(self) -> Dict[str, Dict]:
+        """List all targets in the inventory."""
+        return self._data.get("targets", {})
+
+    def get_target(self, target_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific target from the inventory."""
+        return self._data.get("targets", {}).get(target_id)
 
     # Application helpers
     def add_application(self, app_id: str, metadata: ApplicationMetadata) -> None:

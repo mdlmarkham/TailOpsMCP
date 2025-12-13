@@ -13,6 +13,11 @@ class AuditLogger:
     Writes one JSON object per line to the path defined by `SYSTEMMANAGER_AUDIT_LOG`
     (defaults to `./logs/audit.log`). This is intentionally simple and local; in
     production you may replace with structured remote logging.
+    
+    Enhanced for target registry operations:
+    - Tracks target registry operations (add, remove, discover)
+    - Records target capabilities and constraints
+    - Logs connection test results
     """
 
     def __init__(self, path: Optional[str] = None):

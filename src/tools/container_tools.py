@@ -1,236 +1,396 @@
-"""Docker container management tools for TailOpsMCP."""
+"""Docker container management tools for TailOpsMCP with capability-driven operations."""
 import logging
 from typing import Literal, Union, Optional
 from datetime import datetime
-from fastmcp import FastMCP, Context
+from fastmcp import FastMCP
 from src.auth.middleware import secure_tool
-from src.server.dependencies import deps
 from src.server.utils import format_response, format_error
-from src.tools import stack_tools
+from src.services.policy_gate import PolicyGate, OperationTier, ValidationMode
+from src.services.executor_factory import ExecutorFactory
+from src.utils.audit import AuditLogger
 
 logger = logging.getLogger(__name__)
+audit = AuditLogger()
+
 
 def register_tools(mcp: FastMCP):
-    """Register Docker container management tools with MCP instance."""
+    """Register Docker container management tools with MCP instance using capability-driven operations."""
 
     @mcp.tool()
     @secure_tool("get_container_list")
-    async def get_container_list(format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
+    async def get_container_list(
+        target: str = "local",
+        format: Literal["json", "toon"] = "toon"
+    ) -> Union[dict, str]:
         """List all Docker containers with status and image information.
 
         Args:
+            target: Target system to query (default: "local")
             format: Response format - 'toon' (compact, default) or 'json' (verbose)
         """
         try:
-            client = deps.get_docker_client()
-            containers = client.containers.list(all=True)
+            # Use Policy Gate for authorization
+            policy_gate = PolicyGate()
+            await policy_gate.authorize(
+                operation="get_container_list",
+                target=target,
+                tier=OperationTier.OBSERVE
+            )
 
-            result = []
-            for container in containers:
-                image_name = container.image.tags[0] if container.image.tags else "unknown"
-                result.append({
-                    "id": container.id[:12],
-                    "name": container.name,
-                    "status": container.status,
-                    "image": image_name,
-                    "created": container.attrs['Created'],
-                    "ports": container.ports
-                })
+            # Get executor for target
+            executor = ExecutorFactory.get_executor(target)
+            
+            # Execute container list query
+            result = await executor.execute(
+                command="list_containers",
+                parameters={},
+                timeout=30
+            )
 
-            return format_response({"containers": result, "count": len(result)}, format)
+            if result.success:
+                return format_response(result.output, format)
+            else:
+                return format_error(result.error, "get_container_list")
+                
         except Exception as e:
+            audit.log_operation(
+                operation="get_container_list",
+                target=target,
+                success=False,
+                error=str(e)
+            )
             return format_error(e, "get_container_list")
 
+    @mcp.tool()
+    @secure_tool("start_container")
+    async def start_container(
+        target: str = "local",
+        container: str,
+        dry_run: bool = False
+    ) -> dict:
+        """Start a Docker container.
+
+        Args:
+            target: Target system (default: "local")
+            container: Container name or ID
+            dry_run: If True, simulate without executing
+        """
+        try:
+            # Use Policy Gate for authorization
+            policy_gate = PolicyGate()
+            validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
+            
+            await policy_gate.authorize(
+                operation="start_container",
+                target=target,
+                tier=OperationTier.CONTROL,
+                parameters={"container": container},
+                mode=validation_mode
+            )
+
+            if dry_run:
+                return {
+                    "success": True,
+                    "dry_run": True,
+                    "operation": "start_container",
+                    "container": container,
+                    "target": target,
+                    "message": "Operation would be executed in non-dry-run mode"
+                }
+
+            # Get executor for target
+            executor = ExecutorFactory.get_executor(target)
+            
+            # Execute container start
+            result = await executor.execute(
+                command="start_container",
+                parameters={"container": container},
+                timeout=60
+            )
+
+            audit.log_operation(
+                operation="start_container",
+                target=target,
+                success=result.success,
+                parameters={"container": container}
+            )
+
+            if result.success:
+                return {
+                    "success": True,
+                    "operation": "start_container",
+                    "container": container,
+                    "target": target,
+                    "output": result.output
+                }
+            else:
+                return {
+                    "success": False,
+                    "operation": "start_container",
+                    "container": container,
+                    "target": target,
+                    "error": result.error
+                }
+                
+        except Exception as e:
+            audit.log_operation(
+                operation="start_container",
+                target=target,
+                success=False,
+                error=str(e)
+            )
+            return format_error(e, "start_container")
+
+    @mcp.tool()
+    @secure_tool("stop_container")
+    async def stop_container(
+        target: str = "local",
+        container: str,
+        dry_run: bool = False
+    ) -> dict:
+        """Stop a Docker container.
+
+        Args:
+            target: Target system (default: "local")
+            container: Container name or ID
+            dry_run: If True, simulate without executing
+        """
+        try:
+            # Use Policy Gate for authorization
+            policy_gate = PolicyGate()
+            validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
+            
+            await policy_gate.authorize(
+                operation="stop_container",
+                target=target,
+                tier=OperationTier.CONTROL,
+                parameters={"container": container},
+                mode=validation_mode
+            )
+
+            if dry_run:
+                return {
+                    "success": True,
+                    "dry_run": True,
+                    "operation": "stop_container",
+                    "container": container,
+                    "target": target,
+                    "message": "Operation would be executed in non-dry-run mode"
+                }
+
+            # Get executor for target
+            executor = ExecutorFactory.get_executor(target)
+            
+            # Execute container stop
+            result = await executor.execute(
+                command="stop_container",
+                parameters={"container": container},
+                timeout=60
+            )
+
+            audit.log_operation(
+                operation="stop_container",
+                target=target,
+                success=result.success,
+                parameters={"container": container}
+            )
+
+            if result.success:
+                return {
+                    "success": True,
+                    "operation": "stop_container",
+                    "container": container,
+                    "target": target,
+                    "output": result.output
+                }
+            else:
+                return {
+                    "success": False,
+                    "operation": "stop_container",
+                    "container": container,
+                    "target": target,
+                    "error": result.error
+                }
+                
+        except Exception as e:
+            audit.log_operation(
+                operation="stop_container",
+                target=target,
+                success=False,
+                error=str(e)
+            )
+            return format_error(e, "stop_container")
+
+    @mcp.tool()
+    @secure_tool("inspect_container")
+    async def inspect_container(
+        target: str = "local",
+        container: str,
+        format: Literal["json", "toon"] = "toon"
+    ) -> Union[dict, str]:
+        """Inspect a Docker container for detailed information.
+
+        Args:
+            target: Target system (default: "local")
+            container: Container name or ID
+            format: Response format - 'toon' (compact, default) or 'json' (verbose)
+        """
+        try:
+            # Use Policy Gate for authorization
+            policy_gate = PolicyGate()
+            await policy_gate.authorize(
+                operation="inspect_container",
+                target=target,
+                tier=OperationTier.OBSERVE,
+                parameters={"container": container}
+            )
+
+            # Get executor for target
+            executor = ExecutorFactory.get_executor(target)
+            
+            # Execute container inspection
+            result = await executor.execute(
+                command="inspect_container",
+                parameters={"container": container},
+                timeout=30
+            )
+
+            if result.success:
+                return format_response(result.output, format)
+            else:
+                return format_error(result.error, "inspect_container")
+                
+        except Exception as e:
+            audit.log_operation(
+                operation="inspect_container",
+                target=target,
+                success=False,
+                error=str(e)
+            )
+            return format_error(e, "inspect_container")
+
+    @mcp.tool()
+    @secure_tool("get_container_logs")
+    async def get_container_logs(
+        target: str = "local",
+        container: str,
+        lines: int = 100
+    ) -> dict:
+        """Get logs from a Docker container.
+
+        Args:
+            target: Target system (default: "local")
+            container: Container name or ID
+            lines: Number of log lines to retrieve
+        """
+        try:
+            # Use Policy Gate for authorization
+            policy_gate = PolicyGate()
+            await policy_gate.authorize(
+                operation="get_container_logs",
+                target=target,
+                tier=OperationTier.OBSERVE,
+                parameters={"container": container, "lines": lines}
+            )
+
+            # Get executor for target
+            executor = ExecutorFactory.get_executor(target)
+            
+            # Execute container logs query
+            result = await executor.execute(
+                command="container_logs",
+                parameters={"container": container, "lines": lines},
+                timeout=30
+            )
+
+            if result.success:
+                return {
+                    "success": True,
+                    "container": container,
+                    "target": target,
+                    "lines": lines,
+                    "logs": result.output,
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                return {
+                    "success": False,
+                    "container": container,
+                    "target": target,
+                    "error": result.error,
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+        except Exception as e:
+            audit.log_operation(
+                operation="get_container_logs",
+                target=target,
+                success=False,
+                error=str(e)
+            )
+            return format_error(e, "get_container_logs")
+
+    # Backward compatibility wrapper for existing manage_container tool
     @mcp.tool()
     @secure_tool("manage_container")
     async def manage_container(
         action: Literal["start", "stop", "restart", "logs"],
         name_or_id: str,
-        lines: int = 100
+        lines: int = 100,
+        target: str = "local",
+        dry_run: bool = False
     ) -> dict:
-        """Manage Docker container lifecycle: start, stop, restart, or get logs.
+        """Manage Docker container lifecycle: start, stop, restart, or get logs (backward compatibility).
 
         Args:
             action: Operation to perform (start|stop|restart|logs)
             name_or_id: Container name or ID
             lines: Number of log lines to retrieve (only for 'logs' action)
+            target: Target system (default: "local")
+            dry_run: If True, simulate without executing
         """
         try:
-            client = deps.get_docker_client()
-            container = client.containers.get(name_or_id)
-
             if action == "start":
-                container.start()
-                return {
-                    "success": True,
-                    "container": name_or_id,
-                    "action": "started",
-                    "timestamp": datetime.now().isoformat()
-                }
+                return await start_container(target, name_or_id, dry_run)
             elif action == "stop":
-                container.stop()
-                return {
-                    "success": True,
-                    "container": name_or_id,
-                    "action": "stopped",
-                    "timestamp": datetime.now().isoformat()
-                }
+                return await stop_container(target, name_or_id, dry_run)
             elif action == "restart":
-                container.restart()
+                # For restart, we'll stop then start
+                if dry_run:
+                    return {
+                        "success": True,
+                        "dry_run": True,
+                        "operation": "restart_container",
+                        "container": name_or_id,
+                        "target": target,
+                        "message": "Operation would be executed in non-dry-run mode"
+                    }
+                
+                stop_result = await stop_container(target, name_or_id, False)
+                if not stop_result.get("success", False):
+                    return stop_result
+                
+                start_result = await start_container(target, name_or_id, False)
                 return {
-                    "success": True,
+                    "success": start_result.get("success", False),
+                    "operation": "restart_container",
                     "container": name_or_id,
-                    "action": "restarted",
-                    "timestamp": datetime.now().isoformat()
+                    "target": target,
+                    "stop_result": stop_result,
+                    "start_result": start_result
                 }
             elif action == "logs":
-                logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
-                return {
-                    "success": True,
-                    "container": name_or_id,
-                    "action": "logs",
-                    "lines": lines,
-                    "logs": logs,
-                    "timestamp": datetime.now().isoformat()
-                }
+                return await get_container_logs(target, name_or_id, lines)
             else:
                 return {"success": False, "error": f"Invalid action: {action}"}
+                
         except Exception as e:
+            audit.log_operation(
+                operation="manage_container",
+                target=target,
+                success=False,
+                error=str(e)
+            )
             return format_error(e, "manage_container")
 
-    @mcp.tool()
-    @secure_tool("analyze_container_logs")
-    async def analyze_container_logs(
-        name_or_id: str,
-        lines: int = 200,
-        context: Optional[str] = None,
-        use_ai: bool = True,
-        ctx: Context = None
-    ) -> dict:
-        """Analyze Docker container logs OR system log files using AI to extract insights and identify issues.
-
-        This tool uses AI sampling to intelligently analyze logs, providing:
-        - Summary of log contents
-        - Identified errors and warnings with severity
-        - Root cause analysis
-        - Performance issue detection
-        - Actionable recommendations
-
-        Args:
-            name_or_id: Container name/ID OR path to system log file
-                       - For Docker: container name like "nginx" or ID like "abc123"
-                       - For system logs: full path like "/var/log/syslog" or "/var/log/auth.log"
-                       - Common system logs: syslog, auth.log, kern.log, dmesg, apache2/error.log
-            lines: Number of recent log lines to analyze (default: 200)
-            context: Optional context about what to look for (e.g., "why did it crash?", "find security issues")
-            use_ai: Use AI analysis if available, otherwise fallback to pattern matching
-
-        Returns:
-            Comprehensive analysis including summary, errors, root cause, and recommendations
-
-        Examples:
-            - Docker: name_or_id="nginx"
-            - System: name_or_id="/var/log/syslog"
-            - Auth:   name_or_id="/var/log/auth.log"
-        """
-        try:
-            # Check if it's a file path (system log)
-            if name_or_id.startswith('/'):
-                # System log file analysis
-                log_path = name_or_id
-
-                # Read the log file (tail last N lines)
-                import subprocess
-                result = subprocess.run(
-                    ['tail', '-n', str(lines), log_path],
-                    capture_output=True,
-                    text=True,
-                    timeout=10
-                )
-
-                if result.returncode != 0:
-                    return {
-                        "success": False,
-                        "error": f"Failed to read log file: {result.stderr}"
-                    }
-
-                logs = result.stdout
-                log_name = log_path.split('/')[-1]
-
-                # Perform intelligent analysis
-                analysis = await deps.log_analyzer.analyze_container_logs(
-                    container_name=f"System Log: {log_name}",
-                    logs=logs,
-                    analysis_context=context,
-                    use_ai=use_ai,
-                    mcp_context=ctx
-                )
-
-                return analysis
-
-            else:
-                # Docker container log analysis (original behavior)
-                client = deps.get_docker_client()
-                container = client.containers.get(name_or_id)
-                logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
-
-                # Perform intelligent analysis - pass Context for AI sampling
-                analysis = await deps.log_analyzer.analyze_container_logs(
-                    container_name=container.name,
-                    logs=logs,
-                    analysis_context=context,
-                    use_ai=use_ai,
-                    mcp_context=ctx
-                )
-
-                return analysis
-
-        except Exception as e:
-            logger.error(f"Log analysis failed: {e}")
-            return format_error(e, "analyze_container_logs")
-
-    @mcp.tool()
-    @secure_tool("get_docker_networks")
-    async def get_docker_networks(format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
-        """List Docker networks (compact summary).
-
-        Args:
-            format: Response format - 'toon' (compact, default) or 'json' (verbose)
-        """
-        try:
-            client = deps.get_docker_client()
-            networks = client.networks.list()
-
-            result = {
-                "networks": [
-                    {
-                        "name": net.name,
-                        "id": net.id[:12],
-                        "driver": net.attrs['Driver'],
-                        "scope": net.attrs['Scope'],
-                        "containers": len(net.attrs.get('Containers', {}))
-                    }
-                    for net in networks
-                ],
-                "count": len(networks)
-            }
-            return format_response(result, format)
-        except Exception as e:
-            return format_error(e, "get_docker_networks")
-
-    @mcp.tool()
-    @secure_tool("get_stack_network_info")
-    async def get_stack_network_info(
-        host: str,
-        stack_name: str,
-        format: Literal["json", "toon"] = "json",
-    ) -> Union[dict, str]:
-        """Return Docker stack network metadata via the stack_tools helper."""
-        try:
-            info = await stack_tools.get_stack_network_info(host, stack_name)
-            return format_response(info, format)
-        except Exception as e:
-            logger.exception("get_stack_network_info failed for host=%s stack=%s", host, stack_name)
-            return format_error(e, "get_stack_network_info")
-
-    logger.info("Registered 5 Docker container management tools")
+    logger.info("Registered 6 container management tools with capability-driven operations")

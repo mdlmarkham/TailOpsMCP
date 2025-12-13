@@ -1,15 +1,16 @@
-# Proxmox Multi-Container Installation Guide
+# Proxmox Multi-Container Gateway Deployment Guide
 
-Deploy TailOpsMCP from a Proxmox host to multiple LXC containers simultaneously.
+Deploy SystemManager control plane gateways from a Proxmox host to multiple LXC containers simultaneously.
 
 ## Overview
 
-The Proxmox multi-container installer allows you to deploy TailOpsMCP to multiple LXC containers from your Proxmox host in a single operation. This is ideal for:
+The Proxmox multi-container installer allows you to deploy SystemManager control plane gateways to multiple LXC containers from your Proxmox host in a single operation. This is ideal for:
 
-- **Development environments**: Create multiple isolated instances for testing
-- **Production deployments**: Deploy to multiple containers for high availability
-- **Multi-tenant setups**: Separate instances for different users or teams
-- **Testing different configurations**: Deploy with various auth modes or settings
+- **Control plane gateway deployment**: Deploy isolated gateways for managing targets
+- **Segment-based deployment**: Deploy gateways per network segment for blast radius limitation
+- **High availability**: Deploy multiple gateways for redundancy
+- **Multi-tenant setups**: Separate gateways for different teams or environments
+- **Testing configurations**: Deploy gateways with different target registries and capabilities
 
 ## Features
 

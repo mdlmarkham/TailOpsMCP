@@ -1,4 +1,4 @@
-# TailOpsMCP Security Advisory
+# TailOpsMCP Security Advisory (Control Plane Gateway)
 
 ## Current Security Limitations
 
@@ -6,44 +6,70 @@
 
 **Status:** Defense Layer 3 (Approval Gates) requires external implementation.
 
-**Impact:**
-- High-risk operations (`install_package`, `update_docker_container`, `update_system_packages`, etc.) are **DENIED by default**
-- Setting `SYSTEMMANAGER_ENABLE_APPROVAL=true` without a webhook will block all approval-required operations
-- The middleware will return an error: `"Approval webhook not configured"`
+**Impact (Control Plane Gateway):**
+- High-risk operations (`install_package`, `update_docker_container`, `update_system_packages`, etc.) are **DENIED by default** across all targets
+- Setting `SYSTEMMANAGER_ENABLE_APPROVAL=true` without a webhook will block all approval-required operations on all managed systems
+- The gateway middleware will return an error: `"Approval webhook not configured"`
+- Target-specific approval constraints in `targets.yaml` will be enforced
 
-**Workaround Options:**
+**Workaround Options (Gateway Architecture):**
 
 1. **Disable Approval Requirement (Not Recommended)**
    ```bash
-   # In /opt/systemmanager/.env
+   # In gateway environment configuration
    SYSTEMMANAGER_ENABLE_APPROVAL=false
    ```
-   This removes Layer 3 defense entirely. Only do this if you:
+   This removes Layer 3 defense entirely across all targets. Only do this if you:
    - Fully trust all token holders
-   - Have comprehensive audit logging enabled
-   - Monitor logs actively for suspicious activity
+   - Have comprehensive audit logging enabled on the gateway
+   - Monitor gateway logs actively for suspicious activity
+   - Use target-specific capability restrictions in `targets.yaml`
 
 2. **Implement External Approval Webhook**
    ```bash
-   # In /opt/systemmanager/.env
+   # In gateway environment configuration
    SYSTEMMANAGER_ENABLE_APPROVAL=true
    SYSTEMMANAGER_APPROVAL_WEBHOOK=https://your-approval-service.ts.net/approve
    ```
    
-   Your webhook must:
+   Your webhook must handle gateway-specific context:
    - Accept POST requests with JSON body:
      ```json
      {
        "tool": "install_package",
        "args": {"package_name": "nginx"},
+       "target": "web-server-01",
        "user": "user@tailnet.ts.net",
-       "risk_level": "CRITICAL"
+       "risk_level": "CRITICAL",
+       "gateway_id": "gateway-001"
      }
      ```
    - Return HTTP 200 with `{"approved": true}` or `{"approved": false, "reason": "..."}`
    - Implement your own approval logic (Slack notifications, PagerDuty, etc.)
+   - Consider target-specific approval policies
 
-3. **Use Scopes to Restrict Access**
+3. **Use Target-Specific Capability Restrictions**
+   ```yaml
+   # In targets.yaml - restrict capabilities per target
+   targets:
+     production-web:
+       id: "production-web"
+       capabilities:
+         - "system:read"
+         - "container:read"
+       # No write capabilities for production
+     
+     development-web:
+       id: "development-web"
+       capabilities:
+         - "system:read"
+         - "system:write"
+         - "container:read"
+         - "container:write"
+       # Allow write operations in development
+   ```
+
+4. **Use Scopes to Restrict Access**
    ```bash
    # Mint tokens without dangerous scopes
    python scripts/mint_token.py \

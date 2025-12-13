@@ -1,0 +1,222 @@
+version: "1.0"
+gateway:
+  id: "gateway-security-001"
+  name: "Security-Focused Gateway"
+  description: "Production-ready security configuration with approval gates and enhanced auditing"
+
+# Global security settings
+global_constraints:
+  default_audit_level: "high"
+  require_approval: true
+  max_concurrent_operations: 20
+  operation_timeout: 300
+  enable_dry_run: true
+
+targets:
+  # Production Web Server (Strict Controls)
+  prod-web-01:
+    id: "prod-web-01"
+    name: "Production Web Server 01"
+    type: "remote"
+    executor: "ssh"
+    description: "Production web server with strict security"
+    
+    connection:
+      host: "10.0.1.10"  # Production network
+      username: "prod"
+      key_path: "${SSH_KEY_PROD_WEB_01}"
+      port: 22
+      
+    capabilities:
+      # Read-only operations only for production
+      - "system:read"
+      - "container:read"
+      - "file:read"
+      - "network:read"
+      # Write operations require special approval
+      - "container:control:restricted"
+      - "file:write:restricted"
+      
+    constraints:
+      timeout: 60
+      concurrency: 3
+      audit_level: "high"
+      require_approval: true
+      approval_webhook: "${APPROVAL_WEBHOOK_PROD}"
+      maintenance_window: "02:00-04:00"
+      
+    metadata:
+      environment: "production"
+      security_level: "high"
+      owner: "security-team"
+      compliance: ["pci-dss", "hipaa"]
+
+  # Production Database (Highest Security)
+  prod-db-primary:
+    id: "prod-db-primary"
+    name: "Production Database Primary"
+    type: "remote"
+    executor: "ssh"
+    description: "Primary production database - highest security"
+    
+    connection:
+      host: "10.0.1.20"
+      username: "prod-dba"
+      key_path: "${SSH_KEY_PROD_DB_PRIMARY}"
+      port: 22
+      
+    capabilities:
+      # Very restricted capabilities for production database
+      - "system:read"
+      - "container:read"
+      - "database:read:restricted"
+      - "database:backup:restricted"
+      
+    constraints:
+      timeout: 120
+      concurrency: 1  # Single operation at a time
+      audit_level: "maximum"
+      require_approval: true
+      approval_webhook: "${APPROVAL_WEBHOOK_PROD}"
+      dual_approval: true  # Requires two approvals
+      maintenance_window: "01:00-03:00"
+      
+    metadata:
+      environment: "production"
+      security_level: "maximum"
+      owner: "dba-security-team"
+      compliance: ["pci-dss", "hipaa", "soc2"]
+
+  # Staging Environment (Medium Security)
+  staging-web-01:
+    id: "staging-web-01"
+    name: "Staging Web Server 01"
+    type: "remote"
+    executor: "ssh"
+    description: "Staging environment for testing"
+    
+    connection:
+      host: "10.0.2.10"  # Staging network
+      username: "stage"
+      key_path: "${SSH_KEY_STAGING_WEB_01}"
+      port: 22
+      
+    capabilities:
+      # More permissive for staging
+      - "system:read"
+      - "system:write"
+      - "container:read"
+      - "container:control"
+      - "file:read"
+      - "file:write"
+      - "network:read"
+      
+    constraints:
+      timeout: 45
+      concurrency: 5
+      audit_level: "medium"
+      require_approval: false  # No approval required for staging
+      
+    metadata:
+      environment: "staging"
+      security_level: "medium"
+      owner: "dev-team"
+
+  # Development Environment (Permissive)
+  dev-web-01:
+    id: "dev-web-01"
+    name: "Development Web Server 01"
+    type: "remote"
+    executor: "ssh"
+    description: "Development environment"
+    
+    connection:
+      host: "10.0.3.10"  # Development network
+      username: "dev"
+      key_path: "${SSH_KEY_DEV_WEB_01}"
+      port: 22
+      
+    capabilities:
+      # Full access for development
+      - "system:read"
+      - "system:write"
+      - "container:read"
+      - "container:control"
+      - "file:read"
+      - "file:write"
+      - "network:read"
+      - "network:control"
+      - "package:install"
+      - "service:control"
+      
+    constraints:
+      timeout: 30
+      concurrency: 10
+      audit_level: "basic"
+      require_approval: false  # No approval required for development
+      
+    metadata:
+      environment: "development"
+      security_level: "low"
+      owner: "dev-team"
+
+  # Security Monitoring Server
+  security-monitor:
+    id: "security-monitor"
+    name: "Security Monitoring Server"
+    type: "remote"
+    executor: "ssh"
+    description: "Central security monitoring and alerting"
+    
+    connection:
+      host: "10.0.1.100"
+      username: "secops"
+      key_path: "${SSH_KEY_SECURITY_MONITOR}"
+      port: 22
+      
+    capabilities:
+      # Security-focused capabilities
+      - "system:read"
+      - "container:read"
+      - "file:read"
+      - "logs:read"
+      - "security:scan"
+      - "monitoring:read"
+      - "audit:read"
+      
+    constraints:
+      timeout: 30
+      concurrency: 5
+      audit_level: "high"
+      require_approval: false  # Security operations are always allowed
+      
+    metadata:
+      environment: "production"
+      security_level: "high"
+      owner: "security-team"
+      compliance: ["pci-dss", "hipaa"]
+
+# Security policy overrides
+security_policies:
+  - name: "production-restrictions"
+    target_pattern: "prod-.*"
+    restrictions:
+      - no_root_operations: true
+      - no_dangerous_commands: true
+      - require_encryption: true
+      - limit_file_access: ["/etc", "/var/log", "/home/prod"]
+  
+  - name: "development-permissions"
+    target_pattern: "dev-.*"
+    permissions:
+      - allow_package_installation: true
+      - allow_service_restarts: true
+      - allow_file_modifications: true
+
+# Audit configuration
+audit_config:
+  level: "high"
+  retention_days: 365
+  alert_on_critical: true
+  encrypt_logs: true
+  external_storage: "s3://audit-logs"

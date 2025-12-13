@@ -1,53 +1,66 @@
-# TailOpsMCP Prompts
+# TailOpsMCP Prompts (Control Plane Gateway)
 
-TailOpsMCP includes pre-configured MCP prompts for common home lab management tasks. These prompts provide ready-to-use workflows that combine multiple tools into comprehensive operations.
+TailOpsMCP includes pre-configured MCP prompts for comprehensive multi-system management through the control plane gateway architecture. These prompts provide ready-to-use workflows that combine multiple tools into comprehensive operations across all managed targets.
 
-## Available Prompts
+## Control Plane Gateway Prompts
 
-### 🔒 Security Audit
-**Name:** `security_audit`  
-**Tags:** security, audit, homelab
+### 🔒 Multi-System Security Audit
+**Name:** `security_audit`
+**Tags:** security, audit, homelab, multi-system
 
-Performs a comprehensive security audit including:
-- System log analysis for authentication failures and suspicious activity
-- Docker container security review
-- Network security assessment
-- System health and resource usage
+Performs a comprehensive security audit across all managed targets including:
+- System log analysis for authentication failures and suspicious activity across all targets
+- Docker container security review on all systems
+- Network security assessment across the entire infrastructure
+- System health and resource usage monitoring
+- Centralized audit log analysis
 
-**Usage in Claude Desktop:**
+**Usage in Claude Desktop (Gateway Mode):**
 ```
-Use the security_audit prompt to check my home lab for security issues
+Use the security_audit prompt to check my entire infrastructure for security issues
+```
+
+**Target-Specific Usage:**
+```
+Use the security_audit prompt with target=web-server-01 to audit a specific system
 ```
 
 ---
 
-### 💚 Health Check
-**Name:** `health_check`  
-**Tags:** monitoring, health, homelab
+### 💚 Multi-System Health Check
+**Name:** `health_check`
+**Tags:** monitoring, health, homelab, multi-system
 
-Quick health check of all critical services:
-- System resource usage (CPU, memory, disk)
-- Docker container status
-- Network connectivity tests
-- Recent error detection
+Quick health check of all critical services across all managed targets:
+- System resource usage (CPU, memory, disk) across all systems
+- Docker container status on all targets
+- Network connectivity tests between systems
+- Recent error detection across the infrastructure
+- Target connectivity and availability monitoring
 
 **Usage:**
 ```
-Run the health_check prompt to see if everything is running smoothly
+Run the health_check prompt to see if everything is running smoothly across all systems
 ```
 
 ---
 
-### 🔧 Troubleshoot Container
-**Name:** `troubleshoot_container`  
-**Arguments:** `container_name` (required)  
-**Tags:** docker, troubleshooting, homelab
+### 🔧 Troubleshoot Container (Multi-Target)
+**Name:** `troubleshoot_container`
+**Arguments:** `container_name` (required), `target` (optional)
+**Tags:** docker, troubleshooting, homelab, multi-system
 
-Comprehensive Docker container troubleshooting workflow:
-- Container status and resource usage
-- AI-powered log analysis
-- Configuration review
-- Dependency and connectivity tests
+Comprehensive Docker container troubleshooting workflow across multiple targets:
+- Container status and resource usage on specified target(s)
+- AI-powered log analysis with cross-system context
+- Configuration review with target-specific considerations
+- Dependency and connectivity tests between systems
+- Multi-target container orchestration troubleshooting
+
+**Usage:**
+```
+Run the troubleshoot_container prompt for container=nginx on target=web-server-01
+```
 
 **Usage:**
 ```

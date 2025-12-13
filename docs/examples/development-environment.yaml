@@ -1,0 +1,237 @@
+version: "1.0"
+gateway:
+  id: "gateway-dev-001"
+  name: "Development Environment Gateway"
+  description: "Development environment with permissive access for testing and experimentation"
+
+# Development-specific global settings
+global_constraints:
+  default_audit_level: "basic"
+  require_approval: false  # No approval gates in development
+  max_concurrent_operations: 50
+  operation_timeout: 60
+  enable_dry_run: true
+
+targets:
+  # Development Web Server
+  dev-web-01:
+    id: "dev-web-01"
+    name: "Development Web Server 01"
+    type: "remote"
+    executor: "ssh"
+    description: "Primary development web server"
+    
+    connection:
+      host: "192.168.10.10"  # Development network
+      username: "dev"
+      key_path: "${SSH_KEY_DEV_WEB_01}"
+      port: 22
+      
+    capabilities:
+      # Full development capabilities
+      - "system:read"
+      - "system:write"
+      - "container:read"
+      - "container:control"
+      - "file:read"
+      - "file:write"
+      - "network:read"
+      - "network:control"
+      - "package:install"
+      - "service:control"
+      - "database:read"
+      - "database:write"
+      - "cache:read"
+      - "cache:control"
+      
+    constraints:
+      timeout: 30
+      concurrency: 15  # Higher concurrency for development
+      audit_level: "basic"
+      require_approval: false
+      
+    metadata:
+      environment: "development"
+      security_level: "low"
+      owner: "dev-team"
+      purpose: "web-application-development"
+
+  # Development Database
+  dev-db-01:
+    id: "dev-db-01"
+    name: "Development Database 01"
+    type: "remote"
+    executor: "ssh"
+    description: "Development database server"
+    
+    connection:
+      host: "192.168.10.20"
+      username: "dev"
+      key_path: "${SSH_KEY_DEV_DB_01}"
+      port: 22
+      
+    capabilities:
+      # Full database capabilities for development
+      - "system:read"
+      - "system:write"
+      - "container:read"
+      - "container:control"
+      - "file:read"
+      - "file:write"
+      - "database:read"
+      - "database:write"
+      - "database:backup"
+      - "database:restore"
+      
+    constraints:
+      timeout: 45
+      concurrency: 10
+      audit_level: "basic"
+      require_approval: false
+      
+    metadata:
+      environment: "development"
+      security_level: "low"
+      owner: "dev-team"
+      purpose: "database-development"
+
+  # Development Cache Server
+  dev-cache-01:
+    id: "dev-cache-01"
+    name: "Development Cache Server 01"
+    type: "remote"
+    executor: "ssh"
+    description: "Development Redis cache server"
+    
+    connection:
+      host: "192.168.10.30"
+      username: "dev"
+      key_path: "${SSH_KEY_DEV_CACHE_01}"
+      port: 22
+      
+    capabilities:
+      # Full cache capabilities
+      - "system:read"
+      - "system:write"
+      - "container:read"
+      - "container:control"
+      - "file:read"
+      - "file:write"
+      - "cache:read"
+      - "cache:control"
+      - "cache:flush"
+      
+    constraints:
+      timeout: 30
+      concurrency: 10
+      audit_level: "basic"
+      require_approval: false
+      
+    metadata:
+      environment: "development"
+      security_level: "low"
+      owner: "dev-team"
+      purpose: "cache-development"
+
+  # Development Monitoring
+  dev-monitor-01:
+    id: "dev-monitor-01"
+    name: "Development Monitoring Server"
+    type: "remote"
+    executor: "ssh"
+    description: "Development monitoring and logging"
+    
+    connection:
+      host: "192.168.10.40"
+      username: "dev"
+      key_path: "${SSH_KEY_DEV_MONITOR_01}"
+      port: 22
+      
+    capabilities:
+      # Monitoring capabilities
+      - "system:read"
+      - "container:read"
+      - "file:read"
+      - "logs:read"
+      - "monitoring:read"
+      - "metrics:read"
+      
+    constraints:
+      timeout: 30
+      concurrency: 5
+      audit_level: "basic"
+      require_approval: false
+      
+    metadata:
+      environment: "development"
+      security_level: "low"
+      owner: "dev-team"
+      purpose: "monitoring-development"
+
+  # Local Development Container
+  local-dev:
+    id: "local-dev"
+    name: "Local Development Container"
+    type: "local"
+    executor: "local"
+    description: "Local development environment"
+    
+    connection:
+      # Local connection - no remote credentials needed
+      host: "localhost"
+      
+    capabilities:
+      # Full local development capabilities
+      - "system:read"
+      - "system:write"
+      - "container:read"
+      - "container:control"
+      - "file:read"
+      - "file:write"
+      - "network:read"
+      - "network:control"
+      - "package:install"
+      - "service:control"
+      - "database:read"
+      - "database:write"
+      - "cache:read"
+      - "cache:control"
+      
+    constraints:
+      timeout: 30
+      concurrency: 20  # Very high concurrency for local development
+      audit_level: "basic"
+      require_approval: false
+      
+    metadata:
+      environment: "development"
+      security_level: "low"
+      owner: "developer"
+      purpose: "local-development"
+
+# Development-specific policies
+development_policies:
+  - name: "development-permissions"
+    target_pattern: ".*"
+    permissions:
+      - allow_package_installation: true
+      - allow_service_restarts: true
+      - allow_file_modifications: true
+      - allow_container_operations: true
+      - allow_database_operations: true
+      - allow_network_changes: true
+  
+  - name: "testing-workflows"
+    target_pattern: ".*"
+    workflows:
+      - automated_testing: true
+      - continuous_deployment: true
+      - environment_reset: true
+
+# Development-specific features
+development_features:
+  auto_discovery: true
+  self_healing: true
+  rapid_deployment: true
+  testing_integration: true
+  development_tools: true

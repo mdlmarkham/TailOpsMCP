@@ -1,17 +1,17 @@
-# Contributing to TailOpsMCP
+# Contributing to SystemManager
 
-Thank you for your interest in contributing to TailOpsMCP! We welcome contributions from the home lab community.
+Thank you for your interest in contributing to SystemManager! We welcome contributions from the infrastructure management community.
 
 ## 🎯 Ways to Contribute
 
 ### 1. Report Bugs
-- Check [existing issues](https://github.com/mdlmarkham/TailOpsMCP/issues) first
+- Check [existing issues](https://github.com/mdlmarkham/SystemManager/issues) first
 - Use the bug report template
 - Include system details (OS, Python version, Docker version)
 - Provide logs: `journalctl -u systemmanager-mcp -n 100`
 
 ### 2. Suggest Features
-- Open a [feature request](https://github.com/mdlmarkham/TailOpsMCP/issues/new)
+- Open a [feature request](https://github.com/mdlmarkham/SystemManager/issues/new)
 - Explain the use case and benefit
 - Link to examples if applicable
 - Consider contributing the implementation!
@@ -30,7 +30,7 @@ Thank you for your interest in contributing to TailOpsMCP! We welcome contributi
 ### 5. Share Your Setup
 - Write blog posts or create videos
 - Share your configuration and automations
-- Join discussions in [GitHub Discussions](https://github.com/mdlmarkham/TailOpsMCP/discussions)
+- Join discussions in [GitHub Discussions](https://github.com/mdlmarkham/SystemManager/discussions)
 
 ---
 

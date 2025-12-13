@@ -1,6 +1,6 @@
 # Proxmox Multi-Container Quick Start
 
-> **One-page reference for deploying TailOpsMCP to multiple LXC containers**
+> **One-page reference for deploying SystemManager control plane gateways to multiple LXC containers**
 
 ## Installation in 3 Steps
 

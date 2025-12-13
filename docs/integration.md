@@ -1,6 +1,6 @@
-# TailOpsMCP Server Integration & Deployment Guide
+# SystemManager Control Plane Gateway Integration & Deployment Guide
 
-This guide explains how to deploy the MCP server across multiple hosts with a Tailscale-first access model, token fallback, and recommended security configuration.
+This guide explains how to deploy SystemManager control plane gateways across multiple hosts with a Tailscale-first access model, token fallback, and recommended security configuration.
 
 ## Overview
 - Primary access: Tailscale Services (recommended).
@@ -20,7 +20,7 @@ This guide explains how to deploy the MCP server across multiple hosts with a Ta
 
 1. Clone and install
 ```bash
-git clone https://github.com/mdlmarkham/TailOpsMCP.git /opt/systemmanager
+git clone https://github.com/mdlmarkham/SystemManager.git /opt/systemmanager
 cd /opt/systemmanager
 python -m venv .venv
 . .venv/bin/activate
@@ -40,7 +40,7 @@ SYSTEMMANAGER_MAX_OUTPUT_BYTES=65536
 3. Systemd service (example)
 ```
 [Unit]
-Description=TailOpsMCP Server
+Description=SystemManager Control Plane Gateway
 After=network.target
 
 [Service]

@@ -2,7 +2,7 @@
 
 ## Overview
 
-TailOpsMCP now supports **true TSIDP OIDC authentication**! This uses TSIDP as a standard OpenID Connect provider, giving you:
+SystemManager now supports **true TSIDP OIDC authentication**! This uses TSIDP as a standard OpenID Connect provider, giving you:
 
 - ✅ **Zero-trust SSO** via Tailscale identity
 - ✅ **No manual token management**
@@ -18,7 +18,7 @@ Open `https://tsidp.tailf9480.ts.net` and create a new OIDC client:
 
 | Field | Value |
 |-------|-------|
-| Client Name | `TailOpsMCP` |
+| Client Name | `SystemManager` |
 | Redirect URI | `http://dev1.tailf9480.ts.net:8080/auth/callback` |
 | Grant Types | `authorization_code`, `refresh_token` |
 | Scopes | `openid`, `email`, `profile` |

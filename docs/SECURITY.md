@@ -1,121 +1,183 @@
-# Security Model for Tailnet Deployments
+# Security Model for Control Plane Gateway
 
 ## Overview
 
 # Security Architecture
 
-TailOpsMCP implements **defense-in-depth** security for tailnet deployments:
+SystemManager implements **defense-in-depth** security for control plane gateway deployments:
 
-1. **Network Layer**: Tailscale ACLs control WHO can reach the server
+1. **Network Layer**: Tailscale ACLs control WHO can reach the gateway
 2. **Application Layer**: Bearer tokens + scopes control WHAT they can do
-3. **Audit Layer**: Comprehensive logging tracks WHO did WHAT
+3. **Policy Gate**: Capability-based authorization prevents "LLM imagination" risk
+4. **Target Registry**: Explicit allowlisting of managed systems
+5. **Audit Layer**: Comprehensive logging tracks WHO did WHAT WHERE
 
-**Critical**: Tailnet membership ≠ root access. Both layers are required.
+**Critical**: Gateway access ≠ target access. All operations are explicitly authorized.
 
-## Trust Model
+## Control Plane Gateway Trust Model
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Threat: Compromised Tailnet Node or Leaked Tailscale Key   │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Defense Layer 1: Tailscale ACLs (Network-Level)            │
-│ - Tag-based access: only tag:systemmanager-client can      │
-│   connect to svc:systemmanager-mcp                          │
-│ - Least privilege: minimize who can tag devices            │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼ (if attacker gets network access)
-┌─────────────────────────────────────────────────────────────┐
-│ Defense Layer 2: Application Auth (Bearer Tokens + Scopes) │
-│ - Valid token required for all operations                  │
-│ - Scope-based RBAC: readonly vs admin vs critical          │
-│ - Token expiry enforced                                    │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼ (if attacker gets token)
-┌─────────────────────────────────────────────────────────────┐
-│ Defense Layer 3: Approval Gates (High-Risk Operations)     │
-│ ⚠️  REQUIRES EXTERNAL WEBHOOK - NOT IMPLEMENTED BY DEFAULT │
-│ - Set SYSTEMMANAGER_APPROVAL_WEBHOOK to enable             │
-│ - Without webhook: approval-required ops are DENIED         │
-│ - Examples: install_package, update_docker_container       │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼ (all operations)
-┌─────────────────────────────────────────────────────────────┐
-│ Defense Layer 4: Audit Trail (Lateral Movement Detection)  │
-│ - Every tool invocation logged with:                       │
-│   * Tailscale user + device + tags                         │
-│   * Scopes used, risk level, approval status               │
-│ - Enables forensics and alerting                           │
-└─────────────────────────────────────────────────────────────┘
+### **One Trusted Node Per Network Segment**
+
+The control plane gateway architecture reduces operational overhead by deploying **one trusted node per network segment** rather than agents on every target.
+
+```mermaid
+graph TD
+    A[Threat: Compromised Gateway] -- Network Access --> B[Tailscale ACLs]
+    B -- Application Access --> C[Bearer Tokens + Scopes]
+    C -- Operation Authorization --> D[Policy Gate]
+    D -- Target Validation --> E[Target Registry]
+    E -- Capability Enforcement --> F[Execution Layer]
+    F -- All Operations --> G[Audit Trail]
+    
+    H[Threat: LLM Imagination] -- Prevented by --> I[Capability Allowlisting]
+    I -- Explicit Authorization --> J[Target Registry]
+    
+    K[Benefit: Reduced Blast Radius] -- Gateway Isolation --> L[Segment-Per-Gateway]
+    L -- Target Separation --> M[Limited Impact]
 ```
 
-## Security Assumptions
+### **Security Benefits of Control Plane Gateway**
 
-### ⚠️ CRITICAL: Tailscale is MANDATORY
+#### **Reduced Blast Radius**
+- **Segment Isolation**: Compromise affects only gateway, not all targets
+- **Target Separation**: Gateways manage specific target groups
+- **Network Segmentation**: Gateways deployed per network segment
 
-**TailOpsMCP does NOT implement TLS/HTTPS.** The server runs plain HTTP on port 8080.
+#### **Capability-Based Authorization**
+- **Explicit Allowlisting**: Only explicitly configured operations are permitted
+- **Parameter Validation**: Operation parameters validated against constraints
+- **LLM Imagination Prevention**: Prevents AI from "imagining" unauthorized operations
 
-- ✅ **Safe**: Running inside Tailscale (encrypted tunnel, ACL-protected)
-- ❌ **UNSAFE**: Exposing port 8080 to public internet or untrusted networks
-- ❌ **UNSAFE**: Port forwarding 8080 through a firewall
-- ❌ **UNSAFE**: Running on a network with untrusted devices
+#### **Operational Security**
+- **Single Point of Control**: Updates and configuration managed centrally
+- **Audit Centralization**: All operations logged through gateway
+- **Secrets Management**: Credentials stored only on gateway
 
-**All authentication tokens are sent in plaintext HTTP headers.** Without Tailscale's encryption, tokens can be intercepted.
+## Control Plane Gateway Security Assumptions
 
-**Do not bypass this requirement.** If you cannot use Tailscale, you MUST:
-1. Place TailOpsMCP behind a TLS-terminating reverse proxy (nginx, Caddy, Traefik)
-2. Configure the proxy to add TLS and forward to localhost:8080
-3. Never expose port 8080 directly
+### ⚠️ CRITICAL: Gateway Isolation is MANDATORY
 
-### What Tailscale Provides ✅
-- **Encrypted transport**: TLS-equivalent encryption between nodes (WireGuard-based)
-- **Network segmentation**: ACLs limit which nodes can connect
-- **Identity-aware networking**: Know WHO is connecting
-- **Service discovery**: Stable DNS names via Tailscale Services
+**SystemManager gateways must be deployed in isolated environments** (Proxmox LXC containers, dedicated VMs, or secure jump hosts).
 
-### What Tailscale Does NOT Provide ❌
-- **Application authorization**: Tailnet member ≠ permitted to do X
-- **Audit logging**: Network logs ≠ "who called start_container"
-- **Approval workflows**: Network access ≠ approval to destructive ops
-- **Secret management**: Tailscale key ≠ Docker root access
+- ✅ **Safe**: Gateway running in isolated LXC container with Tailscale
+- ❌ **UNSAFE**: Gateway running on production target systems
+- ❌ **UNSAFE**: Gateway with broad network access to all targets
+- ❌ **UNSAFE**: Gateway without proper credential isolation
 
-## Scope-Based Authorization
+### **Gateway-to-Target Connectivity Security**
 
-### Scope Hierarchy
+#### **SSH Target Security**
+- ✅ **Safe**: SSH keys stored securely on gateway with limited permissions
+- ❌ **UNSAFE**: SSH keys with root access to all targets
+- ❌ **UNSAFE**: SSH keys stored insecurely or shared across gateways
 
+#### **Docker Target Security**
+- ✅ **Safe**: Docker socket access with limited container capabilities
+- ❌ **UNSAFE**: Docker socket with full root-equivalent access
+- ❌ **UNSAFE**: Docker API tokens with broad permissions
+
+#### **HTTP Target Security**
+- ✅ **Safe**: API tokens with least-privilege scopes
+- ❌ **UNSAFE**: API tokens with administrative permissions
+- ❌ **UNSAFE**: API tokens stored in plaintext configuration
+
+### **Policy Gate Security Controls**
+
+#### **Capability Allowlisting**
+- ✅ **Safe**: Only explicitly configured capabilities are permitted
+- ❌ **UNSAFE**: Broad capabilities that allow "LLM imagination" risk
+- ❌ **UNSAFE**: Capabilities without parameter validation
+
+#### **Target Registry Validation**
+- ✅ **Safe**: Targets explicitly defined in registry with constraints
+- ❌ **UNSAFE**: Dynamic target discovery without validation
+- ❌ **UNSAFE**: Targets without capability restrictions
+
+### **Multi-Gateway Security Benefits**
+
+#### **Segment Isolation**
+- **Reduced Blast Radius**: Compromise affects only gateway segment
+- **Target Separation**: Gateways manage specific target groups
+- **Network Segmentation**: Gateways deployed per network segment
+
+#### **Redundancy Security**
+- **Failover Capability**: Multiple gateways can manage critical targets
+- **Load Distribution**: Operations spread across gateways
+- **Maintenance Isolation**: Update gateways without affecting all targets
+
+## Policy Gate & Capability-Based Authorization
+
+### **Capability-Based Authorization Model**
+
+The Policy Gate enforces security through explicit capability allowlisting, preventing "LLM imagination" risk where AI assistants might attempt unauthorized operations.
+
+#### **Target Registry Capabilities**
+
+Each target in the registry defines explicit capabilities:
+
+```yaml
+# Example target with limited capabilities
+web-server-01:
+  id: "web-server-01"
+  capabilities:
+    - "system:read"      # View system metrics
+    - "network:read"     # Check network status
+    - "container:read"   # List containers
+  constraints:
+    sudo_policy: "none"  # No sudo access
+
+# Example target with broader capabilities
+docker-host-01:
+  id: "docker-host-01"
+  capabilities:
+    - "system:read"
+    - "container:read"
+    - "container:control"  # Start/stop containers
+    - "stack:deploy"       # Deploy Docker stacks
+  constraints:
+    sudo_policy: "limited"  # Limited sudo access
 ```
-admin                          # Full access (use sparingly!)
-├── system:admin              # Install packages, update system
-├── docker:admin              # Pull images, manage Docker
-├── container:admin           # Update containers
-│   └── container:write       # Start/stop containers
-│       └── container:read    # List containers, view logs
-├── file:write                # Write files (not implemented)
-│   └── file:read            # Read files
-├── network:diag              # Ping, DNS, port scans
-│   └── network:read          # View interfaces, connections
-└── system:read               # View metrics, processes
 
-readonly                       # All read-only scopes
-├── system:read
-├── network:read
-├── container:read
-└── file:read
+#### **Policy Gate Enforcement**
+
+```python
+# Policy Gate validates every operation
+await policy_gate.authorize(
+    operation="restart_container",
+    target="docker-host-01",
+    tier="control",
+    parameters={"container": "nginx"}
+)
+
+# Authorization checks:
+# 1. Target exists in registry
+# 2. Target has required capability
+# 3. Operation parameters are valid
+# 4. User has appropriate scopes
+# 5. Operation is within constraints
 ```
 
-### Tool Risk Levels
+### **Security Benefits**
 
-| Risk Level | Examples | Requires Approval |
-|------------|----------|-------------------|
-| **low** | get_system_status, list_containers | No |
-| **moderate** | ping_host, dns_lookup | No |
-| **high** | manage_container, file_operations | No (but scoped) |
-| **critical** | install_package, pull_docker_image | **Yes** |
+#### **LLM Imagination Prevention**
+- **Explicit Allowlisting**: AI can only perform explicitly configured operations
+- **Parameter Validation**: Operation parameters validated against constraints
+- **Target Isolation**: Operations limited to specific targets
+
+#### **Defense in Depth**
+- **Network Layer**: Tailscale ACLs control gateway access
+- **Application Layer**: Bearer tokens control user access
+- **Policy Layer**: Capability allowlisting controls operation access
+- **Target Layer**: Target-specific constraints limit impact
+
+### **Tool Risk Levels with Policy Gate**
+
+| Risk Level | Examples | Policy Gate Controls |
+|------------|----------|---------------------|
+| **low** | get_system_status, list_containers | Target capability validation |
+| **moderate** | ping_host, dns_lookup | Network access validation |
+| **high** | manage_container, file_operations | Capability + parameter validation |
+| **critical** | install_package, pull_docker_image | Multi-layer approval + validation |
 
 ## Configuration
 
@@ -245,37 +307,61 @@ Combine application audit logs with Tailscale network logs:
    - Multiple auth failures from same node
    - Unusual source node for specific tools
 
-## Deployment Checklist
+## Control Plane Gateway Deployment Checklist
 
-### Minimum Security (Development)
+### **Gateway Deployment Security**
 
-- [x] Deploy behind Tailscale (private network)
-- [x] Use Tailscale ACLs to limit access
+#### **Minimum Security (Development)**
+
+- [x] Deploy gateway in isolated LXC container
+- [x] Configure Tailscale ACLs for gateway access
+- [x] Define target registry with limited capabilities
 - [ ] Use `readonly` scope for monitoring tools
+- [ ] Configure target-specific constraints
 
-### Recommended Security (Production)
+#### **Recommended Security (Production)**
 
 - [x] All of minimum security
+- [ ] Deploy multiple gateways per network segment
+- [ ] Configure overlapping target sets for redundancy
 - [ ] Set `SYSTEMMANAGER_REQUIRE_AUTH=true`
 - [ ] Generate scoped tokens with short TTLs
-- [ ] Tag server with `tag:systemmanager-server`
+- [ ] Tag gateway with `tag:systemmanager-gateway`
 - [ ] Only allow `tag:systemmanager-client` to connect
-- [ ] Monitor audit logs daily
-- [ ] Rotate tokens monthly
+- [ ] Monitor gateway audit logs daily
+- [ ] Rotate gateway tokens monthly
+- [ ] Validate target registry configuration regularly
 
-### Maximum Security (Critical Infrastructure)
+#### **Maximum Security (Critical Infrastructure)**
 
 - [x] All of recommended security
-- [ ] Set `SYSTEMMANAGER_ENABLE_APPROVAL=true`
-- [ ] Implement approval webhook for critical ops
-- [ ] Use separate tokens per agent/user
-- [ ] Token TTL ≤ 24 hours
-- [ ] Send audit logs to SIEM
-- [ ] Alert on critical operations
-- [ ] Alert on authorization failures
+- [ ] Deploy gateways with segment isolation
+- [ ] Implement approval webhook for critical operations
+- [ ] Use separate tokens per gateway segment
+- [ ] Token TTL ≤ 24 hours for critical gateways
+- [ ] Send gateway audit logs to SIEM
+- [ ] Alert on gateway authorization failures
 - [ ] Correlate with Tailscale flow logs
-- [ ] Review audit trail weekly
-- [ ] Implement "break glass" procedure for emergencies
+- [ ] Review gateway audit trail weekly
+- [ ] Implement "break glass" procedure for gateway emergencies
+
+### **Target Registry Security**
+
+#### **Capability Allowlisting Best Practices**
+
+- [ ] Define explicit capabilities per target
+- [ ] Use least-privilege principle for capabilities
+- [ ] Validate operation parameters against constraints
+- [ ] Regularly review and update target capabilities
+- [ ] Test capability enforcement with dry-run mode
+
+#### **Target Connectivity Security**
+
+- [ ] Store SSH keys securely with limited permissions
+- [ ] Use Docker socket access with container constraints
+- [ ] Configure API tokens with least-privilege scopes
+- [ ] Rotate target credentials regularly
+- [ ] Monitor target connectivity health
 
 ## Threat Scenarios
 

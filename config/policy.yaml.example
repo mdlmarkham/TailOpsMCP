@@ -1,0 +1,213 @@
+# Enhanced Policy Configuration Example
+
+This file demonstrates the enhanced policy system with comprehensive input validation
+and allowlisting capabilities.
+
+## Configuration
+
+```yaml
+# Enhanced Policy Configuration
+# Location: /etc/systemmanager/policy.yaml
+
+default_validation_mode: "strict"  # strict, warn, or permissive
+enable_dry_run: true
+
+# Maintenance windows (optional)
+maintenance_windows:
+  - start: "02:00"
+    end: "04:00"
+    days: ["saturday", "sunday"]
+
+# Lockout periods (optional)
+lockout_periods: []
+
+# Policy Rules
+rules:
+  # Docker Container Operations
+  - name: "docker_container_operations"
+    description: "Docker container management with enhanced validation"
+    target_pattern: ".*"
+    allowed_operations:
+      - "start"
+      - "stop"
+      - "restart"
+      - "inspect"
+    required_capabilities:
+      - "container:write"
+    parameter_constraints:
+      container_name:
+        type: "string"
+        max_length: 256
+        validation_type: "container_name"
+        allowlist_source: "list_containers"
+        pattern: "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+      timeout:
+        type: "int"
+        min: 1
+        max: 300
+        validation_type: "timeout"
+    operation_tier: "control"
+    requires_approval: false
+    dry_run_supported: true
+
+  # Stack Operations
+  - name: "stack_operations"
+    description: "Docker Compose stack management with enhanced validation"
+    target_pattern: ".*"
+    allowed_operations:
+      - "deploy"
+      - "pull"
+      - "restart"
+    required_capabilities:
+      - "stack:write"
+    parameter_constraints:
+      stack_name:
+        type: "string"
+        max_length: 64
+        validation_type: "stack_name"
+        allowlist_source: "list_stacks"
+        pattern: "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$"
+      timeout:
+        type: "int"
+        min: 1
+        max: 600
+        validation_type: "timeout"
+    operation_tier: "control"
+    requires_approval: false
+    dry_run_supported: true
+
+  # Service Operations
+  - name: "service_operations"
+    description: "System service management with enhanced validation"
+    target_pattern: ".*"
+    allowed_operations:
+      - "restart"
+      - "status"
+    required_capabilities:
+      - "system:write"
+    parameter_constraints:
+      service_name:
+        type: "string"
+        max_length: 64
+        validation_type: "service_name"
+        allowlist_source: "list_services"
+        pattern: "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$"
+      timeout:
+        type: "int"
+        min: 1
+        max: 300
+        validation_type: "timeout"
+    operation_tier: "control"
+    requires_approval: false
+    dry_run_supported: true
+
+  # File Operations
+  - name: "file_operations"
+    description: "File system operations with enhanced validation"
+    target_pattern: ".*"
+    allowed_operations:
+      - "read"
+      - "list"
+    required_capabilities:
+      - "file:read"
+    parameter_constraints:
+      path:
+        type: "string"
+        max_length: 1024
+        validation_type: "file_path"
+        pattern: "^[a-zA-Z0-9./_-]+$"
+    operation_tier: "observe"
+    requires_approval: false
+    dry_run_supported: true
+
+  # Network Operations
+  - name: "network_operations"
+    description: "Network operations with enhanced validation"
+    target_pattern: ".*"
+    allowed_operations:
+      - "test"
+      - "scan"
+    required_capabilities:
+      - "network:read"
+    parameter_constraints:
+      host:
+        type: "string"
+        max_length: 253
+        validation_type: "hostname"
+        pattern: "^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+      port:
+        type: "int"
+        min: 1
+        max: 65535
+        validation_type: "port_number"
+    operation_tier: "observe"
+    requires_approval: false
+    dry_run_supported: true
+
+  # Administrative Operations
+  - name: "admin_operations"
+    description: "Administrative operations requiring approval"
+    target_pattern: ".*"
+    allowed_operations:
+      - "shutdown"
+      - "reboot"
+      - "update"
+    required_capabilities:
+      - "system:admin"
+    parameter_constraints:
+      reason:
+        type: "string"
+        max_length: 500
+        validation_type: "string"
+    operation_tier: "admin"
+    requires_approval: true
+    dry_run_supported: false
+```
+
+## Usage Notes
+
+1. **Validation Modes**:
+   - `strict`: Reject invalid operations
+   - `warn`: Warn but allow invalid operations
+   - `permissive`: Allow with minimal validation
+
+2. **Allowlist Sources**:
+   - `list_services`: Discovers system services
+   - `list_containers`: Discovers Docker containers
+   - `list_stacks`: Discovers Compose stacks
+   - `list_ports`: Discovers open ports
+
+3. **Security Features**:
+   - Command injection prevention
+   - Directory traversal protection
+   - Typo hazard prevention via allowlists
+   - Comprehensive audit logging
+
+4. **Performance**:
+   - Allowlist caching (5-minute TTL)
+   - Dynamic discovery only when needed
+   - Efficient pattern matching
+
+## Environment Variables
+
+Set these environment variables to configure the system:
+
+```bash
+# Policy configuration file
+SYSTEMMANAGER_POLICY_CONFIG=/etc/systemmanager/policy.yaml
+
+# Validation mode
+SYSTEMMANAGER_POLICY_MODE=strict
+
+# Enable dry-run
+SYSTEMMANAGER_ENABLE_DRY_RUN=true
+```
+
+## Integration
+
+This configuration works with:
+- Policy Gate authorization layer
+- Target Registry for capability validation
+- Audit Logger for compliance tracking
+- Discovery Tools for allowlist population
+- Input Validator for parameter validation

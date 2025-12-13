@@ -1,9 +1,9 @@
-# TailOpsMCP
+# SystemManager Control Plane Gateway
 
-🛰️ **TailOpsMCP — A secure MCP control surface for Tailscale-connected homelabs**
+🛰️ **SystemManager — A secure control plane gateway for managing distributed infrastructure**
 
-> **Secure remote monitoring and AI-assisted operations for your homelab over Tailscale — powered by MCP**  
-> Model Context Protocol (MCP) server for managing Proxmox LXC containers, Docker stacks, and system administration - all through natural language with AI assistants.
+> **Centralized management of multiple targets through a single control plane gateway — powered by MCP**
+> Model Context Protocol (MCP) server that operates as a control plane gateway, managing SSH, Docker, and HTTP targets through capability-based authorization and policy enforcement.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -13,16 +13,24 @@
 
 ---
 
-## 🎯 What is TailOpsMCP?
+## 🎯 What is SystemManager?
 
-TailOpsMCP is an MCP (Model Context Protocol) server that lets you manage your home lab infrastructure using AI assistants like Claude, ChatGPT, or any MCP-compatible client. Instead of remembering complex commands, just ask:
+SystemManager is a control plane gateway that centralizes management of distributed infrastructure through AI assistants like Claude, ChatGPT, or any MCP-compatible client. Instead of deploying agents on every node, you deploy a single gateway that manages multiple targets through SSH, Docker, and HTTP connections.
 
-- *"Deploy my monitoring stack from GitHub"*
-- *"Analyze the auth logs for security issues"*
-- *"What's using all the CPU on dev1?"*
-- *"Update all packages on the server"*
+**Key Operational Model:**
+- **Control Plane Gateway**: Single trusted node manages multiple targets
+- **Target Registry**: Central configuration of managed systems
+- **Policy Gate**: Capability-based authorization prevents "LLM imagination" risk
+- **Execution Layer**: Orchestrates commands across different target types
 
-Perfect for **home lab enthusiasts**, **self-hosters**, and **DevOps engineers** running Proxmox, Docker, and Tailscale.
+Instead of remembering complex commands, just ask:
+
+- *"Deploy my monitoring stack to all web servers"*
+- *"Analyze security logs across the production cluster"*
+- *"What's using all the CPU across all database nodes?"*
+- *"Update packages on all staging servers"*
+
+Perfect for **infrastructure teams**, **SREs**, and **DevOps engineers** managing distributed systems across multiple environments.
 
 ---
 
@@ -30,19 +38,23 @@ Perfect for **home lab enthusiasts**, **self-hosters**, and **DevOps engineers**
 
 ### 🚀 **Current Capabilities**
 
-- ✅ **Smart Inventory Management** - Auto-detect and track applications running on LXC (Jellyfin, Pi-hole, Ollama, PostgreSQL, etc.)
-- ✅ **Multi-System Support** - Identify systems by hostname + container ID for managing multiple LXCs with one AI
-- ✅ **MCP Prompts** - Pre-configured workflows for common tasks (security audit, health check, troubleshooting, inventory setup)
-- ✅ **Docker Compose Stack Management** - Deploy GitOps-style stacks from repos (like Portainer/Komodo)
-- ✅ **Proxmox LXC Detection** - Automatic virtualization environment detection
-- ✅ **AI-Powered Log Analysis** - Root cause detection with actionable recommendations
-- ✅ **System Monitoring** - CPU, memory, disk, network with historical metrics
-- ✅ **Docker Container Management** - Start/stop/restart/logs for all containers
-- ✅ **Systemd Service Management** - Control system services
-- ✅ **Package Management** - Update systems, install packages
-- ✅ **Security Auditing** - AI-powered security log analysis
-- ✅ **File Operations** - Read, search, and analyze system files
-- ✅ **Network Diagnostics** - Interface status, connectivity tests
+#### **Control Plane Architecture**
+- ✅ **Target Registry** - Central configuration of SSH, Docker, and HTTP targets
+- ✅ **Policy Gate** - Capability-based authorization with parameter validation
+- ✅ **Execution Layer** - Orchestrates commands across multiple target types
+- ✅ **Multi-Target Operations** - Execute commands across groups of targets
+
+#### **Target Management**
+- ✅ **SSH Target Support** - Manage remote systems via SSH connections
+- ✅ **Docker Socket Access** - Control Docker hosts through socket connections
+- ✅ **HTTP API Integration** - Interact with web services and APIs
+- ✅ **Local System Management** - Manage the gateway host itself
+
+#### **Security & Operations**
+- ✅ **Capability-Based Authorization** - Prevent "LLM imagination" risk through explicit allowlisting
+- ✅ **Parameter Validation** - Enforce constraints on operation parameters
+- ✅ **Audit Logging** - Comprehensive tracking of all gateway operations
+- ✅ **Multi-Gateway Support** - Redundant gateways for high availability
 
 ### 🔒 **Security First**
 
@@ -67,234 +79,321 @@ Perfect for **home lab enthusiasts**, **self-hosters**, and **DevOps engineers**
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Control Plane Gateway Architecture
 
+```mermaid
+graph TD
+    A[AI Assistant] -- MCP Protocol --> B[Control Plane Gateway]
+    B -- Policy Gate --> C[Target Registry]
+    C -- Execution Layer --> D[SSH Targets]
+    C -- Execution Layer --> E[Docker Targets]
+    C -- Execution Layer --> F[HTTP Targets]
+    C -- Execution Layer --> G[Local System]
+    
+    B -- Audit Logging --> H[Audit Trail]
+    B -- Capability Auth --> I[Security Policy]
+    
+    subgraph "Network Segments"
+        J[Segment A Gateway] -- Manages --> K[Segment A Targets]
+        L[Segment B Gateway] -- Manages --> M[Segment B Targets]
+    end
 ```
-┌─────────────────────────────────────────────────┐
-│  AI Assistant (Claude/ChatGPT/etc)             │
-│  - Natural language commands                   │
-│  - Context-aware suggestions                   │
-└──────────────────┬──────────────────────────────┘
-                   │ MCP Protocol
-┌──────────────────▼──────────────────────────────┐
-│  TailOpsMCP MCP Server                          │
-│  ┌──────────────────────────────────────────┐  │
-│  │ OAuth/OIDC (Tailscale Identity)         │  │
-│  └──────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────┐  │
-│  │ AI-Powered Analysis                      │  │
-│  │ - Log analysis with root cause detection│  │
-│  │ - Security auditing                      │  │
-│  │ - Performance recommendations            │  │
-│  └──────────────────────────────────────────┘  │
-└──────────────────┬──────────────────────────────┘
-                   │
-    ┌──────────────┼──────────────┬──────────────┐
-    │              │              │              │
-┌───▼────┐  ┌─────▼─────┐  ┌────▼─────┐  ┌────▼─────┐
-│Proxmox │  │  Docker   │  │ Systemd  │  │Tailscale │
-│  LXC   │  │ Compose   │  │ Services │  │  Network │
-└────────┘  └───────────┘  └──────────┘  └──────────┘
-```
+
+### **Architecture Overview**
+
+**Control Plane Gateway Model:**
+- **Single Gateway**: One trusted node manages multiple targets
+- **Target Registry**: Central configuration of managed systems
+- **Policy Enforcement**: Capability-based authorization prevents unauthorized operations
+- **Execution Orchestration**: Commands routed to appropriate targets
+
+**Security Benefits:**
+- **Reduced Blast Radius**: Compromise affects only gateway, not all targets
+- **Capability Allowlisting**: Explicit authorization prevents "LLM imagination" risk
+- **Segment Isolation**: Gateways can be deployed per network segment
+- **Audit Trail**: Comprehensive logging of all gateway operations
+
+**Operational Model:**
+- **Gateway Deployment**: Typically runs in Proxmox LXC containers for isolation
+- **Target Connectivity**: SSH keys, Docker sockets, HTTP APIs for target access
+- **Redundancy**: Multiple gateways can manage overlapping target sets
+- **Maintenance**: Single point of control for updates and configuration
 
 ---
 
 ## 🚀 Quick Start
 
-### Method 1: Proxmox LXC (Recommended)
+### **Control Plane Gateway Deployment**
 
-Use the automated Proxmox installer script (inspired by [tteck's scripts](https://community-scripts.github.io/ProxmoxVE/)):
+#### **Step 1: Deploy Gateway Container**
+
+Deploy the control plane gateway in a Proxmox LXC container for isolation:
 
 ```bash
-bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/ct/build.func)"
+# Automated Proxmox installer (recommended)
+bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/ct/build.func)"
 ```
 
-This will:
-- Create a Debian 12 LXC container (2GB RAM, 2 CPU cores, 4GB disk)
-- Install Python 3.12, Docker, and all dependencies
-- Walk you through Tailscale OAuth setup
-- Configure and start the systemd service
-- Provide complete installation summary
+This creates an isolated gateway container with:
+- Debian 12 LXC (2GB RAM, 2 CPU cores, 4GB disk)
+- Python 3.12 and all dependencies
+- Tailscale OAuth authentication
+- Systemd service configuration
 
-### Method 1b: Proxmox Multi-Container (Deploy to Multiple LXCs)
+#### **Step 2: Configure Target Registry**
 
-Deploy TailOpsMCP to multiple LXC containers from your Proxmox host in a single operation:
+Create your [`targets.yaml`](targets.yaml:1) configuration file:
+
+```yaml
+version: "1.0"
+targets:
+  # Local gateway management
+  local:
+    id: "local"
+    type: "local"
+    executor: "local"
+    capabilities:
+      - "system:read"
+      - "container:read"
+      - "network:read"
+
+  # SSH target example
+  web-server-01:
+    id: "web-server-01"
+    type: "remote"
+    executor: "ssh"
+    connection:
+      host: "192.168.1.100"
+      username: "admin"
+      key_path: "${SSH_KEY_WEB_SERVER_01}"
+    capabilities:
+      - "system:read"
+      - "container:read"
+```
+
+#### **Step 3: Connect AI Assistant**
+
+Configure your MCP-compatible AI assistant to connect to the gateway:
+
+```json
+{
+  "mcpServers": {
+    "systemmanager": {
+      "command": "python",
+      "args": ["-m", "src.mcp_server"],
+      "env": {
+        "SYSTEMMANAGER_TARGETS_CONFIG": "/path/to/targets.yaml"
+      }
+    }
+  }
+}
+```
+
+### **Multi-Gateway Deployment**
+
+For redundancy and segment isolation, deploy multiple gateways:
 
 ```bash
-# On your Proxmox host
-curl -fsSL https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/main/scripts/install/install-proxmox-multi.sh -o install-proxmox-multi.sh
-chmod +x install-proxmox-multi.sh
-
-# Quick deploy to existing containers
+# Deploy to multiple containers for redundancy
 ./install-proxmox-multi.sh --containers 101,102,103 --auth token
-
-# Or use a configuration file for complex setups
-wget https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/main/scripts/install/templates/proxmox-multi.conf
-nano proxmox-multi.conf  # Edit configuration
-./install-proxmox-multi.sh --config proxmox-multi.conf
 ```
 
-**Features:**
-- ✅ Deploy to multiple containers (existing or create new ones)
-- ✅ Sequential or parallel deployment strategies
-- ✅ Auto-configure container features (nesting, TUN device)
-- ✅ Per-container configuration overrides
-- ✅ Comprehensive validation and health checks
+**Benefits:**
+- ✅ **Redundancy**: Multiple gateways can manage overlapping target sets
+- ✅ **Segment Isolation**: Deploy gateways per network segment
+- ✅ **Load Distribution**: Spread management across multiple gateways
+- ✅ **Maintenance**: Update gateways without affecting all targets
 
-**See [PROXMOX_MULTI_CONTAINER_INSTALL.md](./docs/PROXMOX_MULTI_CONTAINER_INSTALL.md) for complete documentation.**
+**See [PROXMOX_MULTI_CONTAINER_INSTALL.md](./docs/PROXMOX_MULTI_CONTAINER_INSTALL.md) for complete multi-container deployment documentation.**
 
-### Method 2: Manual Installation (Any Linux)
+### **Gateway Configuration & Target Setup**
 
-#### Prerequisites
+#### **Target Registry Configuration**
 
-- **OS**: Linux (Ubuntu 22.04+, Debian 11+, Proxmox LXC)
-- **Python**: 3.11 or higher
-- **Docker**: For container management features (optional)
-- **Tailscale**: For secure OAuth authentication (optional but recommended)
+After deploying the gateway, configure your [`targets.yaml`](targets.yaml:1) file to define managed targets:
 
-#### Installation Steps
+```yaml
+version: "1.0"
+targets:
+  # Local gateway management
+  local:
+    id: "local"
+    type: "local"
+    executor: "local"
+    capabilities:
+      - "system:read"
+      - "container:read"
+      - "network:read"
+
+  # SSH target for remote server
+  web-server-01:
+    id: "web-server-01"
+    type: "remote"
+    executor: "ssh"
+    connection:
+      host: "192.168.1.100"
+      username: "admin"
+      key_path: "${SSH_KEY_WEB_SERVER_01}"
+    capabilities:
+      - "system:read"
+      - "container:read"
+
+  # Docker socket target
+  docker-host-01:
+    id: "docker-host-01"
+    type: "remote"
+    executor: "docker"
+    connection:
+      socket_path: "/var/run/docker.sock"
+    capabilities:
+      - "container:read"
+      - "container:control"
+```
+
+#### **Secrets Management**
+
+Store sensitive credentials securely:
 
 ```bash
-# 1. Download and run the installer
-curl -fsSL https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/install.sh | sudo bash
+# Create environment file for secrets
+cp deploy/.env.template .env
+nano .env
 
-# Or clone and run manually
-git clone https://github.com/mdlmarkham/TailOpsMCP.git
-cd TailOpsMCP
-sudo bash install.sh
+# Add SSH keys and credentials
+SSH_KEY_WEB_SERVER_01="/path/to/private/key"
+DOCKER_HOST_TOKEN="your-docker-api-token"
+
+# Secure the file
+chmod 600 .env
 ```
 
-The interactive installer will:
-1. ✅ Check system requirements (Python, Docker, Tailscale)
-2. 🔧 Choose authentication method (OAuth or Token)
-3. 🔐 Configure Tailscale OAuth (with step-by-step guide)
-4. 📦 Install TailOpsMCP and dependencies
-5. ⚙️ Create systemd service
-6. 🚀 Start and verify the server
+#### **Connectivity Requirements**
 
-#### Post-Installation
+Ensure gateway can reach targets:
+- **SSH Targets**: Network connectivity and SSH key authentication
+- **Docker Targets**: Docker socket access or API endpoint
+- **HTTP Targets**: Network connectivity and API credentials
+- **Tailscale**: Subnet routes for cross-network access
 
-```bash
-# Check service status
-sudo systemctl status systemmanager-mcp
+### **Manual Installation (Alternative)**
 
-# View logs
-sudo journalctl -u systemmanager-mcp -f
-
-# Test the server
-curl http://localhost:8080/.well-known/oauth-protected-resource/mcp
-```
-
-### One-Shot Installation
+For non-Proxmox environments:
 
 ```bash
 # Download and run the installer
-curl -fsSL https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/install.sh | sudo bash
+
+# Or clone and run manually
+git clone https://github.com/mdlmarkham/SystemManager.git
+cd SystemManager
+sudo bash install.sh
 ```
 
 The installer will:
 1. ✅ Check system requirements
 2. ✅ Install Python dependencies
 3. ✅ Set up systemd service
-4. ✅ Configure Tailscale OAuth (if available)
+4. ✅ Configure authentication
 5. ✅ Create secure environment file
-6. ✅ Start the server
+6. ✅ Start the gateway service
 
-### Manual Installation
+### **Post-Installation Verification**
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/mdlmarkham/TailOpsMCP.git
-cd TailOpsMCP
+# Check gateway service status
+sudo systemctl status systemmanager-mcp
 
-# 2. Install dependencies
-pip install -r requirements.txt
+# View gateway logs
+sudo journalctl -u systemmanager-mcp -f
 
-# 3. Configure authentication (choose one)
+# Test gateway connectivity
+curl http://localhost:8080/.well-known/oauth-protected-resource/mcp
 
-# Option A: Tailscale OAuth (Recommended)
-cp deploy/.env.template .env
-nano .env  # Add your TSIDP credentials
-chmod 600 .env
-
-# Option B: Token-based auth (Simpler)
-export SYSTEMMANAGER_AUTH_MODE=token
-export SYSTEMMANAGER_SHARED_SECRET="your-secret-here"
-
-# 4. Start the server
-python -m src.mcp_server
+# Verify target registry loading
+sudo journalctl -u systemmanager-mcp | grep "targets.yaml"
 ```
 
 ---
 
-## 🔐 Tailscale Integration
+## 🔐 Security & Connectivity
 
-TailOpsMCP supports **Tailscale Identity Provider (TSIDP)** for OAuth 2.1 authentication.
+### **Tailscale Integration for Gateway Security**
 
-### Setup TSIDP
+SystemManager uses **Tailscale Identity Provider (TSIDP)** for OAuth 2.1 authentication, providing secure gateway access control.
 
-1. **Enable TSIDP** in your Tailscale admin console:
-   ```
-   Settings → OAuth → Identity Provider → Enable
-   ```
+#### **Gateway Network Security**
 
-2. **Register OAuth client**:
-   - Navigate to OAuth applications
-   - Create new application
-   - Set redirect URI: `https://vscode.dev/redirect`
-   - Note the Client ID and Secret
+Configure Tailscale ACLs to control gateway access:
 
-3. **Configure TailOpsMCP**:
-   ```bash
-   # Edit /opt/systemmanager/.env
-   SYSTEMMANAGER_AUTH_MODE=oidc
-   TSIDP_URL=https://tsidp.tail12345.ts.net
-   TSIDP_CLIENT_ID=your-client-id
-   TSIDP_CLIENT_SECRET=your-client-secret
-   SYSTEMMANAGER_BASE_URL=http://your-server.tail12345.ts.net:8080
-   ```
-
-4. **Restart service**:
-   ```bash
-   sudo systemctl restart systemmanager-mcp
-   ```
-
-### Tailscale ACLs
-
-Add to your `tailscale-acl.json`:
 ```json
 {
   "acls": [
     {
       "action": "accept",
-      "src": ["group:admins"],
-      "dst": ["tag:infrastructure:8080"]
+      "src": ["group:systemmanager-admins"],
+      "dst": ["tag:systemmanager-gateway:8080"]
     }
   ],
   "tagOwners": {
-    "tag:infrastructure": ["group:admins"]
+    "tag:systemmanager-gateway": ["group:systemmanager-admins"]
   }
 }
+```
+
+#### **Target Network Connectivity**
+
+Ensure gateways can reach targets through Tailscale:
+
+- **Subnet Routes**: Configure Tailscale subnet routes for cross-network access
+- **ACL Rules**: Allow gateway-to-target communication
+- **Service Tags**: Use tags for gateway service discovery
+
+### **Gateway-to-Target Connectivity**
+
+#### **SSH Target Requirements**
+- Network connectivity between gateway and target
+- SSH key authentication configured
+- Firewall rules allowing SSH access
+- Tailscale subnet routes if crossing networks
+
+#### **Docker Target Requirements**
+- Docker socket access or API endpoint reachable
+- Network connectivity to Docker host
+- API token authentication if using remote API
+
+#### **HTTP Target Requirements**
+- Network connectivity to API endpoint
+- Authentication credentials (API keys, tokens)
+- TLS/SSL certificate validation
+
+### **Multi-Gateway Network Design**
+
+For segment isolation and redundancy:
+
+```yaml
+# Segment A Gateway
+segment-a-gateway:
+  network_segment: "production-a"
+  targets: ["web-a-01", "db-a-01", "cache-a-01"]
+  
+# Segment B Gateway
+segment-b-gateway:
+  network_segment: "production-b"
+  targets: ["web-b-01", "db-b-01", "cache-b-01"]
+  
+# Overlapping targets for redundancy
+shared-targets: ["monitoring-01", "logging-01"]
 ```
 
 ---
 
-## 🐳 Proxmox Integration
+## 🐳 Gateway Deployment & Management
 
-### LXC Container Detection
+### **Proxmox LXC Gateway Deployment**
 
-TailOpsMCP automatically detects when running inside a Proxmox LXC container:
+SystemManager gateways are typically deployed in Proxmox LXC containers for isolation and security.
 
-```json
-{
-  "virtualization": {
-    "type": "lxc",
-    "method": "systemd-detect-virt"
-  }
-}
-```
-
-### Recommended LXC Configuration
+#### **Recommended LXC Configuration**
 
 ```bash
 # /etc/pve/lxc/103.conf
@@ -304,104 +403,190 @@ memory: 2048
 net0: name=eth0,bridge=vmbr0,firewall=1,ip=dhcp
 rootfs: local-lvm:vm-103-disk-0,size=8G
 
-# Enable Docker in LXC
+# Enable Docker for target management
 features: nesting=1,keyctl=1
 lxc.apparmor.profile: unconfined
 lxc.cgroup2.devices.allow: c 10:200 rwm  # /dev/net/tun for Tailscale
 ```
 
-### Network Auditing (Coming Soon)
+#### **Gateway Container Features**
 
-```python
-# Audit LXC network configuration
-audit_lxc_network(container_id=103)
+- **Isolation**: LXC containers provide process and network isolation
+- **Resource Control**: CPU and memory limits prevent gateway resource exhaustion
+- **Security**: AppArmor profiles and cgroup device controls
+- **Network Access**: Tailscale integration for secure remote access
 
-# Output:
-# - Network interfaces and bridges
-# - Firewall rules
-# - Port forwards
-# - Security recommendations
+### **Multi-Gateway Deployment Strategy**
+
+#### **Segment-Based Deployment**
+
+Deploy gateways per network segment to limit blast radius:
+
+```yaml
+# Production Segment A
+production-a-gateway:
+  segment: "production-a"
+  targets: ["web-a-01", "db-a-01", "cache-a-01"]
+  
+# Production Segment B
+production-b-gateway:
+  segment: "production-b"
+  targets: ["web-b-01", "db-b-01", "cache-b-01"]
+  
+# Staging Segment
+staging-gateway:
+  segment: "staging"
+  targets: ["staging-web-01", "staging-db-01"]
+```
+
+#### **Redundancy Configuration**
+
+Multiple gateways can manage overlapping target sets:
+
+```yaml
+# Primary gateway for production
+primary-gateway:
+  targets: ["web-01", "db-01", "cache-01", "monitoring-01"]
+  
+# Secondary gateway for redundancy
+secondary-gateway:
+  targets: ["web-01", "db-01", "cache-01", "logging-01"]
+```
+
+### **Gateway Maintenance Procedures**
+
+#### **Updates & Upgrades**
+
+```bash
+# Update gateway software
+sudo systemctl stop systemmanager-mcp
+cd /opt/systemmanager
+git pull
+pip install -r requirements.txt
+sudo systemctl start systemmanager-mcp
+
+# Verify gateway health
+sudo systemctl status systemmanager-mcp
+sudo journalctl -u systemmanager-mcp --since "5 minutes ago"
+```
+
+#### **Target Registry Management**
+
+```bash
+# Backup target registry
+cp /opt/systemmanager/targets.yaml /opt/systemmanager/targets.yaml.backup
+
+# Validate target configuration
+python -c "from src.services.target_registry import TargetRegistry; tr = TargetRegistry(); print('Valid targets:', list(tr._targets.keys()))"
+
+# Reload target registry without restart
+sudo systemctl reload systemmanager-mcp
 ```
 
 ---
 
-## 📦 Application Inventory
+## 📦 Target Registry & Capability Management
 
-TailOpsMCP can track what applications are running directly on your LXC container (not just Docker), providing context-aware assistance.
+### **Target Registry Configuration**
 
-### Initial Setup
+The Target Registry is the central configuration for all managed targets. It defines what systems the gateway can manage and what operations are allowed.
 
-Use the interactive **setup_inventory** prompt to configure your system:
+#### **Target Types & Capabilities**
 
+```yaml
+# targets.yaml - Complete example
+version: "1.0"
+targets:
+  # Local gateway management
+  local:
+    id: "local"
+    type: "local"
+    executor: "local"
+    capabilities:
+      - "system:read"
+      - "container:read"
+      - "network:read"
+      - "file:read"
+    constraints:
+      timeout: 30
+      concurrency: 5
+
+  # SSH target for remote server
+  web-server-01:
+    id: "web-server-01"
+    type: "remote"
+    executor: "ssh"
+    connection:
+      host: "192.168.1.100"
+      port: 22
+      username: "admin"
+      key_path: "${SSH_KEY_WEB_SERVER_01}"
+    capabilities:
+      - "system:read"
+      - "container:read"
+      - "network:read"
+    constraints:
+      timeout: 60
+      sudo_policy: "limited"
+
+  # Docker socket target
+  docker-host-01:
+    id: "docker-host-01"
+    type: "remote"
+    executor: "docker"
+    connection:
+      socket_path: "/var/run/docker.sock"
+    capabilities:
+      - "container:read"
+      - "container:control"
+      - "stack:deploy"
 ```
-You: "Let's set up the inventory for this system"
 
-AI will guide you through:
-1. System identification (hostname, container ID, type)
-2. Auto-scan for installed applications
-3. Manual additions if needed
-4. Review and save
-```
+#### **Capability-Based Authorization**
 
-### Auto-Detection
+Each target defines explicit capabilities to prevent "LLM imagination" risk:
 
-TailOpsMCP can auto-detect these applications:
+- **system:read**: Read system information (CPU, memory, disk)
+- **container:read**: Inspect containers and services
+- **container:control**: Start/stop/restart containers
+- **network:read**: View network status and connectivity
+- **file:read**: Read and search files
+- **stack:deploy**: Deploy Docker compose stacks
 
-- **Media Servers**: Jellyfin, Plex
-- **Network Services**: Pi-hole, AdGuard Home, WireGuard
-- **Databases**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis
-- **Web Servers**: Nginx, Apache
-- **Home Automation**: Home Assistant
-- **Monitoring**: Prometheus, Grafana
-- **AI/LLM**: Ollama
-- **Other**: Nextcloud, Portainer, and more
+### **Policy Gate Security**
 
-### API Examples
+The Policy Gate enforces security policies across all operations:
 
 ```python
-# Scan for installed applications
-scan_installed_applications(save_to_inventory=True)
-
-# View complete inventory
-get_inventory()
-# Returns: system identity, applications, Docker stacks
-
-# Manually add an application
-add_application_to_inventory(
-    name="ollama",
-    app_type="ai-llm",
-    version="0.1.14",
-    port=11434,
-    service_name="ollama",
-    config_path="/etc/ollama",
-    notes="Running Llama 3.2 model"
-)
-
-# Update system identity (for multi-system setups)
-set_system_identity(
-    hostname="dev1",
-    container_id="103",
-    container_type="lxc",
-    mcp_server_name="dev1-103"  # Unique name for this MCP instance
+# Example policy enforcement
+await policy_gate.authorize(
+    operation="restart_container",
+    target="docker-host-01",
+    tier="control",
+    parameters={"container": "nginx"}
 )
 ```
 
-### Multi-System Management
+**Security Benefits:**
+- ✅ **Explicit Authorization**: Only explicitly allowed operations are permitted
+- ✅ **Parameter Validation**: Operation parameters are validated against constraints
+- ✅ **Audit Trail**: All policy decisions are logged for compliance
+- ✅ **Dry Run Mode**: Test operations without execution
 
-When managing multiple LXC containers with a single AI:
+### **Multi-Target Operations**
 
-1. Each system gets a unique identifier: `hostname-containerID` (e.g., `dev1-103`)
-2. The inventory tracks what's running on each system
-3. AI provides context-aware suggestions based on what you have installed
-4. Inventory stored in `/var/lib/systemmanager/inventory.json` per system
+Execute commands across multiple targets:
 
-### Benefits
+```python
+# Health check across all web servers
+health_check(targets=["web-server-01", "web-server-02", "web-server-03"])
 
-✓ **Context-Aware Help**: AI knows what apps you're running  
-✓ **Better Troubleshooting**: Targeted recommendations based on your stack  
-✓ **Documentation**: Auto-generated infrastructure documentation  
-✓ **Security Audits**: Application-specific security checks  
-✓ **Performance Analysis**: Understanding resource usage by app  
+# Package update across staging environment
+update_packages(targets=["staging-web-01", "staging-db-01", "staging-cache-01"])
+
+# Security audit across production segment
+audit_security(targets=["prod-web-01", "prod-db-01", "prod-cache-01"])
+```
 
 ---
 
@@ -510,7 +695,7 @@ print(response.json())
 
 ### Environment Variables
 
-TailOpsMCP is configured via `/opt/systemmanager/.env`:
+SystemManager is configured via `/opt/systemmanager/.env`:
 
 ```bash
 # Authentication Mode (oidc or token)
@@ -551,7 +736,7 @@ sudo systemctl disable systemmanager-mcp
 
 ```bash
 # Run the update script (Proxmox LXC only)
-pct exec 103 -- bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/ct/build.func)" -s --update
+pct exec 103 -- bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/ct/build.func)" -s --update
 
 # Or manually
 cd /opt/systemmanager
@@ -569,7 +754,7 @@ sudo systemctl start systemmanager-mcp
 
 ### Custom Scopes and Permissions
 
-TailOpsMCP supports fine-grained scope-based authorization:
+SystemManager supports fine-grained scope-based authorization:
 
 ```python
 # Define scopes for different users/teams
@@ -587,7 +772,7 @@ Configure in TSIDP OAuth application or token claims.
 
 ### AI-Powered Log Analysis
 
-TailOpsMCP uses MCP sampling for intelligent log analysis:
+SystemManager uses MCP sampling for intelligent log analysis:
 
 ```bash
 # Analyze container logs
@@ -782,13 +967,13 @@ We welcome contributions from the home lab community!
 2. **Feature Requests**: Suggest new tools or improvements
 3. **Code Contributions**: Submit pull requests
 4. **Documentation**: Help improve docs and examples
-5. **Share Your Setup**: Tell us how you're using TailOpsMCP
+5. **Share Your Setup**: Tell us how you're using SystemManager
 
 ### Development Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/mdlmarkham/TailOpsMCP.git
+git clone https://github.com/mdlmarkham/SystemManager.git
 cd TailOpsMCP
 
 # Create virtual environment

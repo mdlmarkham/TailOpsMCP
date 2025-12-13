@@ -1,0 +1,89 @@
+version: "1.0"
+targets:
+  # Local target (extends existing inventory)
+  local:
+    id: "local"
+    type: "local"
+    executor: "local"
+    capabilities:
+      - "system:read"
+      - "container:read"
+      - "network:read"
+      - "file:read"
+      - "network:diag"
+    constraints:
+      timeout: 30
+      concurrency: 5
+      sudo_policy: "none"
+    metadata:
+      hostname: "{{system.hostname}}"
+      platform: "{{system.platform}}"
+      tags: ["local", "control-plane"]
+
+  # SSH target example
+  web-server-01:
+    id: "web-server-01"
+    type: "remote"
+    executor: "ssh"
+    connection:
+      host: "192.168.1.100"
+      port: 22
+      username: "admin"
+      key_path: "${SSH_KEY_WEB_SERVER_01}"
+      timeout: 30
+    capabilities:
+      - "system:read"
+      - "container:read"
+      - "network:read"
+      - "network:diag"
+    constraints:
+      timeout: 60
+      concurrency: 2
+      sudo_policy: "limited"
+    metadata:
+      hostname: "web-server-01"
+      platform: "ubuntu-22.04"
+      tags: ["web", "production", "ssh"]
+
+  # Docker socket target example
+  docker-host-01:
+    id: "docker-host-01"
+    type: "remote"
+    executor: "docker"
+    connection:
+      socket_path: "/var/run/docker.sock"
+      timeout: 30
+    capabilities:
+      - "container:read"
+      - "container:write"
+      - "docker:admin"
+    constraints:
+      timeout: 120
+      concurrency: 3
+      sudo_policy: "none"
+    metadata:
+      hostname: "docker-host-01"
+      platform: "docker-host"
+      tags: ["docker", "staging"]
+
+  # Docker TCP target example (with TLS)
+  docker-host-02:
+    id: "docker-host-02"
+    type: "remote"
+    executor: "docker"
+    connection:
+      host: "tcp://192.168.1.101:2376"
+      tls_verify: true
+      cert_path: "${DOCKER_CERT_PATH_02}"
+      timeout: 30
+    capabilities:
+      - "container:read"
+      - "container:write"
+    constraints:
+      timeout: 90
+      concurrency: 2
+      sudo_policy: "none"
+    metadata:
+      hostname: "docker-host-02"
+      platform: "docker-host"
+      tags: ["docker", "production"]

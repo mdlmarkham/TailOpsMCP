@@ -2,24 +2,34 @@
 
 ## Overview
 
-TailOpsMCP's inventory system solves a common problem in home lab management: **knowing what's running where**. 
+TailOpsMCP's inventory system provides centralized visibility across all managed systems through the control plane gateway architecture. The system solves the common problem in multi-system management: **knowing what's running where across your entire infrastructure**.
 
-When you have multiple Proxmox LXC containers, each potentially running different services (Jellyfin on one, PostgreSQL on another, Ollama on a third), it becomes hard for an AI assistant to provide context-aware help. The inventory system creates a "scratchpad" of what applications are deployed on each system.
+With the control plane gateway, you can manage multiple systems (Proxmox LXC containers, VMs, bare-metal servers) from a single interface. The inventory system creates a comprehensive registry of applications and services deployed across all targets, enabling AI assistants to provide context-aware help across your entire infrastructure.
 
 ## Key Concepts
 
-### System Identity
+### Control Plane Gateway Architecture
 
-Each TailOpsMCP instance identifies itself with:
+The inventory system operates through the TailOpsMCP control plane gateway, which:
 
+- **Centralizes Management**: Single gateway manages multiple target systems
+- **Target Registry**: All managed systems are configured in `targets.yaml`
+- **Capability-Based Access**: Fine-grained control over what operations can be performed
+- **Audit Logging**: Comprehensive logging of all inventory operations
+
+### Target Identity
+
+Each managed system in the target registry is identified with:
+
+- **Target ID**: Unique identifier for the system (e.g., `web-server-01`, `database-primary`)
 - **Hostname**: The system's hostname (e.g., `dev1`, `media-server`)
 - **Container ID**: Proxmox VMID/CTID if running in LXC (e.g., `103`)
-- **Container Type**: `lxc`, `vm`, or `bare-metal`
-- **MCP Server Name**: Optional custom name for this MCP instance
+- **System Type**: `lxc`, `vm`, `bare-metal`, or `docker`
+- **Executor Type**: Connection method (`ssh`, `docker`, `proxmox`, `local`)
 
-This allows you to run multiple TailOpsMCP instances (one per LXC) and have them uniquely identified.
+This allows the gateway to uniquely identify and manage each system in your infrastructure.
 
-**Example**: `dev1-103` clearly identifies this as the `dev1` container with ID 103.
+**Example**: Target `web-server-01` might be a Proxmox LXC container with ID 103 on host `dev1`.
 
 ### Application Metadata
 
@@ -53,201 +63,334 @@ TailOpsMCP can automatically detect these applications:
 
 ### Detection Method
 
-The scanner uses multiple signals to detect applications:
+The inventory scanner uses multiple signals to detect applications across all managed targets:
 
-1. **systemd Services**: Checks for running services by name
-2. **Processes**: Looks for running processes
+1. **systemd Services**: Checks for running services by name on target systems
+2. **Processes**: Looks for running processes on target systems
 3. **Listening Ports**: Detects applications by their default ports
-4. **File System**: Checks for config files and directories
-5. **Version Commands**: Attempts to query version information
+4. **File System**: Checks for config files and directories on target systems
+5. **Version Commands**: Attempts to query version information from target systems
 
 Each detection gets a confidence score (0.0 to 1.0). Applications need at least 0.3 confidence to be reported.
 
 ## Usage Workflows
 
-### Initial Setup (Interactive)
+### Initial Setup (Control Plane Gateway)
 
-Use the `setup_inventory` MCP prompt:
+With the control plane gateway architecture, inventory setup is centralized:
+
+1. **Configure Target Registry**: Define all managed systems in `targets.yaml`
+2. **Gateway Deployment**: Deploy the TailOpsMCP gateway
+3. **Inventory Discovery**: Use gateway tools to discover applications across all targets
+
+### Interactive Inventory Setup
+
+Use the `setup_inventory` MCP prompt through the gateway:
 
 ```
-You: "Let's set up the inventory for this system"
+You: "Let's set up the inventory for all managed systems"
 
-AI: "I'll help you set up the inventory. First, let me check the current system identity..."
+AI: "I'll help you set up the inventory across all targets. First, let me check the target registry..."
 
-[AI calls get_inventory to see current state]
+[AI calls get_target_registry to see available systems]
 
-AI: "I see this is 'dev1' (LXC container 103). Would you like to customize the MCP server name?"
+AI: "I see 3 targets configured: web-server-01, database-primary, media-server. Would you like to scan all systems?"
 
-You: "Keep it as dev1-103"
+You: "Yes, scan all systems"
 
-AI: "Great! Now let me scan for installed applications..."
+AI: "Great! Now let me scan for installed applications across all targets..."
 
-[AI calls scan_installed_applications]
+[AI calls scan_installed_applications with target="all"]
 
-AI: "Found 5 applications:
-- PostgreSQL 15.4 (port 5432)
-- Nginx 1.24.0 (port 80)
-- Ollama 0.1.14 (port 11434)
-- Redis 7.0.12 (port 6379)
-- Prometheus 2.45.0 (port 9090)
+AI: "Found applications across all targets:
+- web-server-01: Nginx 1.24.0 (port 80), Node.js API (port 3000)
+- database-primary: PostgreSQL 15.4 (port 5432), Redis 7.0.12 (port 6379)
+- media-server: Jellyfin 10.8.0 (port 8096), Plex 1.32.0 (port 32400)
 
 Should I add any other applications that weren't detected?"
 
-You: "Yes, I also run a custom Python API on port 8000"
+You: "Yes, I also run a monitoring agent on port 8080 on web-server-01"
 
-[AI calls add_application_to_inventory]
+[AI calls add_application_to_inventory with target="web-server-01"]
 
-AI: "Done! Inventory is now complete. I'll use this context to provide better assistance."
+AI: "Done! Inventory is now complete across all systems. I'll use this context to provide better assistance."
 ```
 
 ### Programmatic Setup
 
 ```python
-# 1. Set system identity
-set_system_identity(
-    hostname="dev1",
-    container_id="103",
-    container_type="lxc",
-    mcp_server_name="dev1-103"
+# 1. Configure target registry (in targets.yaml)
+# 2. Use gateway to scan all targets
+from src.services.target_registry import TargetRegistry
+
+# Initialize target registry
+tr = TargetRegistry()
+
+# Scan applications across all targets
+results = tr.scan_applications_across_targets()
+# Returns: {
+#   "web-server-01": {"detected_count": 2, "applications": [...]},
+#   "database-primary": {"detected_count": 2, "applications": [...]},
+#   "media-server": {"detected_count": 2, "applications": [...]}
+# }
+
+# 3. Manually add missed applications to specific targets
+tr.add_application_to_target(
+    target_id="web-server-01",
+    name="monitoring-agent",
+    app_type="monitoring",
+    port=8080,
+    service_name="monitoring-agent",
+    notes="Custom monitoring agent"
 )
 
-# 2. Auto-scan for applications
-result = scan_installed_applications(save_to_inventory=True)
-# Returns: {"detected_count": 5, "applications": [...]}
+# 4. Review complete inventory across all targets
+inventory = tr.get_complete_inventory()
+# Returns comprehensive inventory across all managed systems
+```
 
-# 3. Manually add missed applications
-add_application_to_inventory(
-    name="custom-api",
-    app_type="web-api",
-    port=8000,
-    service_name="custom-api",
-    notes="Internal Python API for home automation"
-)
+## Multi-System Scenarios (Control Plane Gateway)
 
-# 4. Review complete inventory
-inventory = get_inventory()
-# Returns:
+### Scenario 1: Media Server + Database Server (Centralized Management)
+
+**Target Registry Configuration:**
+```yaml
+# targets.yaml
+version: "1.0"
+targets:
+  media-server:
+    id: "media-server"
+    type: "remote"
+    executor: "ssh"
+    connection:
+      host: "192.168.1.101"
+      username: "admin"
+      key_path: "${SSH_KEY_MEDIA}"
+    capabilities:
+      - "system:read"
+      - "container:read"
+      - "file:read"
+
+  database-primary:
+    id: "database-primary"
+    type: "remote"
+    executor: "ssh"
+    connection:
+      host: "192.168.1.102"
+      username: "dba"
+      key_path: "${SSH_KEY_DATABASE}"
+    capabilities:
+      - "system:read"
+      - "container:read"
+      - "database:read"
+```
+
+**Gateway Inventory Discovery:**
+```python
+# Scan applications across all targets
+from src.services.target_registry import TargetRegistry
+
+tr = TargetRegistry()
+results = tr.scan_applications_across_targets()
+
+# Results:
 # {
-#   "system": {"hostname": "dev1", "container_id": "103", ...},
-#   "applications": {...},
-#   "stacks": {...}
+#   "media-server": {"detected_count": 2, "applications": ["Jellyfin", "Plex"]},
+#   "database-primary": {"detected_count": 2, "applications": ["PostgreSQL", "Redis"]}
 # }
 ```
 
-## Multi-System Scenarios
+Now when you ask the AI for help through the gateway, it knows:
+- `media-server` has Jellyfin and Plex
+- `database-primary` has PostgreSQL and Redis
 
-### Scenario 1: Media Server + Database Server
+The AI can provide targeted recommendations for each system through the centralized gateway.
 
-**LXC 101 (media-101):**
-```python
-# Media server setup
-set_system_identity(hostname="media", container_id="101", mcp_server_name="media-101")
-scan_installed_applications()  # Detects: Jellyfin, Plex
+### Scenario 2: Development Environment (Multi-Target)
+
+**Target Registry for Development Environment:**
+```yaml
+targets:
+  dev-web:
+    id: "dev-web"
+    type: "remote"
+    executor: "ssh"
+    connection:
+      host: "192.168.1.103"
+      username: "dev"
+      key_path: "${SSH_KEY_DEV}"
+    capabilities:
+      - "system:read"
+      - "container:read"
+      - "file:read"
+      - "file:write"
+
+  dev-db:
+    id: "dev-db"
+    type: "remote"
+    executor: "ssh"
+    connection:
+      host: "192.168.1.104"
+      username: "dev"
+      key_path: "${SSH_KEY_DEV}"
+    capabilities:
+      - "system:read"
+      - "container:read"
+      - "database:read"
+      - "database:write"
 ```
 
-**LXC 102 (db-102):**
-```python
-# Database server setup
-set_system_identity(hostname="db", container_id="102", mcp_server_name="db-102")
-scan_installed_applications()  # Detects: PostgreSQL, Redis
+**Benefits with Control Plane Gateway:**
+- AI knows this is a dev environment across multiple targets
+- Can perform coordinated operations across dev-web and dev-db
+- Understands development-specific capabilities (more permissive access)
+- Centralized audit logging for all development activities
+
+### Scenario 3: Production Environment (Strict Controls)
+
+**Target Registry with Enhanced Security:**
+```yaml
+targets:
+  prod-web:
+    id: "prod-web"
+    type: "remote"
+    executor: "ssh"
+    connection:
+      host: "10.0.1.10"
+      username: "prod"
+      key_path: "${SSH_KEY_PROD}"
+    capabilities:
+      - "system:read"
+      - "container:read"
+    constraints:
+      require_approval: true
+      audit_level: "high"
+
+  prod-db:
+    id: "prod-db"
+    type: "remote"
+    executor: "ssh"
+    connection:
+      host: "10.0.1.20"
+      username: "prod"
+      key_path: "${SSH_KEY_PROD}"
+    capabilities:
+      - "system:read"
+      - "container:read"
+    constraints:
+      require_approval: true
+      audit_level: "high"
 ```
 
-Now when you ask the AI for help, it knows:
-- `media-101` has Jellyfin and Plex
-- `db-102` has PostgreSQL and Redis
+**Security Benefits:**
+- Approval gates for production operations
+- Enhanced audit logging
+- Fine-grained capability control
+- Centralized security policy enforcement
 
-The AI can provide targeted recommendations for each system.
+## Inventory Storage Format (Control Plane Gateway)
 
-### Scenario 2: Development Environment
+With the control plane gateway architecture, inventory data is stored centrally in the gateway:
 
-**LXC 103 (dev1-103):**
-```python
-set_system_identity(hostname="dev1", container_id="103", container_type="lxc")
-scan_installed_applications()
+### Gateway Inventory Storage
 
-# Add custom apps
-add_application_to_inventory(
-    name="local-ollama",
-    app_type="ai-llm",
-    version="0.1.14",
-    port=11434,
-    notes="Running Llama 3.2 and CodeLlama models"
-)
-
-add_application_to_inventory(
-    name="dev-postgres",
-    app_type="database",
-    version="15.4",
-    port=5432,
-    notes="Development database - safe to reset"
-)
-```
-
-**Benefits:**
-- AI knows this is a dev environment (can be more aggressive with changes)
-- Knows which Ollama models are available
-- Understands the PostgreSQL instance is for development
-
-## Inventory File Format
-
-The inventory is stored as JSON at `/var/lib/systemmanager/inventory.json`:
+The inventory is stored as JSON at `/var/lib/systemmanager/inventory.json` on the gateway:
 
 ```json
 {
-  "system": {
-    "hostname": "dev1",
-    "container_id": "103",
-    "container_type": "lxc",
-    "mcp_server_name": "dev1-103"
+  "gateway": {
+    "version": "1.0",
+    "deployed_at": "2025-12-13T20:30:00Z",
+    "target_count": 3
+  },
+  "targets": {
+    "web-server-01": {
+      "target_id": "web-server-01",
+      "hostname": "web-01",
+      "container_id": "101",
+      "system_type": "lxc",
+      "executor": "ssh",
+      "capabilities": ["system:read", "container:read", "file:read"],
+      "last_scan": "2025-12-13T20:30:00Z"
+    },
+    "database-primary": {
+      "target_id": "database-primary",
+      "hostname": "db-01",
+      "container_id": "102",
+      "system_type": "lxc",
+      "executor": "ssh",
+      "capabilities": ["system:read", "container:read", "database:read"],
+      "last_scan": "2025-12-13T20:30:00Z"
+    }
   },
   "applications": {
-    "ollama": {
-      "name": "ollama",
-      "type": "ai-llm",
-      "version": "0.1.14",
-      "port": 11434,
-      "service_name": "ollama",
-      "config_path": "/etc/ollama",
-      "data_path": "/usr/share/ollama",
-      "auto_detected": true,
-      "notes": null,
-      "added_at": "2025-11-16T20:30:00Z"
+    "web-server-01": {
+      "nginx": {
+        "name": "nginx",
+        "type": "web-server",
+        "version": "1.24.0",
+        "port": 80,
+        "service_name": "nginx",
+        "config_path": "/etc/nginx",
+        "data_path": "/var/www/html",
+        "auto_detected": true,
+        "notes": null,
+        "added_at": "2025-12-13T20:30:00Z"
+      }
     },
-    "postgresql": {
-      "name": "postgresql",
-      "type": "database",
-      "version": "15.4",
-      "port": 5432,
-      "service_name": "postgresql",
-      "config_path": "/etc/postgresql",
-      "data_path": "/var/lib/postgresql",
-      "auto_detected": true,
-      "notes": null,
-      "added_at": "2025-11-16T20:30:00Z"
+    "database-primary": {
+      "postgresql": {
+        "name": "postgresql",
+        "type": "database",
+        "version": "15.4",
+        "port": 5432,
+        "service_name": "postgresql",
+        "config_path": "/etc/postgresql",
+        "data_path": "/var/lib/postgresql",
+        "auto_detected": true,
+        "notes": null,
+        "added_at": "2025-12-13T20:30:00Z"
+      }
     }
   },
   "stacks": {},
-  "hosts": {}
+  "audit_log": []
 }
 ```
 
-## API Reference
+### Target-Specific Inventory
 
-### MCP Tools
+Each target can also maintain its own local inventory if needed, but the gateway provides centralized management.
+
+## API Reference (Control Plane Gateway)
+
+### MCP Tools (Gateway Interface)
 
 #### `scan_installed_applications`
 
-Auto-detect applications running on the system.
+Auto-detect applications running on specified target(s).
 
 **Parameters:**
+- `target` (string): Target ID or "all" for all targets (default: current target)
 - `save_to_inventory` (bool): Auto-save to inventory (default: `true`)
 
 **Returns:**
 ```python
 {
-  "scanned_at": "2025-11-16T20:30:00",
-  "system": "dev1-103",
-  "detected_count": 5,
+  "scanned_at": "2025-12-13T20:30:00",
+  "targets_scanned": ["web-server-01", "database-primary"],
+  "results": {
+    "web-server-01": {
+      "detected_count": 2,
+      "applications": ["nginx", "nodejs-api"]
+    },
+    "database-primary": {
+      "detected_count": 2,
+      "applications": ["postgresql", "redis"]
+    }
+  }
+}
+```
   "applications": [
     {
       "name": "ollama",

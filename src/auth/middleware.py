@@ -6,6 +6,7 @@ Provides defense-in-depth for tailnet deployments:
 2. Tailscale identity verification (network-level already done by Tailscale)
 3. Audit logging with Tailscale context
 4. Interactive approval for high-risk operations
+5. Policy Gate integration for comprehensive security controls
 """
 
 import os
@@ -16,6 +17,8 @@ from fastmcp.server.context import Context
 
 from src.auth.token_auth import TokenVerifier, TokenClaims
 from src.auth.scopes import check_authorization, requires_approval, get_tool_risk_level
+from src.services.policy_gate import PolicyGate
+from src.services.target_registry import TargetRegistry
 from src.utils.audit import AuditLogger
 from src.utils.errors import ErrorCategory, SystemManagerError
 
@@ -32,6 +35,10 @@ class SecurityMiddleware:
         # DEFAULT TO REQUIRING AUTH - fail closed
         self.require_auth = os.getenv("SYSTEMMANAGER_REQUIRE_AUTH", "true").lower() == "true"
         self.enable_approval = os.getenv("SYSTEMMANAGER_ENABLE_APPROVAL", "false").lower() == "true"
+        
+        # Initialize Policy Gate for comprehensive security controls
+        self.target_registry = TargetRegistry()
+        self.policy_gate = PolicyGate(self.target_registry, self.audit_logger)
         
     def get_claims_from_context(self, **kwargs) -> Optional[TokenClaims]:
         """Extract and verify token from kwargs or HTTP request.
@@ -109,6 +116,18 @@ class SecurityMiddleware:
                 f"Insufficient privileges: {reason}",
                 category=ErrorCategory.FORBIDDEN
             )
+    
+    def check_target_capability(self, target_capabilities: list, required_scope: str) -> bool:
+        """Check if target has the required capability for an operation.
+        
+        Args:
+            target_capabilities: List of capabilities available on the target
+            required_scope: Required scope for the operation
+            
+        Returns:
+            True if target has the capability, False otherwise
+        """
+        return required_scope in target_capabilities
     
     def check_approval(self, tool_name: str, args: Dict[str, Any]) -> bool:
         """Check if operation requires and has approval.
@@ -222,6 +241,21 @@ class SecurityMiddleware:
                 )
                 return result
             
+            # Apply Policy Gate security controls
+            try:
+                self._apply_policy_gate(tool_name, kwargs, claims)
+            except SystemManagerError as e:
+                result = {"success": False, "error": str(e)}
+                self.audit_logger.log(
+                    tool=tool_name,
+                    args=kwargs,
+                    result=result,
+                    subject=claims.agent,
+                    scopes=claims.scopes,
+                    risk_level=get_tool_risk_level(tool_name),
+                )
+                return result
+            
             # Check approval for high-risk operations
             approved = False
             try:
@@ -277,6 +311,50 @@ class SecurityMiddleware:
                 return result
         
         return wrapped
+    
+    def _apply_policy_gate(self, tool_name: str, kwargs: Dict[str, Any], claims: TokenClaims) -> None:
+        """Apply Policy Gate security controls to tool invocation.
+        
+        Args:
+            tool_name: Tool name
+            kwargs: Tool arguments
+            claims: User token claims
+            
+        Raises:
+            SystemManagerError: If policy enforcement fails
+        """
+        # Extract target and operation information from kwargs
+        target_id = kwargs.get("target_id", "local")  # Default to local target
+        operation = kwargs.get("operation", tool_name.split("_")[-1])  # Extract operation from tool name
+        
+        # Check if this is a dry-run operation
+        dry_run = kwargs.get("dry_run", False)
+        
+        # Apply policy enforcement
+        authorized, validation_errors = self.policy_gate.enforce_policy(
+            tool_name=tool_name,
+            target_id=target_id,
+            operation=operation,
+            parameters=kwargs,
+            claims=claims,
+            dry_run=dry_run
+        )
+        
+        if not authorized:
+            error_message = f"Policy enforcement failed: {', '.join(validation_errors)}"
+            raise SystemManagerError(error_message, category=ErrorCategory.FORBIDDEN)
+        
+        # Audit the policy decision
+        self.policy_gate.audit_policy_decision(
+            tool_name=tool_name,
+            target_id=target_id,
+            operation=operation,
+            parameters=kwargs,
+            claims=claims,
+            authorized=authorized,
+            validation_errors=validation_errors,
+            dry_run=dry_run
+        )
 
 
 # Global middleware instance

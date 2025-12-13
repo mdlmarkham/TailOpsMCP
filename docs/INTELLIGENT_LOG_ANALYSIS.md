@@ -1,44 +1,45 @@
-# Intelligent Log Analysis with AI Sampling
+# Intelligent Log Analysis with AI Sampling (Control Plane Gateway)
 
 ## Overview
 
-The TailOpsMCP server now includes **intelligent log analysis** powered by AI sampling. This feature transforms raw Docker container logs into actionable insights, automatically identifying issues, determining root causes, and providing specific recommendations.
+The TailOpsMCP control plane gateway includes **intelligent log analysis** powered by AI sampling across all managed targets. This feature transforms raw container logs from multiple systems into actionable insights, automatically identifying issues, determining root causes, and providing specific recommendations across your entire infrastructure.
 
-## What is MCP Sampling?
+## What is MCP Sampling? (Gateway Context)
 
-**Sampling** allows the MCP server to make LLM calls back to the client, enabling AI-powered analysis within server-side tools. This creates a feedback loop where:
+**Sampling** allows the MCP server to make LLM calls back to the client, enabling AI-powered analysis within server-side tools. In the control plane gateway architecture, this creates a powerful feedback loop where:
 
-1. Client (VS Code/Copilot) calls server tool
-2. Server retrieves data (e.g., container logs)
-3. Server uses sampling to ask the LLM to analyze the data
-4. Server returns AI-enhanced insights to the client
+1. Client (VS Code/Copilot) calls server tool through the gateway
+2. Gateway retrieves data from multiple targets across the infrastructure (e.g., container logs from web servers, databases, etc.)
+3. Gateway uses sampling to ask the LLM to analyze the aggregated data
+4. Gateway returns AI-enhanced insights to the client with cross-system context
 
-## Features
+## Features (Multi-Target Analysis)
 
-### 🔍 Intelligent Analysis
-- **Automatic Error Detection**: Identifies errors, warnings, and critical issues
-- **Root Cause Analysis**: Determines why problems occurred
-- **Performance Insights**: Detects memory leaks, timeouts, and resource issues
-- **Contextual Understanding**: Analyzes logs in context of the application
+### 🔍 Intelligent Analysis Across Targets
+- **Cross-System Error Detection**: Identifies errors, warnings, and critical issues across all managed systems
+- **Distributed Root Cause Analysis**: Determines why problems occurred with multi-system context
+- **Performance Insights**: Detects memory leaks, timeouts, and resource issues across the infrastructure
+- **Contextual Understanding**: Analyzes logs in context of the application and target environment
 
-### 💡 Actionable Recommendations
-- Specific commands to run for diagnosis
-- Configuration changes to prevent issues
-- Best practices for container orchestration
-- Docker Compose improvements
+### 💡 Actionable Recommendations (Gateway-Specific)
+- Specific commands to run for diagnosis across multiple targets
+- Configuration changes to prevent issues with target-specific considerations
+- Best practices for container orchestration across the infrastructure
+- Docker Compose improvements with multi-target deployment patterns
 
-### 🎯 Dual-Mode Operation
-1. **AI-Enhanced Mode**: Uses LLM sampling for deep analysis (when available)
-2. **Basic Mode**: Falls back to pattern matching if sampling unavailable
+### 🎯 Dual-Mode Operation (Gateway Enhanced)
+1. **AI-Enhanced Mode**: Uses LLM sampling for deep analysis across all targets (when available)
+2. **Basic Mode**: Falls back to pattern matching with target-specific rules if sampling unavailable
 
-## New MCP Tool
+## New MCP Tools (Gateway Interface)
 
-### `analyze_container_logs`
+### `analyze_container_logs` (Multi-Target)
 
-Intelligently analyze Docker container logs to identify issues and provide recommendations.
+Intelligently analyze Docker container logs across multiple targets to identify issues and provide recommendations.
 
 **Parameters:**
 - `name_or_id` (required): Container name or ID to analyze
+- `target` (optional): Target ID or "all" for all targets (default: current target)
 - `lines` (optional, default: 200): Number of recent log lines to analyze
 - `context` (optional): Specific context or question about the logs
 - `use_ai` (optional, default: true): Enable AI analysis if available
@@ -47,6 +48,7 @@ Intelligently analyze Docker container logs to identify issues and provide recom
 ```json
 {
   "success": true,
+  "target": "web-server-01",
   "container": "nginx-web",
   "analyzed_at": "2024-11-15T10:30:00.000Z",
   "analysis": {

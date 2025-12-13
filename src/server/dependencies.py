@@ -16,6 +16,7 @@ class Dependencies:
         self._package_manager = None
         self._app_scanner = None
         self._inventory = None
+        self._executor_factory = None
 
         # System identity (loaded at startup)
         self.system_identity = None
@@ -50,6 +51,14 @@ class Dependencies:
             from src.services.app_scanner import ApplicationScanner
             self._app_scanner = ApplicationScanner()
         return self._app_scanner
+
+    @property
+    def executor_factory(self):
+        """Get ExecutorFactory instance."""
+        if self._executor_factory is None:
+            from src.services.executor_factory import ExecutorFactory
+            self._executor_factory = ExecutorFactory()
+        return self._executor_factory
 
     @property
     def inventory(self):

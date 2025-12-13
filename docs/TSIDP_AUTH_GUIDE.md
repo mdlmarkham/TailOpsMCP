@@ -1,44 +1,48 @@
-# SystemManager MCP Server - TSIDP Authentication Guide
+# TailOpsMCP Control Plane Gateway - TSIDP Authentication Guide
 
 ## Overview
 
-SystemManager now supports OAuth 2.1 authentication using your existing Tailscale Identity Provider (TSIDP). This eliminates the need for custom HMAC tokens and provides enterprise-grade authentication with automatic user identification.
+TailOpsMCP control plane gateway supports OAuth 2.1 authentication using your existing Tailscale Identity Provider (TSIDP). This provides enterprise-grade authentication with automatic user identification across all managed targets through the centralized gateway.
 
-## Prerequisites
+## Prerequisites (Control Plane Gateway)
 
 - **TSIDP Server**: Running on your Tailnet (e.g., `https://tsidp.tailf9480.ts.net`)
-- **Tailscale**: Installed and authenticated on the server
+- **Tailscale**: Installed and authenticated on the gateway server
 - **FastMCP 1.0+**: Built-in OAuth 2.1 support with Dynamic Client Registration
+- **Target Registry**: Configured `targets.yaml` with all managed systems
 
-## Authentication Methods
+## Authentication Methods (Gateway Architecture)
 
-TailOpsMCP supports two authentication modes via the `SYSTEMMANAGER_AUTH_MODE` environment variable:
+TailOpsMCP control plane gateway supports two authentication modes via the `SYSTEMMANAGER_AUTH_MODE` environment variable:
 
-### 1. TSIDP OAuth (Recommended)
+### 1. TSIDP OAuth (Recommended for Gateway)
 
-Uses OAuth 2.1 with automatic Dynamic Client Registration (RFC 7591).
+Uses OAuth 2.1 with automatic Dynamic Client Registration (RFC 7591) for centralized gateway authentication.
 
-**Advantages:**
-- Automatic user authentication via Tailscale
-- No manual token management
-- Works with standard OAuth clients
-- Automatic token refresh
-- Introspection support (RFC 7662)
+**Advantages (Gateway Context):**
+- Centralized user authentication via Tailscale for all target operations
+- No manual token management across multiple systems
+- Works with standard OAuth clients through the gateway
+- Automatic token refresh for gateway sessions
+- Introspection support (RFC 7662) with gateway audit logging
+- Single authentication point for all managed targets
 
-**Setup:**
+**Gateway Setup:**
 ```bash
 export SYSTEMMANAGER_AUTH_MODE=oauth
 export SYSTEMMANAGER_AUTH_SERVER=https://tsidp.tailf9480.ts.net
+export SYSTEMMANAGER_TARGETS_CONFIG=/opt/systemmanager/targets.yaml
 ```
 
 ### 2. HMAC Token Authentication (Legacy)
 
 Custom token-based authentication for backwards compatibility.
 
-**Setup:**
+**Gateway Setup:**
 ```bash
 export SYSTEMMANAGER_AUTH_MODE=token
 export SYSTEMMANAGER_SHARED_SECRET=your-secret-key
+export SYSTEMMANAGER_TARGETS_CONFIG=/opt/systemmanager/targets.yaml
 ```
 
 ## Quick Start with TSIDP
