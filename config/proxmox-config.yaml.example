@@ -1,0 +1,389 @@
+# Proxmox Configuration Example
+
+# This file demonstrates comprehensive Proxmox VE integration configuration
+# for TailOpsMCP with API authentication, discovery settings, and operational defaults
+
+## Basic Configuration
+
+```yaml
+# Proxmox VE Integration Configuration
+# Location: /etc/systemmanager/proxmox-config.yaml
+
+# Global Proxmox settings
+proxmox:
+  # Proxmox hosts configuration
+  hosts:
+    - host: "pve.example.com"
+      username: "root@pam"
+      password: "${PROXMOX_PASSWORD}"  # Environment variable reference
+      # OR use API token authentication (preferred)
+      api_token: "${PROXMOX_API_TOKEN}"
+      token_name: "tailopsmcp"
+      verify_ssl: false  # Set to true in production with valid certificates
+      port: 8006
+      timeout: 30
+      max_retries: 3
+      tags:
+        - "production"
+        - "primary"
+        - "cluster-1"
+    
+    - host: "pve-02.example.com"
+      username: "root@pam"
+      api_token: "${PROXMOX_API_TOKEN_02}"
+      token_name: "tailopsmcp"
+      verify_ssl: false
+      port: 8006
+      tags:
+        - "production"
+        - "secondary"
+        - "cluster-1"
+    
+    # Local development host
+    - host: "localhost"
+      username: "root@pam"
+      password: "${LOCAL_PROXMOX_PASSWORD}"
+      verify_ssl: false
+      port: 8006
+      tags:
+        - "development"
+        - "local"
+
+  # Default settings for operations
+  defaults:
+    # Storage settings
+    storage: "local-lvm"
+    storage_secondary: "local"
+    
+    # Network settings
+    network_bridge: "vmbr0"
+    network_bridge_management: "vmbr1"
+    
+    # Resource defaults
+    default_container_cores: 2
+    default_container_memory: 1024  # MB
+    default_container_disk: 20  # GB
+    default_vm_cores: 2
+    default_vm_memory: 2048  # MB
+    default_vm_disk: 40  # GB
+    
+    # Container template defaults
+    container_os_template: "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.gz"
+    container_features:
+      nesting: false
+      keyctl: false
+      mount: "nfs"
+    
+    # VM defaults
+    vm_os_type: "l26"  # Linux 2.6+
+    vm_vga: "qxl"
+    vm_display: "qxl"
+    vm_scsi_controller: "virtio-scsi-pci"
+    
+    # SSH and authentication
+    ssh_key_path: "~/.ssh/id_rsa"
+    ssh_key_paths:
+      - "~/.ssh/id_rsa"
+      - "~/.ssh/id_ed25519"
+    ssh_authorized_keys: []
+    ssh_key_urls: []
+
+  # Discovery settings
+  discovery:
+    # Auto-discovery configuration
+    auto_discover: true
+    update_interval: 300  # seconds
+    force_refresh_interval: 3600  # seconds
+    
+    # Discovery options
+    include_templates: true
+    include_snaps: true
+    include_backups: true
+    include_storage: true
+    
+    # Health check settings
+    health_check_interval: 60  # seconds
+    health_check_timeout: 10  # seconds
+    
+    # Discovery filters
+    filter_containers:
+      - exclude_tags: ["template", "base"]
+      - include_tags: ["managed", "production"]
+    
+    filter_vms:
+      - exclude_tags: ["template", "base"]
+      - include_tags: ["managed", "production"]
+
+  # Backup settings
+  backup:
+    # Default backup configuration
+    default_storage: "local"
+    default_mode: "snapshot"  # snapshot, suspend, stop
+    default_compression: "gzip"  # gzip, lzo, zstd
+    default_schedule: "01:00"  # Daily at 1 AM
+    
+    # Retention policies
+    retention:
+      daily: 7
+      weekly: 4
+      monthly: 12
+    
+    # Backup notification
+    notifications:
+      enabled: true
+      email_recipients:
+        - "admin@example.com"
+        - "ops@example.com"
+      webhook_url: "${BACKUP_WEBHOOK_URL}"
+    
+    # Backup exclusion rules
+    exclude:
+      containers:
+        - tags: ["no-backup", "temporary"]
+      vms:
+        - tags: ["no-backup", "temporary"]
+
+  # Snapshot settings
+  snapshot:
+    # Default snapshot settings
+    default_retention: 24  # hours
+    max_snapshots_per_resource: 10
+    
+    # Auto-snapshot schedules
+    schedules:
+      - name: "daily"
+        cron: "0 2 * * *"  # Daily at 2 AM
+        retention: 24
+      - name: "weekly"
+        cron: "0 3 * * 0"  # Weekly on Sunday at 3 AM
+        retention: 168  # 1 week
+      - name: "pre-deployment"
+        cron: "manual"
+        retention: 72  # 3 days
+
+  # Security settings
+  security:
+    # API security
+    api_rate_limit: 100  # requests per minute
+    api_request_timeout: 30  # seconds
+    
+    # SSL/TLS settings
+    ssl_verification: true
+    ssl_ca_bundle: "/etc/ssl/certs/ca-certificates.crt"
+    ssl_client_cert: null
+    
+    # Authentication
+    token_rotation_interval: 86400  # 24 hours
+    session_timeout: 3600  # 1 hour
+    
+    # Access control
+    allowed_operations:
+      - "create_container"
+      - "start_container"
+      - "stop_container"
+      - "reboot_container"
+      - "delete_container"
+      - "clone_container"
+      - "create_snapshot"
+      - "delete_snapshot"
+      - "restore_snapshot"
+      - "create_backup"
+      - "list_backups"
+      - "restore_backup"
+      - "discover_hosts"
+      - "discover_containers"
+      - "discover_vms"
+    
+    # Denied operations (high-risk)
+    denied_operations:
+      - "migrate_container"  # Requires additional approval
+      - "migrate_vm"  # Requires additional approval
+      - "delete_snapshot"  # Requires additional approval
+      - "delete_backup"  # Requires additional approval
+
+  # Monitoring integration
+  monitoring:
+    # Health check endpoints
+    health_checks:
+      enabled: true
+      endpoint: "/health"
+      interval: 30  # seconds
+      timeout: 5  # seconds
+    
+    # Metrics collection
+    metrics:
+      enabled: true
+      endpoint: "/metrics"
+      interval: 60  # seconds
+    
+    # Alerting
+    alerts:
+      enabled: true
+      webhook_url: "${MONITORING_WEBHOOK_URL}"
+      email_recipients: ["ops@example.com"]
+      
+      # Alert conditions
+      conditions:
+        - name: "host_down"
+          condition: "host_status == 'offline'"
+          severity: "critical"
+          notification: "immediate"
+        
+        - name: "container_failed"
+          condition: "container_status == 'error'"
+          severity: "warning"
+          notification: "delayed"
+        
+        - name: "backup_failed"
+          condition: "backup_status == 'failed'"
+          severity: "critical"
+          notification: "immediate"
+
+  # Operational settings
+  operations:
+    # Resource limits
+    max_concurrent_operations: 10
+    operation_timeout: 300  # 5 minutes
+    task_monitoring_timeout: 600  # 10 minutes
+    
+    # Resource constraints
+    max_container_cores: 16
+    max_container_memory: 16384  # 16 GB
+    max_container_disk: 500  # 500 GB
+    max_vm_cores: 32
+    max_vm_memory: 65536  # 64 GB
+    max_vm_disk: 2000  # 2 TB
+    
+    # Validation rules
+    validation:
+      hostname_pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
+      vmid_range:
+        min: 100
+        max: 999999
+      name_length:
+        min: 2
+        max: 64
+      description_length:
+        max: 255
+
+  # Integration settings
+  integration:
+    # Fleet inventory integration
+    fleet_inventory:
+      enabled: true
+      auto_update: true
+      update_interval: 300  # seconds
+    
+    # Policy engine integration
+    policy_engine:
+      enabled: true
+      config_path: "/etc/systemmanager/policy.yaml"
+      cache_enabled: true
+      cache_ttl: 300  # seconds
+    
+    # Audit logging
+    audit_logging:
+      enabled: true
+      log_level: "INFO"
+      log_file: "/var/log/systemmanager/proxmox-audit.log"
+      include_parameters: false  # Don't log sensitive data
+      retention_days: 90
+    
+    # Observability integration
+    observability:
+      enabled: true
+      metrics_endpoint: "/metrics"
+      tracing_enabled: true
+      log_enrichment: true
+
+# Environment-specific overrides
+# These can be overridden by environment variables or separate config files
+
+# Development environment
+development:
+  proxmox:
+    defaults:
+      verify_ssl: false
+      timeout: 60
+    security:
+      ssl_verification: false
+      api_rate_limit: 1000
+    operations:
+      max_concurrent_operations: 5
+
+# Production environment
+production:
+  proxmox:
+    defaults:
+      verify_ssl: true
+      timeout: 30
+    security:
+      ssl_verification: true
+      api_rate_limit: 100
+      token_rotation_interval: 43200  # 12 hours
+    monitoring:
+      alerts:
+        conditions:
+          - name: "high_resource_usage"
+            condition: "cpu_usage > 80 or memory_usage > 85"
+            severity: "warning"
+
+# Testing environment
+testing:
+  proxmox:
+    discovery:
+      auto_discover: false
+    backup:
+      retention:
+        daily: 2
+        weekly: 1
+        monthly: 1
+```
+
+## Configuration Environment Variables
+
+The following environment variables can be used to override configuration values:
+
+```bash
+# Proxmox Authentication
+export PROXMOX_PASSWORD="your_proxmox_password"
+export PROXMOX_API_TOKEN="your_api_token"
+export PROXMOX_API_TOKEN_02="backup_api_token"
+export LOCAL_PROXMOX_PASSWORD="local_password"
+
+# Backup and Monitoring
+export BACKUP_WEBHOOK_URL="https://hooks.slack.com/your-webhook"
+export MONITORING_WEBHOOK_URL="https://hooks.slack.com/monitoring"
+
+# Security
+export PROXMOX_SSL_CA_BUNDLE="/path/to/ca-bundle.crt"
+export PROXMOX_SSL_CLIENT_CERT="/path/to/client-cert.pem"
+```
+
+## Configuration Validation
+
+The configuration will be validated for:
+- Required fields (host, username, etc.)
+- URL/address format validation
+- Port number validation (1-65535)
+- SSL certificate validation
+- Token format validation
+- Network connectivity validation
+
+## Security Considerations
+
+1. **API Tokens**: Use API tokens instead of passwords when possible
+2. **SSL Verification**: Always verify SSL certificates in production
+3. **Network Security**: Restrict API access to trusted networks
+4. **Access Control**: Implement proper role-based access control
+5. **Audit Logging**: Enable comprehensive audit logging
+6. **Credential Storage**: Use secure credential storage mechanisms
+
+## Integration Points
+
+This configuration integrates with:
+- TailOpsMCP Fleet Inventory system
+- Policy-driven execution engine
+- Audit logging system
+- Monitoring and alerting system
+- Configuration management system

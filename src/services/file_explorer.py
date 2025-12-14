@@ -1,80 +1,131 @@
 """
-File system explorer service for SystemManager MCP Server
+File system explorer service for SystemManager MCP Server with secure path traversal protection.
 """
 
 import os
 import fnmatch
-from typing import Dict, List
+import logging
+from typing import Dict, List, Optional
 from datetime import datetime
+
+from src.utils.sandbox import SecureFileSandbox, default_sandbox
+
+logger = logging.getLogger(__name__)
 
 
 class FileExplorer:
-    """Service for file system exploration and search."""
+    """Secure service for file system exploration and search with path traversal protection."""
+    
+    def __init__(self, sandbox: Optional[SecureFileSandbox] = None):
+        """Initialize FileExplorer with secure sandbox.
+        
+        Args:
+            sandbox: SecureFileSandbox instance for path protection (uses default if None)
+        """
+        self.sandbox = sandbox or default_sandbox
+        logger.info("FileExplorer initialized with secure sandbox protection")
     
     async def list_directory(self, path: str = "/", recursive: bool = False) -> Dict:
-        """List contents of a directory."""
+        """List contents of a directory with secure path traversal protection.
+        
+        Args:
+            path: Directory path to list
+            recursive: Whether to list recursively
+            
+        Returns:
+            Dictionary with success status and data or error message
+        """
         try:
-            if not os.path.exists(path):
-                return {"success": False, "error": f"Path does not exist: {path}"}
+            # Use secure sandbox for path validation and traversal
+            entries, error = self.sandbox.safe_list_directory(path)
             
-            if not os.path.isdir(path):
-                return {"success": False, "error": f"Path is not a directory: {path}"}
+            if error:
+                return {"success": False, "error": error}
             
-            entries = []
+            if not entries:
+                return {"success": True, "data": []}
             
-            for entry in os.listdir(path):
-                entry_path = os.path.join(path, entry)
-                try:
-                    stat = os.stat(entry_path)
-                    entry_info = {
-                        "name": entry,
-                        "path": entry_path,
-                        "type": "directory" if os.path.isdir(entry_path) else "file",
-                        "size": stat.st_size if os.path.isfile(entry_path) else 0,
-                        "permissions": oct(stat.st_mode)[-3:],
-                        "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                        "accessed": datetime.fromtimestamp(stat.st_atime).isoformat()
-                    }
-                    entries.append(entry_info)
-                except PermissionError:
-                    # Skip entries we don't have permission to access
-                    continue
+            # Apply recursive listing if requested
+            if recursive:
+                all_entries = entries.copy()
+                directory_entries = [e for e in entries if e["type"] == "directory"]
+                
+                for directory_entry in directory_entries:
+                    try:
+                        subdir_path = directory_entry["path"]
+                        subdir_entries, subdir_error = self.sandbox.safe_list_directory(subdir_path)
+                        
+                        if not subdir_error and subdir_entries:
+                            # Add entries with relative paths
+                            for sub_entry in subdir_entries:
+                                sub_entry["path"] = sub_entry["path"]
+                                sub_entry["name"] = os.path.relpath(sub_entry["path"], subdir_path)
+                                all_entries.append(sub_entry)
+                    except Exception as e:
+                        logger.warning(f"Error listing subdirectory {directory_entry['path']}: {str(e)}")
+                        continue
+                
+                return {"success": True, "data": all_entries}
             
             return {"success": True, "data": entries}
             
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            logger.error(f"Error listing directory {path}: {str(e)}")
+            return {"success": False, "error": f"Directory listing error: {str(e)}"}
     
     async def search_files(self, pattern: str, path: str = "/", max_results: int = 100) -> Dict:
-        """Search for files by name pattern."""
+        """Search for files by name pattern with secure path handling.
+        
+        Args:
+            pattern: File name pattern to search for
+            path: Base directory to search in
+            max_results: Maximum number of results to return
+            
+        Returns:
+            Dictionary with success status and results or error message
+        """
         try:
-            if not os.path.exists(path):
-                return {"success": False, "error": f"Path does not exist: {path}"}
+            # Validate base path using sandbox
+            resolved_path, error = self.sandbox.path_resolver.resolve_secure_path(path)
+            if error:
+                return {"success": False, "error": error}
             
             results = []
             
-            for root, dirs, files in os.walk(path):
-                # Skip directories we can't access
+            # Walk directory tree safely
+            for root, dirs, files in os.walk(resolved_path):
+                # Skip directories we can't access or that are blocked
                 try:
-                    dirs[:] = [d for d in dirs if os.access(os.path.join(root, d), os.R_OK)]
+                    # Filter out inaccessible directories
+                    dirs[:] = [d for d in dirs if self._is_safe_directory_access(os.path.join(root, d))]
                 except PermissionError:
                     continue
                 
+                # Search for matching files
                 for file in files:
                     if fnmatch.fnmatch(file, pattern):
                         file_path = os.path.join(root, file)
+                        
+                        # Validate each file path using sandbox
+                        validated_path, validation_error = self.sandbox.path_resolver.resolve_secure_path(file_path)
+                        if validation_error:
+                            continue
+                        
                         try:
-                            stat = os.stat(file_path)
-                            results.append({
-                                "path": file_path,
-                                "name": file,
-                                "size": stat.st_size,
-                                "modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
-                            })
-                            
-                            if len(results) >= max_results:
-                                break
-                        except (PermissionError, OSError):
+                            # Get file info using sandbox
+                            file_info, info_error = self.sandbox.safe_get_file_info(validated_path)
+                            if not info_error and file_info:
+                                results.append({
+                                    "path": file_info["path"],
+                                    "name": file_info["name"],
+                                    "size": file_info["size"],
+                                    "modified": file_info["modified"]
+                                })
+                                
+                                if len(results) >= max_results:
+                                    break
+                        except Exception as e:
+                            logger.debug(f"Error accessing file {file_path}: {str(e)}")
                             continue
                 
                 if len(results) >= max_results:
@@ -83,54 +134,71 @@ class FileExplorer:
             return {"success": True, "data": results}
             
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            logger.error(f"Error searching files in {path}: {str(e)}")
+            return {"success": False, "error": f"File search error: {str(e)}"}
     
     async def get_file_info(self, file_path: str) -> Dict:
-        """Get detailed information about a file."""
+        """Get detailed information about a file with secure path handling.
+        
+        Args:
+            file_path: Path to the file
+            
+        Returns:
+            Dictionary with success status and file info or error message
+        """
         try:
-            if not os.path.exists(file_path):
-                return {"success": False, "error": f"File does not exist: {file_path}"}
+            # Use secure sandbox to get file info
+            file_info, error = self.sandbox.safe_get_file_info(file_path)
             
-            if not os.path.isfile(file_path):
-                return {"success": False, "error": f"Path is not a file: {file_path}"}
-            
-            stat = os.stat(file_path)
-            
-            file_info = {
-                "path": file_path,
-                "name": os.path.basename(file_path),
-                "size": stat.st_size,
-                "permissions": oct(stat.st_mode)[-3:],
-                "owner": stat.st_uid,
-                "group": stat.st_gid,
-                "created": datetime.fromtimestamp(stat.st_ctime).isoformat(),
-                "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                "accessed": datetime.fromtimestamp(stat.st_atime).isoformat()
-            }
+            if error:
+                return {"success": False, "error": error}
             
             return {"success": True, "data": file_info}
             
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            logger.error(f"Error getting file info for {file_path}: {str(e)}")
+            return {"success": False, "error": f"File info error: {str(e)}"}
     
     async def read_file(self, file_path: str, encoding: str = "utf-8") -> Dict:
-        """Read the contents of a file."""
+        """Read the contents of a file with secure path handling.
+        
+        Args:
+            file_path: Path to the file to read
+            encoding: File encoding (default utf-8)
+            
+        Returns:
+            Dictionary with success status and file content or error message
+        """
         try:
-            if not os.path.exists(file_path):
-                return {"success": False, "error": f"File does not exist: {file_path}"}
+            # Use secure sandbox to read file
+            content, error = self.sandbox.safe_read_file(file_path, max_size=1024*1024)  # 1MB limit
             
-            if not os.path.isfile(file_path):
-                return {"success": False, "error": f"Path is not a file: {file_path}"}
-            
-            # Check file size (limit to 1MB for safety)
-            file_size = os.path.getsize(file_path)
-            if file_size > 1024 * 1024:  # 1MB
-                return {"success": False, "error": "File too large (max 1MB)"}
-            
-            with open(file_path, 'r', encoding=encoding) as f:
-                content = f.read()
+            if error:
+                return {"success": False, "error": error}
             
             return {"success": True, "data": content}
             
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            logger.error(f"Error reading file {file_path}: {str(e)}")
+            return {"success": False, "error": f"File read error: {str(e)}"}
+    
+    def _is_safe_directory_access(self, directory_path: str) -> bool:
+        """Check if directory access is safe.
+        
+        Args:
+            directory_path: Path to check
+            
+        Returns:
+            True if directory access is safe, False otherwise
+        """
+        try:
+            # Check if we can read the directory
+            if not os.access(directory_path, os.R_OK):
+                return False
+            
+            # Use sandbox to validate path
+            resolved_path, error = self.sandbox.path_resolver.resolve_secure_path(directory_path, ensure_within_allowed=True)
+            return error is None
+            
+        except Exception:
+            return False

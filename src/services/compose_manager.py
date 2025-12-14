@@ -1,15 +1,18 @@
 """
-Docker Compose Stack Management
+Docker Compose Stack Management with security hardening.
 Similar to Portainer/Komodo stacks - deploy from GitHub repos
 """
 
 import os
 import yaml
 import subprocess
+import logging
 from typing import Dict, List, Optional
 from pathlib import Path
 from urllib.parse import urlparse
 import git
+
+logger = logging.getLogger(__name__)
 
 
 class ComposeStackManager:
@@ -20,7 +23,7 @@ class ComposeStackManager:
         self.stacks_dir.mkdir(parents=True, exist_ok=True)
 
     def _validate_repo_url(self, url: str) -> bool:
-        """Validate repository URL is from allowed sources.
+        """Securely validate repository URL to prevent command injection.
 
         Args:
             url: Git repository URL to validate
@@ -28,30 +31,91 @@ class ComposeStackManager:
         Returns:
             True if URL is allowed, False otherwise
         """
+        import re
+        
+        # Basic input validation
+        if not url or not isinstance(url, str):
+            return False
+        
         # Get allowed hosts from environment, default to common git providers
         allowed_hosts_str = os.getenv(
             "SYSTEMMANAGER_ALLOWED_GIT_HOSTS",
             "github.com,gitlab.com,bitbucket.org"
         )
-        allowed_hosts = [h.strip() for h in allowed_hosts_str.split(",") if h.strip()]
+        allowed_hosts = [h.strip().lower() for h in allowed_hosts_str.split(",") if h.strip()]
 
         try:
+            # URL format validation
+            url_pattern = re.compile(r'^(https://|git@)[a-zA-Z0-9.-]+(/.*)?$', re.IGNORECASE)
+            if not url_pattern.match(url):
+                return False
+
             parsed = urlparse(url)
 
             # Only allow https and git protocols
             if parsed.scheme not in ['https', 'git']:
                 return False
 
-            # Extract hostname (handle git@host:repo format)
-            if '@' in parsed.netloc:
-                host = parsed.netloc.split('@')[-1].split(':')[0]
-            else:
-                host = parsed.netloc.split(':')[0]
+            # Securely extract hostname with proper validation
+            host = self._extract_secure_hostname(parsed, url)
+            if not host:
+                return False
+            
+            # Normalize hostname
+            host = host.lower().strip()
+            
+            # Validate hostname format
+            if not self._is_valid_hostname(host):
+                return False
 
             # Check if host is in allowed list
             return any(host == allowed or host.endswith('.' + allowed) for allowed in allowed_hosts)
-        except Exception:
+        except Exception as e:
+            logger.warning(f"URL validation error for {url}: {str(e)}")
             return False
+    
+    def _extract_secure_hostname(self, parsed, url: str) -> Optional[str]:
+        """Securely extract hostname from parsed URL."""
+        try:
+            # Handle SSH git URLs (git@host:repo format)
+            if '@' in url and url.startswith('git@'):
+                git_match = re.match(r'git@([^:]+):', url)
+                if git_match:
+                    return git_match.group(1)
+                return None
+            
+            # Handle standard URLs
+            netloc = parsed.netloc
+            
+            # Remove port if present
+            if ':' in netloc:
+                netloc = netloc.split(':')[0]
+            
+            # Validate netloc format
+            if not netloc or '.' not in netloc:
+                return None
+            
+            return netloc
+            
+        except Exception:
+            return None
+    
+    def _is_valid_hostname(self, hostname: str) -> bool:
+        """Validate hostname format to prevent injection."""
+        import re
+        
+        # Hostname pattern: alphanumeric, hyphens, dots, max 253 chars
+        hostname_pattern = re.compile(
+            r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$'
+        )
+        
+        return (
+            len(hostname) <= 253 and
+            hostname_pattern.match(hostname) is not None and
+            not hostname.startswith('-') and
+            not hostname.endswith('-') and
+            '..' not in hostname
+        )
     
     async def deploy_stack(
         self,

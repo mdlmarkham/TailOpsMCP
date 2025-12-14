@@ -305,7 +305,7 @@ class PolicyGate:
     async def enforce_policy(self, tool_name: str, target_id: str, operation: str,
                            parameters: Dict[str, Any], claims: TokenClaims,
                            dry_run: bool = False) -> Tuple[bool, List[str]]:
-        """Enforce security policy for an operation.
+        """Enforce security policy for an operation with proper async/sync consistency.
         
         Args:
             tool_name: Tool name
@@ -321,8 +321,8 @@ class PolicyGate:
         validation_errors = []
         
         try:
-            # Step 1: Validate target existence
-            target = self.validate_target_existence(target_id)
+            # Step 1: Validate target existence (fixed async method)
+            target = await self.validate_target_existence(target_id)
             
             # Step 2: Find matching policy rule
             policy_rule = self.get_matching_policy_rule(tool_name, target_id, operation)
@@ -336,10 +336,11 @@ class PolicyGate:
                 validation_errors.append(f"User authorization failed: {reason}")
                 return False, validation_errors
             
-            # Step 4: Validate target capabilities
-            self.validate_capabilities(target, policy_rule.required_capabilities)
+            # Step 4: Validate target capabilities (fixed async method)
+            cap_errors = await self.validate_capabilities(target, policy_rule.required_capabilities)
+            validation_errors.extend(cap_errors)
             
-            # Step 5: Validate parameters (now properly awaited)
+            # Step 5: Validate parameters (properly awaited)
             param_errors = await self.validate_parameters(operation, parameters, policy_rule.parameter_constraints, target_id)
             validation_errors.extend(param_errors)
             
@@ -373,6 +374,63 @@ class PolicyGate:
             logger.error(f"Policy enforcement error: {e}")
             validation_errors.append(f"Policy enforcement error: {e}")
             return False, validation_errors
+    
+    async def validate_target_existence(self, target_id: str) -> TargetMetadata:
+        """Validate target existence in registry.
+        
+        Args:
+            target_id: Target identifier
+            
+        Returns:
+            TargetMetadata if found
+            
+        Raises:
+            SystemManagerError: If target not found
+        """
+        try:
+            target = await self.target_registry.get_target(target_id)
+            if not target:
+                raise SystemManagerError(
+                    f"Target {target_id} not found in registry",
+                    ErrorCategory.VALIDATION_ERROR
+                )
+            return target
+        except Exception as e:
+            if isinstance(e, SystemManagerError):
+                raise
+            raise SystemManagerError(
+                f"Error validating target {target_id}: {str(e)}",
+                ErrorCategory.VALIDATION_ERROR
+            )
+    
+    async def validate_capabilities(self, target: TargetMetadata, required_capabilities: List[str]) -> List[str]:
+        """Validate target capabilities against required capabilities.
+        
+        Args:
+            target: Target metadata
+            required_capabilities: List of required capabilities
+            
+        Returns:
+            List of validation errors (empty if valid)
+        """
+        errors = []
+        
+        try:
+            target_capabilities = target.capabilities or []
+            
+            for capability in required_capabilities:
+                if capability not in target_capabilities:
+                    errors.append(f"Target {target.id} missing required capability: {capability}")
+            
+            if errors:
+                logger.warning(f"Capability validation failed for target {target.id}: {errors}")
+            
+            return errors
+            
+        except Exception as e:
+            error_msg = f"Error validating capabilities for target {target.id}: {str(e)}"
+            logger.error(error_msg)
+            return [error_msg]
     
     def _check_approval(self, tool_name: str, parameters: Dict[str, Any]) -> bool:
         """Check if operation has approval (placeholder implementation).

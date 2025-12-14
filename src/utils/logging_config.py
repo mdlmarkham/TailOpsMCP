@@ -1,12 +1,14 @@
 """
-Standardized logging configuration and utilities for consistent observability.
+Secure logging configuration with sensitive data redaction and production hardening.
 """
 
 import logging
 import os
 import sys
+import re
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+from io import StringIO
 
 from src.utils.audit_enhanced import LogLevel, audit_logger
 

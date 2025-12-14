@@ -1,0 +1,287 @@
+# Development Flexible Policy Configuration
+# This policy provides flexible access for development environments
+
+policies:
+  version: "v2"
+  name: "Development Flexible Policy"
+  description: "Flexible policy for development environments with permissive access"
+  deny_by_default: false  # Allow by default for development
+  enable_dry_run: false   # Disable dry run for faster development workflow
+  require_approval_for_admin: false
+  audit_all_operations: true
+  
+  # Global rules (apply to all targets)
+  global_policies:
+    - name: "development_observation"
+      description: "Read operations allowed for all environments"
+      enabled: true
+      operations:
+        - service_status
+        - network_status
+        - network_scan
+        - file_read
+        - container_inspect
+        - backup_list
+        - snapshot_list
+      target_roles: [development, staging, production, gateway]
+      allowed: true
+      requires_approval: false
+      parameter_constraints:
+        file_path:
+          type: "string"
+          required: true
+          max_length: 2048  # More permissive for development
+          pattern: "^[^<>:\"|?*]+$"
+        host:
+          type: "string"
+          required: false
+          max_length: 253
+        port:
+          type: "int"
+          required: false
+          min: 1
+          max: 65535
+    
+    - name: "development_package_management"
+      description: "Package management for development"
+      enabled: true
+      operations:
+        - package_update
+        - package_install
+        - package_remove
+        - package_list
+      target_roles: [development, staging]
+      allowed: true
+      requires_approval: false
+      operation_timeout: 300  # 5 minutes
+      parameter_constraints:
+        package_name:
+          type: "string"
+          required: true
+          max_length: 256  # More permissive for development packages
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9._+-]*$"
+  
+  # Role-based policies
+  role_policies:
+    gateway:
+      - name: "gateway_local_operations"
+        description: "Full access for gateway local operations"
+        enabled: true
+        operations:
+          - service_restart
+          - service_start
+          - service_stop
+          - file_read
+          - file_write
+          - file_delete
+          - file_copy
+          - network_test
+          - network_status
+        target_roles: [gateway]
+        allowed: true
+        requires_approval: false
+        operation_timeout: 120
+        parameter_constraints:
+          service_name:
+            type: "string"
+            required: true
+            max_length: 128
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+          file_path:
+            type: "string"
+            required: true
+            max_length: 2048
+            pattern: "^[^<>:\"|?*]+$"
+    
+    development:
+      - name: "development_full_container_access"
+        description: "Full container access for development"
+        enabled: true
+        operations:
+          - container_create
+          - container_delete
+          - container_start
+          - container_stop
+          - container_restart
+          - container_inspect
+        target_roles: [development]
+        allowed: true
+        requires_approval: false
+        operation_timeout: 300
+        parameter_constraints:
+          container_name:
+            type: "string"
+            required: true
+            max_length: 128  # More permissive names
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+          template:
+            type: "string"
+            required: true
+            max_length: 256
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_./-]*$"
+          config:
+            type: "dict"
+            required: false
+            default: {}
+      
+      - name: "development_stack_management"
+        description: "Full stack management for development"
+        enabled: true
+        operations:
+          - stack_deploy
+          - stack_remove
+          - stack_update
+        target_roles: [development]
+        allowed: true
+        requires_approval: false
+        operation_timeout: 600  # 10 minutes for complex deployments
+        parameter_constraints:
+          stack_name:
+            type: "string"
+            required: true
+            max_length: 128
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+          config:
+            type: "dict"
+            required: true
+            description: "Stack configuration (Docker Compose, etc.)"
+      
+      - name: "development_backup_operations"
+        description: "Full backup operations for development"
+        enabled: true
+        operations:
+          - backup_create
+          - backup_restore
+          - backup_list
+          - backup_delete
+        target_roles: [development]
+        allowed: true
+        requires_approval: false
+        operation_timeout: 900  # 15 minutes for development backups
+        parameter_constraints:
+          backup_id:
+            type: "string"
+            required: true
+            max_length: 128
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+          target_path:
+            type: "string"
+            required: true
+            max_length: 2048
+            pattern: "^[^<>:\"|?*]+$"
+          backup_type:
+            type: "string"
+            required: false
+            default: "full"
+            allowed_values: ["full", "incremental", "differential"]
+      
+      - name: "development_snapshot_operations"
+        description: "Full snapshot operations for development"
+        enabled: true
+        operations:
+          - snapshot_create
+          - snapshot_delete
+          - snapshot_restore
+          - snapshot_list
+        target_roles: [development]
+        allowed: true
+        requires_approval: false
+        operation_timeout: 300
+        parameter_constraints:
+          container_id:
+            type: "string"
+            required: true
+            max_length: 128
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+          snapshot_name:
+            type: "string"
+            required: true
+            max_length: 128
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+          description:
+            type: "string"
+            required: false
+            max_length: 512
+      
+      - name: "development_service_management"
+        description: "Full service management for development"
+        enabled: true
+        operations:
+          - service_restart
+          - service_start
+          - service_stop
+        target_roles: [development]
+        allowed: true
+        requires_approval: false
+        operation_timeout: 120
+        parameter_constraints:
+          service_name:
+            type: "string"
+            required: true
+            max_length: 128
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+          timeout:
+            type: "int"
+            required: false
+            min: 10
+            max: 600
+            default: 60
+    
+    staging:
+      - name: "staging_balanced_access"
+        description: "Balanced access for staging environment"
+        enabled: true
+        operations:
+          - service_restart
+          - service_start
+          - service_stop
+          - container_start
+          - container_stop
+          - container_restart
+          - stack_deploy
+          - stack_update
+          - file_read
+          - file_write
+          - backup_create
+          - backup_list
+        target_roles: [staging]
+        allowed: true
+        requires_approval: false
+        parameter_constraints:
+          service_name:
+            type: "string"
+            required: true
+            max_length: 96
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+          container_name:
+            type: "string"
+            required: true
+            max_length: 96
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+          stack_name:
+            type: "string"
+            required: true
+            max_length: 96
+            pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+  
+  # Emergency policies (simplified for development)
+  emergency_policies:
+    - name: "development_emergency"
+      description: "Emergency operations for development environments"
+      enabled: true
+      operations:
+        - service_restart
+        - container_start
+        - container_stop
+        - backup_create
+      target_roles: [development, staging]
+      allowed: true
+      requires_approval: false
+
+  # No maintenance windows for development - 24/7 access
+  maintenance_windows: []
+
+  # Policy lifecycle
+  created_at: "2024-01-01T00:00:00Z"
+  created_by: "devops-team"
+  effective_from: "2024-01-01T00:00:00Z"

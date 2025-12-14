@@ -24,9 +24,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Enable FastMCP auth debugging only in development
-if os.getenv("SYSTEMMANAGER_ENV") == "development":
-    logging.getLogger("fastmcp.server.auth").setLevel(logging.DEBUG)
+# Initialize secure logging configuration
+from src.utils.secure_logging import setup_secure_logging
+setup_secure_logging()
 
 # Create FastMCP instance with auth
 mcp = create_mcp_instance()
