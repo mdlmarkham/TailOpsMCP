@@ -1,0 +1,221 @@
+workflows:
+  # Environment Provisioning Workflow
+  provision_production_environment:
+    name: "Provision Production Environment"
+    description: "Provision a complete production environment with containers, services, and networking"
+    category: "provisioning"
+    version: "1.0.0"
+    
+    parameters:
+      environment_name:
+        type: "string"
+        required: true
+        description: "Name of the environment to provision"
+        validation:
+          pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
+          max_length: 50
+      
+      container_count:
+        type: "integer"
+        required: true
+        default: 5
+        description: "Number of containers to create"
+        validation:
+          min: 1
+          max: 100
+      
+      service_type:
+        type: "string"
+        required: true
+        choices: ["web", "api", "database", "cache", "message-queue"]
+        description: "Type of service to deploy"
+      
+      node_type:
+        type: "string"
+        required: true
+        choices: ["standard", "high-memory", "high-cpu", "gpu"]
+        default: "high-memory"
+        description: "Node type for containers"
+      
+      backup_enabled:
+        type: "boolean"
+        required: false
+        default: true
+        description: "Enable automatic backups"
+      
+      monitoring_enabled:
+        type: "boolean"
+        required: false
+        default: true
+        description: "Enable monitoring and alerting"
+    
+    approvals:
+      - step: "allocate_resources"
+        required_approvers: ["operations_manager"]
+        description: "Resource allocation approval required"
+        timeout_hours: 24
+      
+      - step: "create_initial_backup"
+        required_approvers: ["security_admin"]
+        description: "Initial backup approval required for production"
+        timeout_hours: 12
+    
+    steps:
+      - id: "validate_prerequisites"
+        name: "Validate Prerequisites"
+        type: "validation"
+        timeout_minutes: 5
+        retry_policy:
+          max_attempts: 3
+          initial_delay_seconds: 30
+      
+      - id: "check_resource_availability"
+        name: "Check Resource Availability"
+        type: "validation"
+        timeout_minutes: 10
+        dependencies: ["validate_prerequisites"]
+      
+      - id: "allocate_resources"
+        name: "Allocate Resources"
+        type: "resource_allocation"
+        timeout_minutes: 15
+        requires_approval: true
+        retry_policy:
+          max_attempts: 2
+          initial_delay_minutes: 1
+      
+      - id: "create_network"
+        name: "Create Network"
+        type: "network_configuration"
+        timeout_minutes: 10
+        dependencies: ["allocate_resources"]
+      
+      - id: "create_containers"
+        name: "Create Containers"
+        type: "container_operations"
+        timeout_minutes: 45
+        dependencies: ["create_network"]
+        retry_policy:
+          max_attempts: 3
+          initial_delay_minutes: 2
+      
+      - id: "configure_storage"
+        name: "Configure Storage"
+        type: "container_operations"
+        timeout_minutes: 20
+        dependencies: ["create_containers"]
+      
+      - id: "deploy_services"
+        name: "Deploy Services"
+        type: "service_deployment"
+        timeout_minutes: 30
+        dependencies: ["configure_storage"]
+        retry_policy:
+          max_attempts: 2
+          initial_delay_minutes: 2
+      
+      - id: "configure_load_balancer"
+        name: "Configure Load Balancer"
+        type: "network_configuration"
+        timeout_minutes: 15
+        dependencies: ["deploy_services"]
+      
+      - id: "setup_monitoring"
+        name: "Setup Monitoring"
+        type: "configuration"
+        timeout_minutes: 20
+        dependencies: ["configure_load_balancer"]
+      
+      - id: "run_health_checks"
+        name: "Run Health Checks"
+        type: "health_validation"
+        timeout_minutes: 15
+        dependencies: ["setup_monitoring"]
+      
+      - id: "run_integration_tests"
+        name: "Run Integration Tests"
+        type: "testing"
+        timeout_minutes: 30
+        dependencies: ["run_health_checks"]
+      
+      - id: "create_initial_backup"
+        name: "Create Initial Backup"
+        type: "backup"
+        timeout_minutes: 45
+        dependencies: ["run_integration_tests"]
+        requires_approval: true
+      
+      - id: "setup_automated_backups"
+        name: "Setup Automated Backups"
+        type: "configuration"
+        timeout_minutes: 10
+        dependencies: ["create_initial_backup"]
+    
+    rollback_plan:
+      enabled: true
+      conditions:
+        - "container_creation_failed"
+        - "service_deployment_failed"
+        - "health_check_failed"
+      actions:
+        - id: "cleanup_containers"
+          name: "Cleanup Created Containers"
+          type: "container_operations"
+          timeout_minutes: 30
+          parameters:
+            action: "delete_all"
+            preserve_data: false
+        
+        - id: "cleanup_network"
+          name: "Cleanup Network"
+          type: "network_configuration"
+          timeout_minutes: 15
+          parameters:
+            action: "delete"
+        
+        - id: "cleanup_storage"
+          name: "Cleanup Storage"
+          type: "container_operations"
+          timeout_minutes: 20
+          parameters:
+            action: "cleanup_volumes"
+        
+        - id: "cleanup_resources"
+          name: "Release Allocated Resources"
+          type: "resource_allocation"
+          timeout_minutes: 10
+          parameters:
+            action: "release"
+    
+    resource_requirements:
+      cpu_cores: "{{ parameters.container_count * 2 }}"
+      memory_gb: "{{ parameters.container_count * 4 }}"
+      disk_gb: "{{ parameters.container_count * 50 }}"
+      network_bandwidth_mbps: 1000
+    
+    estimated_duration_minutes: 180
+    
+    tags:
+      - "provisioning"
+      - "environment"
+      - "{{ parameters.service_type }}"
+      - "production-ready"
+    
+    owner: "infrastructure-team"
+    
+    documentation: |
+      This workflow provisions a complete {{ parameters.service_type }} environment
+      with {{ parameters.container_count }} containers and comprehensive monitoring.
+      
+      Prerequisites:
+      - Sufficient CPU, memory, and disk resources available
+      - Network connectivity to Proxmox cluster
+      - Valid service configuration templates
+      
+      Approval Process:
+      - Resource allocation requires operations manager approval
+      - Initial backup requires security admin approval
+      
+      Rollback:
+      Automatic rollback is triggered on failure conditions and will
+      clean up all created resources.

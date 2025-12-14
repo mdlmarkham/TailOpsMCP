@@ -230,9 +230,9 @@ class TargetRegistryFixtures:
         
         if constraints is None:
             constraints = {
-                "allowed_commands": ["docker", "systemctl"],
-                "allowed_paths": ["/opt"],
-                "max_concurrent": 5
+                "timeout": 60,
+                "concurrency": 1,
+                "sudo_policy": "none"
             }
         
         return TargetMetadata(
@@ -288,9 +288,9 @@ TEST_TARGETS = {
         capabilities=[Scope.CONTAINER_READ.value, Scope.SYSTEM_READ.value]
     ),
     "write-target": TargetRegistryFixtures.create_test_target(
-        "write-target", 
-        capabilities=[Scope.CONTAINER_READ.value, Scope.CONTAINER_WRITE.value, 
-                     Scope.SYSTEM_READ.value, Scope.SYSTEM_WRITE.value]
+        "write-target",
+        capabilities=[Scope.CONTAINER_READ.value, Scope.CONTAINER_WRITE.value,
+                     Scope.SYSTEM_READ.value, Scope.FILE_WRITE.value]
     ),
     "admin-target": TargetRegistryFixtures.create_test_target(
         "admin-target",
@@ -300,9 +300,9 @@ TEST_TARGETS = {
         "restricted-target",
         capabilities=[Scope.CONTAINER_READ.value],
         constraints={
-            "allowed_commands": ["docker ps"],
-            "allowed_paths": ["/var/log"],
-            "max_concurrent": 1
+            "timeout": 30,
+            "concurrency": 1,
+            "sudo_policy": "none"
         }
     )
 }

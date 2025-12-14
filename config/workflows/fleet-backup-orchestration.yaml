@@ -1,0 +1,134 @@
+workflows:
+  # Fleet Backup Orchestration Workflow
+  fleet_backup_orchestration:
+    name: "Fleet Backup Orchestration"
+    description: "Orchestrate comprehensive backup of all containers across the fleet"
+    category: "backup"
+    version: "1.0.0"
+    
+    parameters:
+      backup_retention_days:
+        type: "integer"
+        required: false
+        default: 30
+        description: "Number of days to retain backups"
+        validation:
+          min: 1
+          max: 365
+      
+      backup_compression:
+        type: "boolean"
+        required: false
+        default: true
+        description: "Enable backup compression"
+      
+      backup_destination:
+        type: "string"
+        required: false
+        default: "local"
+        choices: ["local", "s3", "azure", "gcp"]
+        description: "Backup destination"
+      
+      include_logs:
+        type: "boolean"
+        required: false
+        default: false
+        description: "Include container logs in backup"
+      
+      backup_schedule:
+        type: "string"
+        required: false
+        default: "nightly"
+        choices: ["hourly", "daily", "weekly", "monthly"]
+        description: "Backup frequency"
+    
+    steps:
+      - id: "discover_backup_targets"
+        name: "Discover Backup Targets"
+        type: "discovery"
+        timeout_minutes: 15
+      
+      - id: "validate_backup_space"
+        name: "Validate Backup Storage"
+        type: "validation"
+        timeout_minutes: 10
+        dependencies: ["discover_backup_targets"]
+      
+      - id: "create_snapshots"
+        name: "Create Container Snapshots"
+        type: "snapshot"
+        timeout_minutes: 90
+        dependencies: ["validate_backup_space"]
+        retry_policy:
+          max_attempts: 3
+          initial_delay_minutes: 2
+      
+      - id: "backup_configuration"
+        name: "Backup Configuration"
+        type: "backup"
+        timeout_minutes: 30
+        dependencies: ["create_snapshots"]
+      
+      - id: "backup_data_volumes"
+        name: "Backup Data Volumes"
+        type: "backup"
+        timeout_minutes: 120
+        dependencies: ["backup_configuration"]
+      
+      - id: "upload_backups"
+        name: "Upload Backups to Storage"
+        type: "transfer"
+        timeout_minutes: 180
+        dependencies: ["backup_data_volumes"]
+        requires_approval: true
+        approvers: ["security_admin"]
+      
+      - id: "verify_backup_integrity"
+        name: "Verify Backup Integrity"
+        type: "validation"
+        timeout_minutes: 45
+        dependencies: ["upload_backups"]
+      
+      - id: "cleanup_old_backups"
+        name: "Cleanup Old Backups"
+        type: "maintenance"
+        timeout_minutes: 30
+        dependencies: ["verify_backup_integrity"]
+      
+      - id: "generate_backup_report"
+        name: "Generate Backup Report"
+        type: "configuration"
+        timeout_minutes: 15
+        dependencies: ["cleanup_old_backups"]
+    
+    resource_requirements:
+      storage_gb: 1000
+      network_bandwidth_mbps: 500
+      cpu_cores: 4
+    
+    estimated_duration_minutes: 300
+    
+    tags:
+      - "backup"
+      - "maintenance"
+      - "fleet"
+      - "data-protection"
+    
+    owner: "operations-team"
+    
+    documentation: |
+      This workflow performs comprehensive backup of all containers across the fleet.
+      
+      Features:
+      - Automatic discovery of backup targets
+      - Consistent snapshots with integrity verification
+      - Configurable retention and compression
+      - Automated cleanup of expired backups
+      
+      Scheduling:
+      - Recommended: Daily execution at 2:00 AM UTC
+      - Retention: {{ parameters.backup_retention_days }} days
+      - Destination: {{ parameters.backup_destination }}
+      
+      Approvals:
+      - Upload to external storage requires security admin approval

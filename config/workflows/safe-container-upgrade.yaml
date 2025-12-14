@@ -1,0 +1,199 @@
+workflows:
+  # Safe Container Upgrade Workflow
+  safe_container_upgrade:
+    name: "Safe Container Upgrade"
+    description: "Safely upgrade containers using {{ parameters.upgrade_type }} strategy with rollback capability"
+    category: "upgrade"
+    version: "1.0.0"
+    
+    parameters:
+      upgrade_type:
+        type: "string"
+        required: true
+        choices: ["rolling", "blue-green", "canary"]
+        description: "Type of upgrade strategy"
+      
+      maintenance_window:
+        type: "string"
+        required: true
+        choices: ["off-hours", "scheduled", "immediate"]
+        description: "When to perform the upgrade"
+      
+      max_downtime_minutes:
+        type: "integer"
+        required: false
+        default: 30
+        description: "Maximum acceptable downtime in minutes"
+        validation:
+          min: 1
+          max: 120
+      
+      rollback_on_failure:
+        type: "boolean"
+        required: false
+        default: true
+        description: "Automatically rollback on failure"
+      
+      test_environment:
+        type: "string"
+        required: false
+        default: "staging"
+        description: "Test environment for validation"
+    
+    approvals:
+      - step: "create_pre_upgrade_snapshots"
+        required_approvers: ["operations_manager", "security_admin"]
+        description: "Pre-upgrade snapshots require both operations and security approval"
+        timeout_hours: 4
+    
+    steps:
+      - id: "pre_upgrade_assessment"
+        name: "Pre-upgrade Assessment"
+        type: "validation"
+        timeout_minutes: 20
+      
+      - id: "create_pre_upgrade_snapshots"
+        name: "Create Pre-upgrade Snapshots"
+        type: "snapshot"
+        timeout_minutes: 45
+        dependencies: ["pre_upgrade_assessment"]
+        requires_approval: true
+        retry_policy:
+          max_attempts: 2
+          initial_delay_minutes: 5
+      
+      - id: "backup_current_state"
+        name: "Backup Current State"
+        type: "backup"
+        timeout_minutes: 60
+        dependencies: ["create_pre_upgrade_snapshots"]
+      
+      - id: "prepare_rollback_plan"
+        name: "Prepare Rollback Plan"
+        type: "validation"
+        timeout_minutes: 15
+        dependencies: ["backup_current_state"]
+      
+      - id: "upgrade_infrastructure"
+        name: "Upgrade Infrastructure"
+        type: "upgrade"
+        timeout_minutes: 90
+        dependencies: ["prepare_rollback_plan"]
+        retry_policy:
+          max_attempts: 2
+          initial_delay_minutes: 5
+      
+      - id: "upgrade_containers"
+        name: "Upgrade Containers"
+        type: "upgrade"
+        timeout_minutes: 120
+        dependencies: ["upgrade_infrastructure"]
+        retry_policy:
+          max_attempts: 2
+          initial_delay_minutes: 3
+      
+      - id: "update_configuration"
+        name: "Update Configuration"
+        type: "configuration"
+        timeout_minutes: 30
+        dependencies: ["upgrade_containers"]
+      
+      - id: "post_upgrade_verification"
+        name: "Post-upgrade Verification"
+        type: "validation"
+        timeout_minutes: 30
+        dependencies: ["update_configuration"]
+      
+      - id: "run_smoke_tests"
+        name: "Run Smoke Tests"
+        type: "testing"
+        timeout_minutes: 45
+        dependencies: ["post_upgrade_verification"]
+      
+      - id: "run_integration_tests"
+        name: "Run Integration Tests"
+        type: "testing"
+        timeout_minutes: 60
+        dependencies: ["run_smoke_tests"]
+      
+      - id: "performance_validation"
+        name: "Performance Validation"
+        type: "testing"
+        timeout_minutes: 45
+        dependencies: ["run_integration_tests"]
+      
+      - id: "update_monitoring"
+        name: "Update Monitoring Configuration"
+        type: "configuration"
+        timeout_minutes: 20
+        dependencies: ["performance_validation"]
+      
+      - id: "cleanup_old_versions"
+        name: "Cleanup Old Versions"
+        type: "maintenance"
+        timeout_minutes: 30
+        dependencies: ["update_monitoring"]
+    
+    rollback_plan:
+      enabled: true
+      conditions:
+        - "upgrade_failed"
+        - "health_check_failed"
+        - "performance_degradation"
+      actions:
+        - id: "restore_snapshots"
+          name: "Restore from Pre-upgrade Snapshots"
+          type: "restore"
+          timeout_minutes: 60
+          parameters:
+            restore_point: "pre_upgrade"
+            verify_restore: true
+        
+        - id: "restore_configuration"
+          name: "Restore Previous Configuration"
+          type: "configuration"
+          timeout_minutes: 30
+          parameters:
+            configuration_source: "backup"
+        
+        - id: "restart_services"
+          name: "Restart Services"
+          type: "container_operations"
+          timeout_minutes: 15
+          parameters:
+            action: "restart_all"
+    
+    resource_requirements:
+      cpu_cores: 4
+      memory_gb: 8
+      storage_gb: 100
+      network_bandwidth_mbps: 200
+    
+    estimated_duration_minutes: 360
+    
+    tags:
+      - "upgrade"
+      - "safety"
+      - "rollback"
+      - "{{ parameters.upgrade_type }}"
+    
+    owner: "platform-team"
+    
+    documentation: |
+      This workflow safely upgrades containers using {{ parameters.upgrade_type }} strategy.
+      
+      Upgrade Strategies:
+      - Rolling: Gradual upgrade with zero downtime
+      - Blue-Green: Complete environment switchover
+      - Canary: Gradual rollout with rollback capability
+      
+      Safety Features:
+      - Pre-upgrade snapshots and backups
+      - Comprehensive testing at each step
+      - Automatic rollback on failure
+      - Performance validation
+      
+      Prerequisites:
+      - Staging environment for testing
+      - Sufficient rollback storage space
+      - Approved maintenance window
