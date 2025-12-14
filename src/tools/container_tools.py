@@ -30,12 +30,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
-            await policy_gate.authorize(
-                operation="get_container_list",
-                target=target,
-                tier=OperationTier.OBSERVE
-            )
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
@@ -77,7 +73,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
             
             await policy_gate.authorize(
@@ -157,7 +154,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
             
             await policy_gate.authorize(
@@ -237,7 +235,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="inspect_container",
                 target=target,
@@ -285,7 +284,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="get_container_logs",
                 target=target,

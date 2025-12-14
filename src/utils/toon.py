@@ -340,3 +340,61 @@ def apply_toon_delta(prev_toon: str, delta_toon: str) -> str:
     delta = _to_obj(delta_toon)
     new = apply_delta(prev, delta)
     return json.dumps(new, separators=(",",":"), ensure_ascii=False)
+
+
+def _from_toon_tabular(tabular_str: str) -> List[Dict[str, Any]]:
+    """Parse TOON tabular format back to list of dicts.
+    
+    Format: [key1,key2,key3][val1,val2,val3][val1,val2,val3]...
+    
+    Returns:
+        List of dictionaries reconstructed from tabular format
+    """
+    if not tabular_str.startswith('[') or ']' not in tabular_str:
+        # Not tabular format, try to parse as regular JSON
+        try:
+            return json.loads(tabular_str)
+        except json.JSONDecodeError:
+            return []
+    
+    # Extract header
+    header_end = tabular_str.find(']') + 1
+    header_str = tabular_str[:header_end]
+    
+    try:
+        keys = json.loads(header_str)
+    except json.JSONDecodeError:
+        return []
+    
+    # Extract rows
+    rows_str = tabular_str[header_end:]
+    rows = []
+    
+    # Parse each row
+    i = 0
+    while i < len(rows_str):
+        if rows_str[i] == '[':
+            # Find matching closing bracket
+            j = i + 1
+            bracket_count = 1
+            while j < len(rows_str) and bracket_count > 0:
+                if rows_str[j] == '[':
+                    bracket_count += 1
+                elif rows_str[j] == ']':
+                    bracket_count -= 1
+                j += 1
+            
+            row_str = rows_str[i:j]
+            try:
+                values = json.loads(row_str)
+                if len(values) == len(keys):
+                    row_dict = dict(zip(keys, values))
+                    rows.append(row_dict)
+            except json.JSONDecodeError:
+                pass
+            
+            i = j
+        else:
+            i += 1
+    
+    return rows

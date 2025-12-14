@@ -1,14 +1,18 @@
 """
 Target Registry loader with schema validation and configuration management.
+
+Extended to support gateway mode operations and gateway-specific configuration.
 """
 
 import json
 import os
 import yaml
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from src.models.target_registry import TargetMetadata
+from src.models.gateway_models import GatewayMetadata, OperationMode
+from src.utils.gateway_mode import is_gateway_mode
 
 
 class TargetRegistry:
@@ -16,6 +20,7 @@ class TargetRegistry:
     
     Loads and validates target configurations from YAML/JSON files,
     provides access to target metadata, and supports dynamic discovery.
+    Extended to support gateway mode operations.
     """
     
     def __init__(self, config_path: Optional[str] = None):
@@ -33,6 +38,7 @@ class TargetRegistry:
         
         self.config_path = config_path or os.getenv("SYSTEMMANAGER_TARGETS_CONFIG", default_path)
         self._targets: Dict[str, TargetMetadata] = {}
+        self._gateway_metadata: Optional[GatewayMetadata] = None
         self._errors: List[str] = []
         
         # Load configuration on initialization
@@ -72,6 +78,16 @@ class TargetRegistry:
             if "targets" not in config_data:
                 self._errors.append("Configuration missing 'targets' field")
                 return False
+            
+            # Load gateway configuration if present
+            if "gateway" in config_data:
+                try:
+                    self._gateway_metadata = GatewayMetadata.from_dict(config_data["gateway"])
+                    gateway_errors = self._gateway_metadata.validate()
+                    if gateway_errors:
+                        self._errors.extend([f"gateway: {error}" for error in gateway_errors])
+                except Exception as e:
+                    self._errors.append(f"Failed to parse gateway configuration: {str(e)}")
             
             # Load and validate targets
             self._targets = {}
@@ -185,6 +201,10 @@ class TargetRegistry:
                 "targets": {target_id: target.to_dict() for target_id, target in self._targets.items()}
             }
             
+            # Add gateway configuration if present
+            if self._gateway_metadata:
+                config_data["gateway"] = self._gateway_metadata.to_dict()
+            
             # Ensure directory exists
             os.makedirs(os.path.dirname(self.config_path) or ".", exist_ok=True)
             
@@ -202,6 +222,98 @@ class TargetRegistry:
         except Exception as e:
             self._errors.append(f"Failed to save configuration: {str(e)}")
             return False
+    
+    # Gateway-specific methods
+    def get_gateway_metadata(self) -> Optional[GatewayMetadata]:
+        """Get gateway metadata if configured.
+        
+        Returns:
+            GatewayMetadata if gateway mode is configured, None otherwise.
+        """
+        return self._gateway_metadata
+    
+    def set_gateway_metadata(self, gateway_metadata: GatewayMetadata) -> bool:
+        """Set gateway metadata.
+        
+        Args:
+            gateway_metadata: GatewayMetadata to set.
+            
+        Returns:
+            True if set successfully, False otherwise.
+        """
+        validation_errors = gateway_metadata.validate()
+        if validation_errors:
+            self._errors.extend(validation_errors)
+            return False
+        
+        self._gateway_metadata = gateway_metadata
+        return True
+    
+    def is_gateway_mode(self) -> bool:
+        """Check if target registry is operating in gateway mode.
+        
+        Returns:
+            True if gateway mode is configured and active, False otherwise.
+        """
+        if not self._gateway_metadata:
+            return False
+        
+        return self._gateway_metadata.is_gateway_mode()
+    
+    def get_managed_targets(self) -> List[str]:
+        """Get list of managed target IDs in gateway mode.
+        
+        Returns:
+            List of target IDs managed by this gateway.
+        """
+        if not self.is_gateway_mode() or not self._gateway_metadata:
+            return []
+        
+        return self._gateway_metadata.managed_targets.copy()
+    
+    def add_managed_target(self, target_id: str) -> bool:
+        """Add a target to managed targets list in gateway mode.
+        
+        Args:
+            target_id: Target ID to add to managed targets.
+            
+        Returns:
+            True if target added successfully, False otherwise.
+        """
+        if not self.is_gateway_mode() or not self._gateway_metadata:
+            self._errors.append("Cannot add managed target: not in gateway mode")
+            return False
+        
+        return self._gateway_metadata.add_managed_target(target_id)
+    
+    def remove_managed_target(self, target_id: str) -> bool:
+        """Remove a target from managed targets list in gateway mode.
+        
+        Args:
+            target_id: Target ID to remove from managed targets.
+            
+        Returns:
+            True if target removed successfully, False otherwise.
+        """
+        if not self.is_gateway_mode() or not self._gateway_metadata:
+            self._errors.append("Cannot remove managed target: not in gateway mode")
+            return False
+        
+        return self._gateway_metadata.remove_managed_target(target_id)
+    
+    def can_manage_target(self, target_id: str) -> bool:
+        """Check if this gateway can manage the specified target.
+        
+        Args:
+            target_id: Target ID to check.
+            
+        Returns:
+            True if target can be managed, False otherwise.
+        """
+        if not self.is_gateway_mode() or not self._gateway_metadata:
+            return False
+        
+        return self._gateway_metadata.can_manage_target(target_id)
     
     def get_errors(self) -> List[str]:
         """Get current validation errors.

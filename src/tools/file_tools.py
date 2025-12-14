@@ -34,7 +34,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="read_file",
                 target=target,
@@ -96,7 +97,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="list_directory",
                 target=target,
@@ -156,7 +158,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="get_file_info",
                 target=target,
@@ -218,7 +221,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="search_files",
                 target=target,

@@ -1,395 +1,317 @@
 """
-Enhanced audit logging system with standardized formats, correlation IDs, and multiple sinks.
+Enhanced Audit Logger for Policy-as-Code System
+
+Provides structured JSON lines audit logging with result hashing, duration tracking,
+and log rotation capabilities.
 """
 
 import json
-import logging
 import os
-import sys
-from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+import hashlib
+import time
+import logging
+import re
+from datetime import datetime, timedelta
+from typing import Dict, Any, Optional, List
 from pathlib import Path
+from dataclasses import dataclass, asdict
+from enum import Enum
 
-from src.models.execution import AuditLogEntry, ExecutionResult, ExecutionStatus
-
-
-class LogLevel(str, Enum):
-    """Standardized log levels for consistent logging across the system."""
-    DEBUG = "debug"
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
+logger = logging.getLogger(__name__)
 
 
-class LogSinkType(str, Enum):
-    """Types of log sinks supported by the system."""
-    FILE = "file"
-    JSONL = "jsonl"
-    CONSOLE = "console"
-    DATABASE = "database"
-    SYSLOG = "syslog"
-    HTTP = "http"
+class AuditEventType(str, Enum):
+    """Types of audit events."""
+    POLICY_DECISION = "policy_decision"
+    REMOTE_OPERATION = "remote_operation"
+    TARGET_ACCESS = "target_access"
+    CREDENTIAL_ACCESS = "credential_access"
+    CONFIG_CHANGE = "config_change"
 
 
-class LogFormatter:
-    """Standardized log formatter for consistent log formats."""
+@dataclass
+class AuditLogEntry:
+    """Structured audit log entry."""
+    timestamp: str
+    event_type: AuditEventType
+    actor: str  # Client/agent identifier
+    target: str  # Target system identifier
+    operation: str  # Operation performed
+    parameters: Dict[str, Any]  # Operation parameters (sanitized)
+    result_hash: str  # Hash of operation result
+    duration_ms: float  # Operation duration in milliseconds
+    authorized: bool  # Whether operation was authorized
+    policy_rule: Optional[str] = None  # Policy rule that authorized/denied
+    validation_errors: List[str] = None  # Validation errors if any
     
-    @staticmethod
-    def format_structured_log(
-        level: LogLevel,
-        message: str,
-        correlation_id: str,
-        operation: Optional[str] = None,
-        target: Optional[str] = None,
-        capability: Optional[str] = None,
-        duration: Optional[float] = None,
-        metrics: Optional[Dict[str, Any]] = None,
-        **kwargs
-    ) -> Dict[str, Any]:
-        """Format a structured log entry."""
-        log_entry = {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-            "level": level.value,
-            "message": message,
-            "correlation_id": correlation_id,
-        }
+    def __post_init__(self):
+        if self.validation_errors is None:
+            self.validation_errors = []
+
+
+class StructuredAuditLogger:
+    """Enhanced audit logger with JSON lines format and rotation."""
+    
+    def __init__(self, log_path: str = "./logs/audit.jsonl", 
+                 rotation_size: int = 100 * 1024 * 1024,  # 100MB
+                 rotation_count: int = 10):
+        self.log_path = Path(log_path)
+        self.rotation_size = rotation_size
+        self.rotation_count = rotation_count
         
-        if operation:
-            log_entry["operation"] = operation
-        if target:
-            log_entry["target"] = target
-        if capability:
-            log_entry["capability"] = capability
-        if duration is not None:
-            log_entry["duration"] = duration
-        if metrics:
-            log_entry["metrics"] = metrics
+        # Ensure log directory exists
+        self.log_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Add any additional context
-        log_entry.update(kwargs)
+        # Initialize log file
+        self._ensure_log_file()
+    
+    def _ensure_log_file(self):
+        """Ensure log file exists and is ready for writing."""
+        if not self.log_path.exists():
+            self.log_path.touch()
+    
+    def _rotate_if_needed(self):
+        """Rotate log file if it exceeds size limit."""
+        if self.log_path.stat().st_size >= self.rotation_size:
+            self._rotate_log()
+    
+    def _rotate_log(self):
+        """Rotate the audit log file."""
+        # Remove oldest log file if we have too many
+        log_files = sorted(self.log_path.parent.glob("audit*.jsonl"))
+        if len(log_files) >= self.rotation_count:
+            oldest_file = log_files[0]
+            oldest_file.unlink()
         
-        return log_entry
-    
-    @staticmethod
-    def format_audit_log(audit_entry: AuditLogEntry) -> Dict[str, Any]:
-        """Format an audit log entry for output."""
-        return audit_entry.dict()
-    
-    @staticmethod
-    def format_execution_log(execution_result: ExecutionResult) -> Dict[str, Any]:
-        """Format an execution result for logging."""
-        return {
-            "timestamp": execution_result.timestamp.isoformat(),
-            "correlation_id": execution_result.correlation_id,
-            "operation_id": execution_result.operation_id,
-            "target_id": execution_result.target_id,
-            "capability": execution_result.capability,
-            "executor_type": execution_result.executor_type,
-            "status": execution_result.status.value,
-            "success": execution_result.success,
-            "severity": execution_result.severity.value,
-            "duration": execution_result.duration,
-            "dry_run": execution_result.dry_run,
-            "metrics": execution_result.metrics,
-            "error": execution_result.error,
-            "structured_error": execution_result.structured_error.dict() if execution_result.structured_error else None,
-        }
-
-
-class LogSink:
-    """Base class for log sinks."""
-    
-    def __init__(self, sink_type: LogSinkType, config: Dict[str, Any]):
-        self.sink_type = sink_type
-        self.config = config
-        self.enabled = config.get("enabled", True)
-    
-    def write(self, log_entry: Dict[str, Any]) -> bool:
-        """Write a log entry to the sink."""
-        raise NotImplementedError
-    
-    def close(self) -> None:
-        """Close the sink."""
-        pass
-
-
-class FileSink(LogSink):
-    """File-based log sink with rotation support."""
-    
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(LogSinkType.FILE, config)
-        self.path = config["path"]
-        self.max_size = config.get("max_size", 10 * 1024 * 1024)  # 10MB default
-        self.backup_count = config.get("backup_count", 5)
-        self.encoding = config.get("encoding", "utf-8")
+        # Rename current log file with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        rotated_path = self.log_path.parent / f"audit_{timestamp}.jsonl"
+        self.log_path.rename(rotated_path)
         
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        
-        self._file = None
-        self._open_file()
+        # Create new log file
+        self.log_path.touch()
     
-    def _open_file(self) -> None:
-        """Open the log file."""
-        if self._file is not None:
-            self._file.close()
+    def _sanitize_parameters(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        """Sanitize parameters to remove sensitive data."""
+        sanitized = {}
         
-        self._file = open(self.path, "a", encoding=self.encoding)
-    
-    def _should_rotate(self) -> bool:
-        """Check if the log file should be rotated."""
-        try:
-            return os.path.getsize(self.path) >= self.max_size
-        except OSError:
-            return False
-    
-    def _rotate_file(self) -> None:
-        """Rotate the log file."""
-        if not os.path.exists(self.path):
-            return
-        
-        # Create backup files
-        for i in range(self.backup_count - 1, 0, -1):
-            src = f"{self.path}.{i}"
-            dst = f"{self.path}.{i + 1}"
-            if os.path.exists(src):
-                if os.path.exists(dst):
-                    os.remove(dst)
-                os.rename(src, dst)
-        
-        # Rotate current file
-        if os.path.exists(self.path):
-            os.rename(self.path, f"{self.path}.1")
-        
-        self._open_file()
-    
-    def write(self, log_entry: Dict[str, Any]) -> bool:
-        """Write a log entry to the file."""
-        if not self.enabled:
-            return False
-        
-        try:
-            if self._should_rotate():
-                self._rotate_file()
-            
-            log_line = json.dumps(log_entry, separators=(",", ":"), ensure_ascii=False)
-            self._file.write(log_line + "\n")
-            self._file.flush()
-            return True
-        except Exception as e:
-            print(f"Error writing to file sink: {e}", file=sys.stderr)
-            return False
-    
-    def close(self) -> None:
-        """Close the file."""
-        if self._file is not None:
-            self._file.close()
-            self._file = None
-
-
-class ConsoleSink(LogSink):
-    """Console output log sink."""
-    
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(LogSinkType.CONSOLE, config)
-        self.format = config.get("format", "structured")  # structured or human
-    
-    def write(self, log_entry: Dict[str, Any]) -> bool:
-        """Write a log entry to the console."""
-        if not self.enabled:
-            return False
-        
-        try:
-            if self.format == "human":
-                timestamp = log_entry.get("timestamp", "")
-                level = log_entry.get("level", "INFO").upper()
-                message = log_entry.get("message", "")
-                correlation_id = log_entry.get("correlation_id", "")
-                
-                print(f"{timestamp} [{level}] {message} (cid: {correlation_id})")
+        for key, value in parameters.items():
+            # Redact sensitive fields
+            if any(sensitive in key.lower() for sensitive in [
+                'token', 'password', 'secret', 'key', 'credential'
+            ]):
+                sanitized[key] = "<REDACTED>"
             else:
-                print(json.dumps(log_entry, separators=(",", ":"), ensure_ascii=False))
-            
-            return True
-        except Exception as e:
-            print(f"Error writing to console sink: {e}", file=sys.stderr)
-            return False
-
-
-class AuditLogger:
-    """Enhanced audit logging system with multiple sinks and standardized formats."""
-    
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.config = config or {}
-        self.sinks: List[LogSink] = []
-        self.formatter = LogFormatter()
-        self._setup_sinks()
-    
-    def _setup_sinks(self) -> None:
-        """Set up log sinks based on configuration."""
-        sinks_config = self.config.get("sinks", [
-            {
-                "type": "file",
-                "enabled": True,
-                "path": os.getenv("SYSTEMMANAGER_AUDIT_LOG", "./logs/audit.log"),
-                "max_size": 10 * 1024 * 1024,  # 10MB
-                "backup_count": 5
-            },
-            {
-                "type": "console",
-                "enabled": os.getenv("SYSTEMMANAGER_LOG_CONSOLE", "true").lower() == "true",
-                "format": "human"
-            }
-        ])
-        
-        for sink_config in sinks_config:
-            sink_type = sink_config["type"]
-            
-            if sink_type == "file":
-                self.sinks.append(FileSink(sink_config))
-            elif sink_type == "console":
-                self.sinks.append(ConsoleSink(sink_config))
-            # Add other sink types as needed
-    
-    def log_operation(
-        self,
-        operation: str,
-        correlation_id: str,
-        target: Optional[str] = None,
-        capability: Optional[str] = None,
-        executor_type: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        status: ExecutionStatus = ExecutionStatus.SUCCESS,
-        success: bool = True,
-        duration: Optional[float] = None,
-        subject: Optional[str] = None,
-        scopes: Optional[List[str]] = None,
-        risk_level: Optional[str] = None,
-        approved: Optional[bool] = None,
-        error: Optional[str] = None,
-        structured_error: Optional[Dict[str, Any]] = None,
-        dry_run: bool = False,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> None:
-        """Log an operation with comprehensive context."""
-        audit_entry = AuditLogEntry(
-            timestamp=datetime.utcnow(),
-            correlation_id=correlation_id,
-            operation=operation,
-            target=target,
-            capability=capability,
-            executor_type=executor_type,
-            parameters=parameters or {},
-            status=status,
-            success=success,
-            duration=duration,
-            subject=subject,
-            scopes=scopes or [],
-            risk_level=risk_level,
-            approved=approved,
-            error=error,
-            structured_error=structured_error,
-            dry_run=dry_run,
-            metadata=metadata or {}
-        )
-        
-        self._write_to_sinks(self.formatter.format_audit_log(audit_entry))
-    
-    def log_execution_result(self, execution_result: ExecutionResult) -> None:
-        """Log an execution result."""
-        self._write_to_sinks(self.formatter.format_execution_log(execution_result))
-    
-    def log_structured(
-        self,
-        level: LogLevel,
-        message: str,
-        correlation_id: str,
-        operation: Optional[str] = None,
-        target: Optional[str] = None,
-        capability: Optional[str] = None,
-        duration: Optional[float] = None,
-        metrics: Optional[Dict[str, Any]] = None,
-        **kwargs
-    ) -> None:
-        """Log a structured message."""
-        log_entry = self.formatter.format_structured_log(
-            level=level,
-            message=message,
-            correlation_id=correlation_id,
-            operation=operation,
-            target=target,
-            capability=capability,
-            duration=duration,
-            metrics=metrics,
-            **kwargs
-        )
-        
-        self._write_to_sinks(log_entry)
-    
-    def _write_to_sinks(self, log_entry: Dict[str, Any]) -> None:
-        """Write log entry to all configured sinks."""
-        for sink in self.sinks:
-            try:
-                sink.write(log_entry)
-            except Exception as e:
-                print(f"Error writing to sink {sink.sink_type}: {e}", file=sys.stderr)
-    
-    def close(self) -> None:
-        """Close all log sinks."""
-        for sink in self.sinks:
-            try:
-                sink.close()
-            except Exception as e:
-                print(f"Error closing sink {sink.sink_type}: {e}", file=sys.stderr)
-
-
-# Global audit logger instance
-audit_logger = AuditLogger()
-
-
-def setup_logging_config() -> None:
-    """Set up standardized logging configuration for the entire system."""
-    
-    # Configure Python logging
-    log_level = os.getenv("SYSTEMMANAGER_LOG_LEVEL", "INFO").upper()
-    log_format = os.getenv("SYSTEMMANAGER_LOG_FORMAT", "structured")
-    
-    # Basic logging configuration
-    logging.basicConfig(
-        level=getattr(logging, log_level, logging.INFO),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s' if log_format == "human" else None,
-        handlers=[]
-    )
-    
-    # Remove default handlers
-    logging.getLogger().handlers.clear()
-    
-    # Add structured logging handler if configured
-    if log_format == "structured":
-        class StructuredLogHandler(logging.Handler):
-            def emit(self, record):
+                # Ensure value is JSON serializable
                 try:
-                    log_entry = {
-                        "timestamp": datetime.utcnow().isoformat() + "Z",
-                        "level": record.levelname.lower(),
-                        "logger": record.name,
-                        "message": record.getMessage(),
-                        "correlation_id": getattr(record, 'correlation_id', 'unknown'),
-                    }
-                    
-                    # Add extra fields if present
-                    if hasattr(record, 'extra') and record.extra:
-                        log_entry.update(record.extra)
-                    
-                    print(json.dumps(log_entry, separators=(",", ":"), ensure_ascii=False))
-                except Exception:
-                    self.handleError(record)
+                    json.dumps(value)
+                    sanitized[key] = value
+                except (TypeError, ValueError):
+                    sanitized[key] = str(value)
         
-        handler = StructuredLogHandler()
-        logging.getLogger().addHandler(handler)
-
-
-# Initialize logging configuration when module is imported
-setup_logging_config()
+        return sanitized
+    
+    def _hash_result(self, result: Any) -> str:
+        """Create a hash of the operation result for integrity verification."""
+        result_str = json.dumps(result, sort_keys=True, default=str)
+        return hashlib.sha256(result_str.encode()).hexdigest()
+    
+    def log_remote_operation(self, 
+                           actor: str, 
+                           target: str, 
+                           operation: str, 
+                           parameters: Dict[str, Any], 
+                           result: Any, 
+                           duration_ms: float, 
+                           authorized: bool,
+                           policy_rule: Optional[str] = None,
+                           validation_errors: List[str] = None) -> None:
+        """Log a remote operation with full audit details."""
+        
+        entry = AuditLogEntry(
+            timestamp=datetime.utcnow().isoformat() + "Z",
+            event_type=AuditEventType.REMOTE_OPERATION,
+            actor=actor,
+            target=target,
+            operation=operation,
+            parameters=self._sanitize_parameters(parameters),
+            result_hash=self._hash_result(result),
+            duration_ms=duration_ms,
+            authorized=authorized,
+            policy_rule=policy_rule,
+            validation_errors=validation_errors or []
+        )
+        
+        self._write_entry(entry)
+    
+    def log_policy_decision(self,
+                          actor: str,
+                          target: str,
+                          operation: str,
+                          parameters: Dict[str, Any],
+                          authorized: bool,
+                          policy_rule: str,
+                          validation_errors: List[str] = None) -> None:
+        """Log a policy decision."""
+        
+        entry = AuditLogEntry(
+            timestamp=datetime.utcnow().isoformat() + "Z",
+            event_type=AuditEventType.POLICY_DECISION,
+            actor=actor,
+            target=target,
+            operation=operation,
+            parameters=self._sanitize_parameters(parameters),
+            result_hash="",  # No result for policy decisions
+            duration_ms=0.0,
+            authorized=authorized,
+            policy_rule=policy_rule,
+            validation_errors=validation_errors or []
+        )
+        
+        self._write_entry(entry)
+    
+    def log_target_access(self, 
+                        actor: str, 
+                        target: str, 
+                        operation: str,
+                        authorized: bool) -> None:
+        """Log target access events."""
+        
+        entry = AuditLogEntry(
+            timestamp=datetime.utcnow().isoformat() + "Z",
+            event_type=AuditEventType.TARGET_ACCESS,
+            actor=actor,
+            target=target,
+            operation=operation,
+            parameters={},
+            result_hash="",
+            duration_ms=0.0,
+            authorized=authorized
+        )
+        
+        self._write_entry(entry)
+    
+    def _write_entry(self, entry: AuditLogEntry):
+        """Write audit entry to log file."""
+        try:
+            self._rotate_if_needed()
+            
+            with open(self.log_path, 'a', encoding='utf-8') as f:
+                # Convert to dict and write as JSON line
+                entry_dict = asdict(entry)
+                f.write(json.dumps(entry_dict, separators=(',', ':'), ensure_ascii=False) + '\n')
+                
+        except Exception as e:
+            logger.error(f"Failed to write audit log entry: {e}")
+    
+    def search_audit_logs(self, 
+                         start_time: Optional[datetime] = None,
+                         end_time: Optional[datetime] = None,
+                         actor: Optional[str] = None,
+                         target: Optional[str] = None,
+                         operation: Optional[str] = None,
+                         event_type: Optional[AuditEventType] = None,
+                         authorized: Optional[bool] = None) -> List[AuditLogEntry]:
+        """Search audit logs with filtering capabilities."""
+        
+        entries = []
+        
+        # Read all log files
+        log_files = sorted(self.log_path.parent.glob("audit*.jsonl"))
+        
+        for log_file in log_files:
+            try:
+                with open(log_file, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if not line.strip():
+                            continue
+                        
+                        try:
+                            data = json.loads(line)
+                            
+                            # Convert timestamp to datetime for filtering
+                            entry_time = datetime.fromisoformat(data['timestamp'].replace('Z', '+00:00'))
+                            
+                            # Apply filters
+                            if start_time and entry_time < start_time:
+                                continue
+                            if end_time and entry_time > end_time:
+                                continue
+                            if actor and data.get('actor') != actor:
+                                continue
+                            if target and data.get('target') != target:
+                                continue
+                            if operation and data.get('operation') != operation:
+                                continue
+                            if event_type and data.get('event_type') != event_type.value:
+                                continue
+                            if authorized is not None and data.get('authorized') != authorized:
+                                continue
+                            
+                            # Create AuditLogEntry object
+                            entry = AuditLogEntry(
+                                timestamp=data['timestamp'],
+                                event_type=AuditEventType(data['event_type']),
+                                actor=data['actor'],
+                                target=data['target'],
+                                operation=data['operation'],
+                                parameters=data['parameters'],
+                                result_hash=data['result_hash'],
+                                duration_ms=data['duration_ms'],
+                                authorized=data['authorized'],
+                                policy_rule=data.get('policy_rule'),
+                                validation_errors=data.get('validation_errors', [])
+                            )
+                            
+                            entries.append(entry)
+                            
+                        except (json.JSONDecodeError, KeyError) as e:
+                            logger.warning(f"Invalid audit log entry: {e}")
+                            continue
+                            
+            except Exception as e:
+                logger.error(f"Error reading audit log file {log_file}: {e}")
+                continue
+        
+        return entries
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get audit log statistics."""
+        
+        stats = {
+            'total_entries': 0,
+            'authorized_operations': 0,
+            'denied_operations': 0,
+            'event_types': {},
+            'operations': {},
+            'targets': {},
+            'actors': {}
+        }
+        
+        entries = self.search_audit_logs()
+        
+        for entry in entries:
+            stats['total_entries'] += 1
+            
+            if entry.authorized:
+                stats['authorized_operations'] += 1
+            else:
+                stats['denied_operations'] += 1
+            
+            # Count by event type
+            event_type = entry.event_type.value
+            stats['event_types'][event_type] = stats['event_types'].get(event_type, 0) + 1
+            
+            # Count by operation
+            operation = entry.operation
+            stats['operations'][operation] = stats['operations'].get(operation, 0) + 1
+            
+            # Count by target
+            target = entry.target
+            stats['targets'][target] = stats['targets'].get(target, 0) + 1
+            
+            # Count by actor
+            actor = entry.actor
+            stats['actors'][actor] = stats['actors'].get(actor, 0) + 1
+        
+        return stats

@@ -17,6 +17,9 @@ class Dependencies:
         self._app_scanner = None
         self._inventory = None
         self._executor_factory = None
+        self._target_registry = None
+        self._audit_logger = None
+        self._policy_gate = None
 
         # System identity (loaded at startup)
         self.system_identity = None
@@ -67,6 +70,30 @@ class Dependencies:
             from src.inventory import Inventory
             self._inventory = Inventory()
         return self._inventory
+    
+    @property
+    def target_registry(self):
+        """Get TargetRegistry instance."""
+        if self._target_registry is None:
+            from src.services.target_registry import TargetRegistry
+            self._target_registry = TargetRegistry()
+        return self._target_registry
+    
+    @property
+    def audit_logger(self):
+        """Get AuditLogger instance."""
+        if self._audit_logger is None:
+            from src.utils.audit import AuditLogger
+            self._audit_logger = AuditLogger()
+        return self._audit_logger
+    
+    @property
+    def policy_gate(self):
+        """Get PolicyGate instance."""
+        if self._policy_gate is None:
+            from src.services.policy_gate import PolicyGate
+            self._policy_gate = PolicyGate(self.target_registry, self.audit_logger)
+        return self._policy_gate
 
     def initialize_system_identity(self):
         """Load or auto-detect system identity."""

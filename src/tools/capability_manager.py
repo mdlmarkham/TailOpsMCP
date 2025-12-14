@@ -35,7 +35,8 @@ class CapabilityManager:
     """Manages capability-driven operations with "Observe First" workflow patterns."""
     
     def __init__(self):
-        self.policy_gate = PolicyGate()
+        self.from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
         self.executor_factory = ExecutorFactory()
         
         # Define available capabilities

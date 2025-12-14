@@ -2,7 +2,7 @@
 Test configuration and initialization for the enhanced test infrastructure.
 """
 
-import pytest
+# import pytest  # Commented out since pytest is not available
 import sys
 from pathlib import Path
 

@@ -8,8 +8,10 @@ from src.tools.container_tools import register_tools as register_container_tools
 from src.tools.stack_tools import register_tools as register_stack_tools
 from src.tools.network_tools import register_tools as register_network_tools
 from src.tools.file_tools import register_tools as register_file_tools
+from src.tools.fleet_tools import register_tools as register_fleet_tools
 from src.tools.capability_manager import capability_manager
 from src.tools.integration_manager import integration_manager
+from src.services.discovery_manager import get_discovery_tools
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,10 @@ def register_all_tools(mcp: FastMCP):
     register_stack_tools(mcp)
     register_network_tools(mcp)
     register_file_tools(mcp)
+    register_fleet_tools(mcp)
+    
+    # Register discovery tools
+    register_discovery_tools(mcp)
     
     # Register capability management tools
     @mcp.tool()
@@ -137,5 +143,35 @@ def register_all_tools(mcp: FastMCP):
     logger.info("Registered all tools with capability-driven operations")
 
 
+def register_discovery_tools(mcp: FastMCP):
+    """Register discovery tools with the MCP instance."""
+    
+    # Get discovery tools from discovery manager
+    discovery_tools = get_discovery_tools()
+    
+    # Register each discovery tool
+    @mcp.tool()
+    async def run_discovery() -> dict:
+        """Run a complete discovery cycle to discover Proxmox hosts and nodes."""
+        return await discovery_tools["run_discovery"]()
+    
+    @mcp.tool()
+    async def get_discovery_status() -> dict:
+        """Get the current status of the discovery pipeline."""
+        return await discovery_tools["get_discovery_status"]()
+    
+    @mcp.tool()
+    async def get_discovery_config() -> dict:
+        """Get the current discovery configuration."""
+        return await discovery_tools["get_discovery_config"]()
+    
+    @mcp.tool()
+    async def update_discovery_config(new_config: dict) -> dict:
+        """Update the discovery configuration."""
+        return await discovery_tools["update_discovery_config"](new_config)
+    
+    logger.info("Registered discovery tools")
+
+
 # Export the main registration function
-__all__ = ["register_all_tools"]
+__all__ = ["register_all_tools", "register_discovery_tools"]

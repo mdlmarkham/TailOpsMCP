@@ -1,0 +1,155 @@
+# Security-Focused Policy Configuration Example
+# This configuration demonstrates a security-focused approach with strict controls,
+# minimal permissions, and comprehensive audit logging.
+# Designed for high-security environments with strict access controls
+
+targets:
+  # Bastion host - minimal access
+  - id: "bastion-host"
+    host: "bastion.security.example.com"
+    tags: ["bastion", "security", "jump-host"]
+    roles: ["bastion"]
+    connection_method: "ssh"
+    credential_path: "/etc/systemmanager/credentials/bastion.key"
+    capabilities: ["system:read"]
+    description: "Bastion host for secure access"
+
+  # Security monitoring server
+  - id: "security-monitor"
+    host: "monitor.security.example.com"
+    tags: ["security", "monitoring", "siem"]
+    roles: ["security-monitor"]
+    connection_method: "ssh"
+    credential_path: "/etc/systemmanager/credentials/security-monitor.key"
+    capabilities: ["system:read", "security:read"]
+    description: "Security monitoring and SIEM server"
+
+  # Firewall management
+  - id: "firewall-primary"
+    host: "fw01.security.example.com"
+    tags: ["firewall", "security", "network"]
+    roles: ["firewall"]
+    connection_method: "ssh"
+    credential_path: "/etc/systemmanager/credentials/firewall.key"
+    capabilities: ["system:read", "firewall:read"]
+    description: "Primary firewall management"
+
+  # Log aggregation server
+  - id: "log-aggregator"
+    host: "logs.security.example.com"
+    tags: ["logs", "security", "aggregation"]
+    roles: ["log-aggregator"]
+    connection_method: "ssh"
+    credential_path: "/etc/systemmanager/credentials/log-aggregator.key"
+    capabilities: ["system:read", "logs:read"]
+    description: "Central log aggregation server"
+
+rules:
+  # Default deny - strict security
+  - name: "default_deny"
+    description: "Strict default deny - no operations allowed without explicit permission"
+    target_pattern: ".*"
+    allowed_operations: []
+    required_capabilities: []
+    parameter_constraints: {}
+    operation_tier: "observe"
+
+  # Bastion host - read-only monitoring only
+  - name: "bastion_monitoring"
+    description: "Bastion host monitoring (read-only)"
+    target_pattern: "bastion-host"
+    allowed_operations:
+      - "status"
+      - "metrics"
+    required_capabilities:
+      - "system:read"
+    parameter_constraints: {}
+    operation_tier: "observe"
+    requires_approval: false
+    dry_run_supported: true
+
+  # Security monitoring - enhanced logging
+  - name: "security_monitoring"
+    description: "Security monitoring operations"
+    target_pattern: "security-monitor"
+    allowed_operations:
+      - "status"
+      - "security_alerts"
+      - "audit_logs"
+    required_capabilities:
+      - "security:read"
+    parameter_constraints:
+      timeframe:
+        type: "string"
+        pattern: "^\\d+[hmd]$"  # e.g., 24h, 7d
+    operation_tier: "observe"
+    requires_approval: false
+    dry_run_supported: true
+
+  # Firewall operations - read-only with approval
+  - name: "firewall_read"
+    description: "Firewall rule viewing"
+    target_pattern: "firewall-primary"
+    allowed_operations:
+      - "list_firewall_rules"
+      - "firewall_status"
+    required_capabilities:
+      - "firewall:read"
+    parameter_constraints: {}
+    operation_tier: "observe"
+    requires_approval: true  # Requires approval for security
+    dry_run_supported: true
+
+  # Log operations - read-only with strict constraints
+  - name: "log_operations"
+    description: "Log viewing operations"
+    target_pattern: "log-aggregator"
+    allowed_operations:
+      - "search_logs"
+      - "log_statistics"
+    required_capabilities:
+      - "logs:read"
+    parameter_constraints:
+      search_query:
+        type: "string"
+        max_length: 256
+        pattern: "^[a-zA-Z0-9 _-]+$"  # Simple search patterns only
+      timeframe:
+        type: "string"
+        pattern: "^\\d+[hmd]$"
+    operation_tier: "observe"
+    requires_approval: true  # Log access requires approval
+    dry_run_supported: true
+
+  # Emergency operations - requires multiple approvals
+  - name: "emergency_operations"
+    description: "Emergency operations for security incidents"
+    target_pattern: ".*"
+    allowed_operations:
+      - "emergency_shutdown"
+      - "isolate_host"
+    required_capabilities:
+      - "emergency:admin"
+    parameter_constraints:
+      reason:
+        type: "string"
+        max_length: 500
+        pattern: "^[a-zA-Z0-9 .,!?-]+$"
+    operation_tier: "admin"
+    requires_approval: true
+    dry_run_supported: false  # No dry-run for emergencies
+
+# Security-Enhanced Global Configuration
+default_validation_mode: "strict"
+enable_dry_run: true
+audit_log_path: "/var/log/systemmanager/audit.jsonl"
+audit_rotation_size: 50000000  # 50MB (smaller for security)
+audit_rotation_count: 30  # Keep more logs for security analysis
+
+# Security-specific settings
+security:
+  require_approval_for_all_control_operations: true
+  max_operation_duration: 300  # 5 minutes max
+  require_multi_factor_auth: true
+  session_timeout: 900  # 15 minutes
+  audit_log_encryption: true

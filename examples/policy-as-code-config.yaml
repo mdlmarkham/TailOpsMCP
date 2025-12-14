@@ -1,0 +1,221 @@
+# Policy-as-Code Configuration Example
+# This file demonstrates the complete Policy-as-Code system for Gateway Fleet Orchestrator
+
+# Server/Targets Configuration
+targets:
+  # Production web servers
+  - id: "web-prod-01"
+    host: "web01.production.example.com"
+    tags: ["web", "production", "nginx"]
+    roles: ["webserver", "load-balancer"]
+    connection_method: "ssh"
+    credential_path: "/etc/systemmanager/credentials/web-prod-01.key"
+    capabilities: ["container:write", "system:read", "network:read"]
+    description: "Production web server 01"
+
+  - id: "web-prod-02"
+    host: "web02.production.example.com"
+    tags: ["web", "production", "nginx"]
+    roles: ["webserver"]
+    connection_method: "ssh"
+    credential_path: "/etc/systemmanager/credentials/web-prod-02.key"
+    capabilities: ["container:write", "system:read"]
+    description: "Production web server 02"
+
+  # Database servers
+  - id: "db-primary"
+    host: "db01.production.example.com"
+    tags: ["database", "production", "postgresql"]
+    roles: ["primary-db"]
+    connection_method: "ssh"
+    credential_path: "/etc/systemmanager/credentials/db-primary.key"
+    capabilities: ["system:read", "database:admin"]
+    description: "Primary database server"
+
+  - id: "db-replica"
+    host: "db02.production.example.com"
+    tags: ["database", "production", "postgresql"]
+    roles: ["replica-db"]
+    connection_method: "ssh"
+    credential_path: "/etc/systemmanager/credentials/db-replica.key"
+    capabilities: ["system:read"]
+    description: "Database replica server"
+
+  # Development environment
+  - id: "dev-app"
+    host: "dev-app.internal.example.com"
+    tags: ["development", "application"]
+    roles: ["dev-server"]
+    connection_method: "docker"
+    credential_path: "/etc/systemmanager/credentials/dev-app.key"
+    capabilities: ["container:write", "system:read", "network:read"]
+    description: "Development application server"
+
+  # Local management
+  - id: "local-gateway"
+    host: "localhost"
+    tags: ["gateway", "management"]
+    roles: ["gateway"]
+    connection_method: "local"
+    credential_path: null
+    capabilities: ["container:write", "system:read", "network:read", "gateway:admin"]
+    description: "Local gateway management"
+
+# Policy Rules Configuration
+rules:
+  # Default deny rule - enforce deny-by-default
+  - name: "default_deny"
+    description: "Default deny rule - no operations allowed unless explicitly permitted"
+    target_pattern: ".*"
+    allowed_operations: []  # Empty list means deny all
+    required_capabilities: []
+    parameter_constraints: {}
+    operation_tier: "observe"
+
+  # Web server operations
+  - name: "web_server_monitoring"
+    description: "Web server monitoring and status operations"
+    target_pattern: "web-.*"
+    allowed_operations:
+      - "status"
+      - "metrics"
+      - "processes"
+      - "nginx_status"
+    required_capabilities:
+      - "system:read"
+    parameter_constraints:
+      service_name:
+        type: "string"
+        max_length: 64
+        pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+    operation_tier: "observe"
+    requires_approval: false
+    dry_run_supported: true
+
+  - name: "web_server_container_operations"
+    description: "Web server container management operations"
+    target_pattern: "web-.*"
+    allowed_operations:
+      - "start_container"
+      - "stop_container"
+      - "restart_container"
+      - "inspect_container"
+    required_capabilities:
+      - "container:write"
+    parameter_constraints:
+      container_name:
+        type: "string"
+        max_length: 256
+        pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+      timeout:
+        type: "int"
+        min: 1
+        max: 300
+    operation_tier: "control"
+    requires_approval: false
+    dry_run_supported: true
+
+  # Database operations
+  - name: "database_monitoring"
+    description: "Database monitoring operations"
+    target_pattern: "db-.*"
+    allowed_operations:
+      - "status"
+      - "metrics"
+      - "postgres_status"
+    required_capabilities:
+      - "system:read"
+    parameter_constraints: {}
+    operation_tier: "observe"
+    requires_approval: false
+    dry_run_supported: true
+
+  - name: "database_admin_operations"
+    description: "Database administrative operations"
+    target_pattern: "db-primary"
+    allowed_operations:
+      - "backup_database"
+      - "restore_database"
+      - "vacuum_database"
+    required_capabilities:
+      - "database:admin"
+    parameter_constraints:
+      database_name:
+        type: "string"
+        max_length: 64
+        pattern: "^[a-zA-Z0-9_]+$"
+    operation_tier: "admin"
+    requires_approval: true
+    dry_run_supported: true
+
+  # Development environment operations
+  - name: "dev_environment_operations"
+    description: "Development environment operations"
+    target_pattern: "dev-.*"
+    allowed_operations:
+      - "start_container"
+      - "stop_container"
+      - "restart_container"
+      - "inspect_container"
+      - "deploy_stack"
+      - "pull_stack"
+    required_capabilities:
+      - "container:write"
+    parameter_constraints:
+      container_name:
+        type: "string"
+        max_length: 256
+      stack_name:
+        type: "string"
+        max_length: 64
+      timeout:
+        type: "int"
+        min: 1
+        max: 600
+    operation_tier: "control"
+    requires_approval: false
+    dry_run_supported: true
+
+  # Gateway management operations
+  - name: "gateway_management"
+    description: "Gateway management operations"
+    target_pattern: "local-gateway"
+    allowed_operations:
+      - "gateway_status"
+      - "update_gateway"
+      - "restart_gateway"
+      - "manage_targets"
+    required_capabilities:
+      - "gateway:admin"
+    parameter_constraints: {}
+    operation_tier: "admin"
+    requires_approval: false
+    dry_run_supported: true
+
+  # Network operations (allowed on all targets)
+  - name: "network_operations"
+    description: "Network connectivity testing"
+    target_pattern: ".*"
+    allowed_operations:
+      - "test_connectivity"
+      - "scan_ports"
+    required_capabilities:
+      - "network:read"
+    parameter_constraints:
+      host:
+        type: "string"
+        max_length: 253
+      port:
+        type: "int"
+        min: 1
+        max: 65535
+    operation_tier: "observe"
+    requires_approval: false
+    dry_run_supported: true
+
+# Global Configuration
+default_validation_mode: "strict"
+enable_dry_run: true
+audit_log_path: "./logs/audit.jsonl"
+audit_rotation_size: 100000000  # 100MB
+audit_rotation_count: 10

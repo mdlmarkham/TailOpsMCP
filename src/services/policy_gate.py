@@ -21,7 +21,8 @@ from src.auth.scopes import Scope, check_authorization, requires_approval, get_t
 from src.auth.token_auth import TokenClaims
 from src.models.target_registry import TargetMetadata, ExecutorType
 from src.services.target_registry import TargetRegistry
-from src.services.input_validator import InputValidator, AllowlistManager, ParameterType, ValidationMode
+from src.services.input_validator import InputValidator, AllowlistManager, ParameterType
+from src.models.validation import ValidationMode
 from src.services.discovery_tools import DiscoveryTools
 from src.utils.audit import AuditLogger
 from src.utils.errors import ErrorCategory, SystemManagerError
@@ -35,13 +36,6 @@ class OperationTier(str, Enum):
     OBSERVE = "observe"      # Read-only operations
     CONTROL = "control"      # Start/stop operations
     ADMIN = "admin"          # Administrative operations
-
-
-class ValidationMode(str, Enum):
-    """Validation modes for policy enforcement."""
-    STRICT = "strict"        # Reject invalid operations
-    WARN = "warn"           # Warn but allow invalid operations
-    DRY_RUN = "dry_run"     # Simulate without executing
 
 
 @dataclass
@@ -308,9 +302,9 @@ class PolicyGate:
         
         return None
     
-    def enforce_policy(self, tool_name: str, target_id: str, operation: str,
-                      parameters: Dict[str, Any], claims: TokenClaims,
-                      dry_run: bool = False) -> Tuple[bool, List[str]]:
+    async def enforce_policy(self, tool_name: str, target_id: str, operation: str,
+                           parameters: Dict[str, Any], claims: TokenClaims,
+                           dry_run: bool = False) -> Tuple[bool, List[str]]:
         """Enforce security policy for an operation.
         
         Args:
@@ -345,7 +339,7 @@ class PolicyGate:
             # Step 4: Validate target capabilities
             self.validate_capabilities(target, policy_rule.required_capabilities)
             
-            # Step 5: Validate parameters
+            # Step 5: Validate parameters (now properly awaited)
             param_errors = await self.validate_parameters(operation, parameters, policy_rule.parameter_constraints, target_id)
             validation_errors.extend(param_errors)
             

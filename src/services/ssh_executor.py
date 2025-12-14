@@ -46,7 +46,12 @@ class SSHExecutor(Executor):
         for attempt in range(self.retry_attempts):
             try:
                 self.client = paramiko.SSHClient()
-                self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                
+                # Load system host keys for verification
+                self.client.load_system_host_keys()
+                
+                # Set missing host key policy to reject unknown hosts
+                self.client.set_missing_host_key_policy(paramiko.RejectPolicy())
                 
                 # Resolve key path from environment variable if needed
                 actual_key_path = self.key_path
@@ -118,8 +123,27 @@ class SSHExecutor(Executor):
             sudo = kwargs.get('sudo', False)
             timeout = kwargs.get('timeout', self.timeout)
             
-            # Add sudo prefix if requested
-            actual_command = f"sudo {command}" if sudo else command
+            # For security, validate sudo commands and use safe string format
+            if sudo:
+                # Basic command validation to prevent injection
+                command_parts = command.split()
+                if not command_parts:
+                    return self._create_result(
+                        status=ExecutionStatus.FAILURE,
+                        success=False,
+                        error="Empty command for sudo execution"
+                    )
+                
+                # Escape command parts to prevent injection
+                escaped_parts = []
+                for part in command_parts:
+                    # Basic shell escaping - in production, use shlex.quote
+                    escaped_part = part.replace("'", "'\\''")
+                    escaped_parts.append(f"'{escaped_part}'")
+                
+                actual_command = f"sudo {' '.join(escaped_parts)}"
+            else:
+                actual_command = command
             
             stdin, stdout, stderr = self.client.exec_command(actual_command, timeout=timeout)
             
@@ -168,12 +192,6 @@ class SSHExecutor(Executor):
                 error=str(e),
                 metadata={"command": command}
             )
-                "command": actual_command
-            }
-            
-        except Exception as e:
-            logger.error(f"Command execution failed: {str(e)}")
-            return {"success": False, "error": str(e)}
     
     def test_connection(self) -> bool:
         """Test SSH connection by executing a simple command.
@@ -182,14 +200,7 @@ class SSHExecutor(Executor):
             True if connection test successful, False otherwise.
         """
         result = self.execute_command("echo 'connection test'")
-        return result["success"]
-    
-    def disconnect(self) -> None:
-        """Close SSH connection."""
-        if self.client:
-            self.client.close()
-            self.client = None
-            logger.info(f"SSH connection closed to {self.host}:{self.port}")
+        return result.success
     
     def __enter__(self):
         """Context manager entry."""

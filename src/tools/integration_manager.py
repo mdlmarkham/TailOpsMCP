@@ -14,7 +14,8 @@ class ToolIntegrationManager:
     """Manages integration between tools, Policy Gate, and execution layer."""
     
     def __init__(self):
-        self.policy_gate = PolicyGate()
+        self.from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
         self.executor_factory = ExecutorFactory()
         self.target_registry = TargetRegistry()
     

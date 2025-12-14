@@ -57,7 +57,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
             
             await policy_gate.authorize(
@@ -137,7 +138,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
             
             await policy_gate.authorize(
@@ -217,7 +219,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
             
             await policy_gate.authorize(
@@ -297,7 +300,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="get_stack_status",
                 target=target,
@@ -343,7 +347,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="list_stacks",
                 target=target,

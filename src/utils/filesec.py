@@ -59,19 +59,19 @@ def is_path_allowed(path: str, allowed_paths: Optional[List[str]] = None) -> tup
         allowed_paths = DEFAULT_ALLOWED_PATHS
     
     try:
-        # Resolve to absolute path to prevent traversal
-        abs_path = os.path.abspath(path)
+        # Resolve to absolute path and symlinks to prevent traversal
+        resolved_path = os.path.realpath(path)  # This resolves symlinks
         
         # Check against deny patterns first
         from fnmatch import fnmatch
         for pattern in ALWAYS_DENY_PATTERNS:
-            if fnmatch(abs_path, pattern):
+            if fnmatch(resolved_path, pattern):
                 return False, f"Path matches deny pattern: {pattern}"
         
-        # Check if path starts with any allowed prefix
+        # Check if path starts with any allowed prefix (using resolved paths)
         for allowed in allowed_paths:
-            allowed_abs = os.path.abspath(allowed)
-            if abs_path.startswith(allowed_abs):
+            allowed_resolved = os.path.realpath(allowed)
+            if resolved_path.startswith(allowed_resolved):
                 return True, "Path allowed"
         
         return False, f"Path not in allowed list: {allowed_paths}"

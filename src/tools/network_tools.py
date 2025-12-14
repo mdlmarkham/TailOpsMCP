@@ -39,7 +39,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="test_connectivity",
                 target=target,
@@ -102,7 +103,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="scan_ports",
                 target=target,
@@ -161,7 +163,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="get_network_status",
                 target=target,
@@ -204,7 +207,8 @@ def register_tools(mcp: FastMCP):
         """
         try:
             # Use Policy Gate for authorization
-            policy_gate = PolicyGate()
+            from src.server.dependencies import deps
+            policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="get_network_io_counters",
                 target=target,

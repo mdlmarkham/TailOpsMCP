@@ -14,13 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from src.utils.errors import SystemManagerError
-
-
-class ValidationMode(str, Enum):
-    """Validation modes for parameter validation."""
-    STRICT = "strict"        # Reject invalid parameters
-    WARN = "warn"           # Warn but allow invalid parameters
-    PERMISSIVE = "permissive" # Allow with minimal validation
+from src.models.validation import ValidationMode
 
 
 class ParameterType(str, Enum):
@@ -266,17 +260,54 @@ class InputValidator:
         """Validate file path with directory traversal protection."""
         errors = []
         
-        # Check for directory traversal attempts
-        if ".." in path or path.startswith("/") or "~" in path:
-            errors.append("File path contains potential directory traversal")
-        
-        # Check for dangerous characters
-        if any(char in path for char in ['|', ';', '&', '`', '$', '(', ')', '<', '>']):
-            errors.append("File path contains dangerous characters")
-        
-        # Check path length
-        if len(path) > 1024:
-            errors.append("File path too long")
+        try:
+            # Import here to avoid circular imports
+            from pathlib import Path
+            
+            # Default allowed base directories
+            allowed_base_dirs = [
+                "/tmp",
+                "/var/log",
+                "/etc",
+                "/opt",
+                "/home",
+                ".",
+                "./logs",
+                "./data"
+            ]
+            
+            # Resolve to absolute path (handles .., symlinks, ~)
+            try:
+                resolved_path = Path(path).resolve()
+            except (ValueError, RuntimeError) as e:
+                errors.append(f"Invalid file path: {e}")
+                return errors
+            
+            # Check against allowed base directories
+            path_allowed = False
+            for base_dir in allowed_base_dirs:
+                try:
+                    base_resolved = Path(base_dir).resolve()
+                    if resolved_path.is_relative_to(base_resolved):
+                        path_allowed = True
+                        break
+                except (ValueError, RuntimeError):
+                    continue
+            
+            if not path_allowed:
+                errors.append(f"File path not in allowed directories: {allowed_base_dirs}")
+            
+            # Check for dangerous characters (additional layer of protection)
+            dangerous_chars = ['|', ';', '&', '`', '$', '(', ')', '<', '>', '"', "'"]
+            if any(char in path for char in dangerous_chars):
+                errors.append("File path contains dangerous characters")
+            
+            # Check path length
+            if len(path) > 1024:
+                errors.append("File path too long")
+                
+        except Exception as e:
+            errors.append(f"Path validation error: {e}")
         
         return errors
     

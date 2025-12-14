@@ -200,7 +200,12 @@ class TargetDiscovery:
             import paramiko
             
             client = paramiko.SSHClient()
-            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            
+            # Load system host keys for verification
+            client.load_system_host_keys()
+            
+            # Set missing host key policy to reject unknown hosts
+            client.set_missing_host_key_policy(paramiko.RejectPolicy())
             
             # Resolve key path from environment variable if needed
             key_path = target.connection.key_path

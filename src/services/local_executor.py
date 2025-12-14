@@ -54,13 +54,19 @@ class LocalExecutor(Executor):
         
         try:
             # Extract optional parameters
-            shell = kwargs.get('shell', True)
+            shell = kwargs.get('shell', False)  # Changed default to False for security
             cwd = kwargs.get('cwd')
             env = kwargs.get('env')
             
+            # For security, if shell=False, split command into list
+            if not shell and isinstance(command, str):
+                cmd_list = command.split()
+            else:
+                cmd_list = command
+            
             # Execute command
             process = subprocess.run(
-                command,
+                cmd_list,
                 shell=shell,
                 cwd=cwd,
                 env=env,
