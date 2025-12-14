@@ -90,7 +90,7 @@ class TestSecurityAuditLogger:
     @pytest.fixture
     def audit_logger(self):
         """Create audit logger with temporary database."""
-        from src.services.security_audit_logger import SecurityAuditLogger
+        from src.security import SecurityAuditLogger
         
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp_file:
             db_path = tmp_file.name
@@ -441,7 +441,7 @@ class TestSecurityMonitor:
     @pytest.fixture
     def security_monitor(self):
         """Create security monitor with temporary database."""
-        from src.services.security_monitor import SecurityMonitor
+        from src.security import SecurityMonitor
         
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp_file:
             db_path = tmp_file.name
@@ -694,7 +694,7 @@ class TestSecurityIntegration:
     @pytest.mark.asyncio
     async def test_end_to_end_security_workflow(self):
         """Test complete security workflow from authentication to audit."""
-        from src.services.security_audit_logger import SecurityAuditLogger
+        from src.security import SecurityAuditLogger
         from src.services.identity_manager import IdentityManager
         from src.services.access_control import AdvancedAccessControl
         from src.models.security_models import (
@@ -802,7 +802,7 @@ class TestSecurityIntegration:
     @pytest.mark.asyncio
     async def test_security_policy_integration(self):
         """Test security integration with policy system."""
-        from src.services.security_policy_integration import SecurityPolicyIntegration
+        from src.security import SecurityPolicyIntegration
         from src.models.policy_models import PolicyContext, Policy
         from src.models.security_models import (
             IdentityContext, AuthenticationMethod, RiskProfile,
@@ -852,7 +852,7 @@ class TestSecurityPerformance:
     @pytest.mark.asyncio
     async def test_audit_logging_performance(self):
         """Test audit logging performance under load."""
-        from src.services.security_audit_logger import SecurityAuditLogger
+        from src.security import SecurityAuditLogger
         from src.models.security_models import (
             SecurityOperation, InitiatorType, RiskLevel
         )

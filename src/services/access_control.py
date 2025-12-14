@@ -22,7 +22,7 @@ from src.models.security_models import (
     RiskAssessment, RiskLevel, AccessAttempt, SecurityOperation,
     ResourceType, SensitivityLevel, SecurityClassification
 )
-from src.services.security_audit_logger import SecurityAuditLogger
+from src.security import SecurityAuditLogger  # Backward compat alias for AuditLogger
 from src.services.identity_manager import IdentityManager
 
 

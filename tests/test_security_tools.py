@@ -1,7 +1,7 @@
 """Tests for security scanning and hardening tools."""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from src.services.security_scanner import SecurityScanner
+from src.security import SecurityScanner
 from src.services.secrets_scanner import SecretsScanner
 from src.services.firewall_manager import FirewallManager
 from src.services.cis_checker import CISChecker

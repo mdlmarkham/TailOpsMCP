@@ -24,7 +24,7 @@ from src.models.security_models import (
     GovernanceDecision, SODDecision, ApprovalChainValidation,
     SecurityOperation, IdentityContext, RiskLevel, AlertSeverity
 )
-from src.services.security_audit_logger import SecurityAuditLogger
+from src.security import SecurityAuditLogger  # Backward compat alias for AuditLogger
 
 
 logger = logging.getLogger(__name__)

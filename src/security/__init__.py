@@ -144,8 +144,8 @@ def security_health_check() -> Dict[str, Any]:
         "monitoring_active": monitor._monitoring_active,
         "total_alerts": len(monitor.get_alerts()),
         "active_rules": len([r for r in monitor._rules.values() if r.enabled]),
-        "access_engine_initial is not None,
-        "audit_loggerized": access_engine_initialized": audit_logger is not None,
+        "access_engine_initialized": access_engine is not None,
+        "audit_logger_initialized": audit_logger is not None,
         "timestamp": datetime.now().isoformat()
     }
 

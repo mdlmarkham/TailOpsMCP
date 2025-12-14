@@ -80,7 +80,7 @@ def validate_security_services():
     
     # Test Security Audit Logger
     try:
-        from src.services.security_audit_logger import SecurityAuditLogger
+        from src.security import SecurityAuditLogger
         
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
             db_path = tmp.name
@@ -125,7 +125,7 @@ def validate_security_services():
     
     # Test Security Monitor
     try:
-        from src.services.security_monitor import SecurityMonitor
+        from src.security import SecurityMonitor
         
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
             db_path = tmp.name
@@ -187,7 +187,7 @@ def validate_security_integrations():
     
     # Test Policy Integration
     try:
-        from src.services.security_policy_integration import SecurityPolicyIntegration
+        from src.security import SecurityPolicyIntegration
         from src.models.policy_models import PolicyContext
         
         policy_context = PolicyContext(
@@ -207,7 +207,7 @@ def validate_security_integrations():
     
     # Test Workflow Integration
     try:
-        from src.services.security_workflow_integration import SecurityWorkflowIntegration
+        from src.security import SecurityWorkflowIntegration
         
         workflow_integration = SecurityWorkflowIntegration()
         integrations_validated.append("Workflow Integration")
@@ -218,7 +218,7 @@ def validate_security_integrations():
     
     # Test Event Integration
     try:
-        from src.services.security_event_integration import SecurityEventIntegration
+        from src.security import SecurityEventIntegration
         
         event_integration = SecurityEventIntegration()
         integrations_validated.append("Event Integration")
@@ -371,7 +371,7 @@ async def run_async_validation():
     print("⚡ Running Async Security Tests...")
     
     try:
-        from src.services.security_audit_logger import SecurityAuditLogger
+        from src.security import SecurityAuditLogger
         from src.models.security_models import SecurityOperation, InitiatorType, RiskLevel
         
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
