@@ -6,7 +6,7 @@ import uuid
 from typing import Any, Dict, Optional
 
 from src.models.execution import ExecutionResult, ExecutionRequest, ExecutionStatus, StructuredError
-from src.utils.audit_enhanced import AuditLogger, LogLevel
+from src.utils.audit import AuditLogger, LogLevel
 from src.utils.logging_config import SystemLogger, get_logger, metrics_collector, health_checker
 from src.utils.observability_config import generate_correlation_id
 

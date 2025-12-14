@@ -1,6 +1,6 @@
-# SystemManager Control Plane Gateway
+# TailOpsMCP Gateway
 
-🛰️ **SystemManager — A secure control plane gateway for managing distributed infrastructure**
+🛰️ **TailOpsMCP — A secure control plane gateway for managing distributed infrastructure**
 
 > **Centralized management of multiple targets through a single control plane gateway — powered by MCP**
 > Model Context Protocol (MCP) server that operates as a control plane gateway, managing SSH, Docker, and HTTP targets through capability-based authorization and policy enforcement.
@@ -13,9 +13,9 @@
 
 ---
 
-## 🎯 What is SystemManager?
+## 🎯 What is TailOpsMCP?
 
-SystemManager is a control plane gateway that centralizes management of distributed infrastructure through AI assistants like Claude, ChatGPT, or any MCP-compatible client. Instead of deploying agents on every node, you deploy a single gateway that manages multiple targets through SSH, Docker, and HTTP connections.
+TailOpsMCP is a control plane gateway that centralizes management of distributed infrastructure through AI assistants like Claude, ChatGPT, or any MCP-compatible client. Instead of deploying agents on every node, you deploy a single gateway that manages multiple targets through SSH, Docker, and HTTP connections.
 
 **Key Operational Model:**
 - **Control Plane Gateway**: Single trusted node manages multiple targets
@@ -62,7 +62,7 @@ Perfect for **infrastructure teams**, **SREs**, and **DevOps engineers** managin
 
 - ✅ **Tailscale Required** - Encrypted transport mandatory (no built-in TLS)
 - ✅ **OAuth 2.1 with TSIDP** - Tailscale Identity Provider authentication
-- ✅ **Non-Root Service** - Runs as dedicated `systemmanager` user
+- ✅ **Non-Root Service** - Runs as dedicated `tailopsmcp` user
 - ✅ **Systemd Hardening** - Full sandboxing with ProtectSystem, ProtectHome
 - ✅ **Audit Logging** - Complete tracking of all operations
 - ✅ **Scope-Based Access** - Fine-grained permission control
@@ -123,19 +123,43 @@ graph TD
 
 ## 🚀 Quick Start
 
-### **Control Plane Gateway Deployment**
+### **Proxmox One-Liner Deployment (Recommended)**
 
-#### **Step 1: Deploy Gateway Container**
-
-Deploy the control plane gateway in a Proxmox LXC container for isolation:
+Deploy TailOpsMCP Gateway with a single command:
 
 ```bash
-# Automated Proxmox installer (recommended)
-bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/ct/build.func)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/ct/tailops-gateway.sh)"
+```
+
+**What this does:**
+- ✅ Creates isolated LXC container with sensible defaults
+- ✅ Installs TailOpsMCP with all dependencies
+- ✅ Configures for Tailscale and Docker integration
+- ✅ Starts the gateway service automatically
+- ✅ Provides clear access instructions
+
+**Customize deployment:**
+```bash
+# High-performance deployment
+RAM_SIZE=4096 CPU_CORES=4 DISK_SIZE=16 \
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/ct/tailops-gateway.sh)"
+
+# Minimal deployment
+RAM_SIZE=1024 CPU_CORES=1 DISK_SIZE=4 \
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/ct/tailops-gateway.sh)"
+```
+
+### **Alternative: Legacy Proxmox Installer**
+
+For existing workflows, the legacy installer is still available:
+
+```bash
+# Legacy Proxmox installer
+bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/ct/build.func)"
 ```
 
 This creates an isolated gateway container with:
-- Debian 12 LXC (2GB RAM, 2 CPU cores, 4GB disk)
+- Debian 12 LXC (2GB RAM, 2 CPU cores, 8GB disk)
 - Python 3.12 and all dependencies
 - Tailscale OAuth authentication
 - Systemd service configuration
@@ -178,11 +202,11 @@ Configure your MCP-compatible AI assistant to connect to the gateway:
 ```json
 {
   "mcpServers": {
-    "systemmanager": {
+    "tailopsmcp": {
       "command": "python",
       "args": ["-m", "src.mcp_server"],
       "env": {
-        "SYSTEMMANAGER_TARGETS_CONFIG": "/path/to/targets.yaml"
+        "TAILOPSMCP_TARGETS_CONFIG": "/path/to/targets.yaml"
       }
     }
   }
@@ -281,11 +305,11 @@ For non-Proxmox environments:
 
 ```bash
 # Download and run the installer
-curl -fsSL https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/install.sh | sudo bash
 
 # Or clone and run manually
-git clone https://github.com/mdlmarkham/SystemManager.git
-cd SystemManager
+git clone https://github.com/mdlmarkham/TailOpsMCP.git
+cd TailOpsMCP
 sudo bash install.sh
 ```
 
@@ -301,16 +325,16 @@ The installer will:
 
 ```bash
 # Check gateway service status
-sudo systemctl status systemmanager-mcp
+sudo systemctl status tailopsmcp-mcp
 
 # View gateway logs
-sudo journalctl -u systemmanager-mcp -f
+sudo journalctl -u tailopsmcp-mcp -f
 
 # Test gateway connectivity
 curl http://localhost:8080/.well-known/oauth-protected-resource/mcp
 
 # Verify target registry loading
-sudo journalctl -u systemmanager-mcp | grep "targets.yaml"
+sudo journalctl -u tailopsmcp-mcp | grep "targets.yaml"
 ```
 
 ---
@@ -319,7 +343,7 @@ sudo journalctl -u systemmanager-mcp | grep "targets.yaml"
 
 ### **Tailscale Integration for Gateway Security**
 
-SystemManager uses **Tailscale Identity Provider (TSIDP)** for OAuth 2.1 authentication, providing secure gateway access control.
+TailOpsMCP uses **Tailscale Identity Provider (TSIDP)** for OAuth 2.1 authentication, providing secure gateway access control.
 
 #### **Gateway Network Security**
 
@@ -330,12 +354,12 @@ Configure Tailscale ACLs to control gateway access:
   "acls": [
     {
       "action": "accept",
-      "src": ["group:systemmanager-admins"],
-      "dst": ["tag:systemmanager-gateway:8080"]
+      "src": ["group:tailopsmcp-admins"],
+      "dst": ["tag:tailopsmcp-gateway:8080"]
     }
   ],
   "tagOwners": {
-    "tag:systemmanager-gateway": ["group:systemmanager-admins"]
+    "tag:tailopsmcp-gateway": ["group:tailopsmcp-admins"]
   }
 }
 ```
@@ -391,7 +415,7 @@ shared-targets: ["monitoring-01", "logging-01"]
 
 ### **Proxmox LXC Gateway Deployment**
 
-SystemManager gateways are typically deployed in Proxmox LXC containers for isolation and security.
+TailOpsMCP gateways are typically deployed in Proxmox LXC containers for isolation and security.
 
 #### **Recommended LXC Configuration**
 
@@ -459,28 +483,28 @@ secondary-gateway:
 
 ```bash
 # Update gateway software
-sudo systemctl stop systemmanager-mcp
-cd /opt/systemmanager
+sudo systemctl stop tailopsmcp-mcp
+cd /opt/tailopsmcp
 git pull
 pip install -r requirements.txt
-sudo systemctl start systemmanager-mcp
+sudo systemctl start tailopsmcp-mcp
 
 # Verify gateway health
-sudo systemctl status systemmanager-mcp
-sudo journalctl -u systemmanager-mcp --since "5 minutes ago"
+sudo systemctl status tailopsmcp-mcp
+sudo journalctl -u tailopsmcp-mcp --since "5 minutes ago"
 ```
 
 #### **Target Registry Management**
 
 ```bash
 # Backup target registry
-cp /opt/systemmanager/targets.yaml /opt/systemmanager/targets.yaml.backup
+cp /opt/tailopsmcp/targets.yaml /opt/tailopsmcp/targets.yaml.backup
 
 # Validate target configuration
 python -c "from src.services.target_registry import TargetRegistry; tr = TargetRegistry(); print('Valid targets:', list(tr._targets.keys()))"
 
 # Reload target registry without restart
-sudo systemctl reload systemmanager-mcp
+sudo systemctl reload tailopsmcp-mcp
 ```
 
 ---
@@ -695,7 +719,7 @@ print(response.json())
 
 ### Environment Variables
 
-SystemManager is configured via `/opt/systemmanager/.env`:
+TailOpsMCP is configured via `/opt/tailopsmcp/.env`:
 
 ```bash
 # Authentication Mode (oidc or token)
@@ -719,17 +743,17 @@ LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR
 
 ```bash
 # Check status
-sudo systemctl status systemmanager-mcp
+sudo systemctl status tailopsmcp-mcp
 
 # View logs
-sudo journalctl -u systemmanager-mcp -f
+sudo journalctl -u tailopsmcp-mcp -f
 
 # Restart
-sudo systemctl restart systemmanager-mcp
+sudo systemctl restart tailopsmcp-mcp
 
 # Enable/disable auto-start
-sudo systemctl enable systemmanager-mcp
-sudo systemctl disable systemmanager-mcp
+sudo systemctl enable tailopsmcp-mcp
+sudo systemctl disable tailopsmcp-mcp
 ```
 
 ### Update to Latest Version
@@ -739,13 +763,13 @@ sudo systemctl disable systemmanager-mcp
 pct exec 103 -- bash -c "$(wget -qLO - https://raw.githubusercontent.com/mdlmarkham/SystemManager/master/ct/build.func)" -s --update
 
 # Or manually
-cd /opt/systemmanager
-sudo systemctl stop systemmanager-mcp
+cd /opt/tailopsmcp
+sudo systemctl stop tailopsmcp-mcp
 git pull
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
-sudo systemctl start systemmanager-mcp
+sudo systemctl start tailopsmcp-mcp
 ```
 
 ---
@@ -839,7 +863,7 @@ get_service_status("nginx")
 
 ```bash
 # Check logs for errors
-sudo journalctl -u systemmanager-mcp -n 100 --no-pager
+sudo journalctl -u tailopsmcp-mcp -n 100 --no-pager
 
 # Common issues:
 # 1. Python not found - check venv path in service file

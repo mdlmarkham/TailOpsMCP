@@ -266,7 +266,7 @@ class SecurityAuditIntegration:
         events = []
         
         try:
-            from src.utils.audit_enhanced import AuditLogger, LogLevel
+            from src.utils.audit import AuditLogger, LogLevel
             
             audit_logger = AuditLogger()
             
@@ -654,7 +654,7 @@ class SystemIntegrationManager:
     async def _test_security_audit_integration(self) -> None:
         """Test security audit integration."""
         # Simple test - try to get audit events
-        from src.utils.audit_enhanced import AuditLogger
+        from src.utils.audit import AuditLogger
         audit_logger = AuditLogger()
         await audit_logger.get_recent_events(hours=1)
     

@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional, List
 from io import StringIO
 
-from src.utils.audit_enhanced import LogLevel, audit_logger
+from src.utils.audit import LogLevel, audit_logger
 
 
 class SystemLogger:

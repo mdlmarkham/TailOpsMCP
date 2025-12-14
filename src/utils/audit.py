@@ -57,6 +57,7 @@ class AuditLogEntry:
     result_hash: str  # Hash of operation result
     duration_ms: float  # Operation duration in milliseconds
     authorized: bool  # Whether operation was authorized
+    correlation_id: Optional[str] = None  # Correlation ID for request tracking
     policy_rule: Optional[str] = None  # Policy rule that authorized/denied
     validation_errors: List[str] = None  # Validation errors if any
     
@@ -383,6 +384,39 @@ class StructuredAuditLogger:
         except Exception as e:
             logger.error(f"Failed to write audit log entry: {e}")
     
+    def log_structured(self,
+                      level: LogLevel,
+                      message: str,
+                      correlation_id: Optional[str] = None,
+                      **kwargs) -> None:
+        """Log a structured message to the audit log."""
+        # Convert log level to event type
+        event_type_map = {
+            LogLevel.INFO: AuditEventType.TOOL_INVOCATION,
+            LogLevel.WARNING: AuditEventType.TOOL_INVOCATION,
+            LogLevel.ERROR: AuditEventType.TOOL_INVOCATION,
+            LogLevel.DEBUG: AuditEventType.TOOL_INVOCATION
+        }
+        
+        entry = AuditLogEntry(
+            timestamp=datetime.now().isoformat(),
+            event_type=event_type_map.get(level, AuditEventType.TOOL_INVOCATION),
+            actor="system",
+            target="audit_log",
+            operation=level.value,
+            parameters={
+                "message": message,
+                "correlation_id": correlation_id or "unknown",
+                **kwargs
+            },
+            result_hash=hashlib.sha256("logged".encode()).hexdigest(),
+            duration_ms=0.0,
+            authorized=True,
+            correlation_id=correlation_id or "unknown"
+        )
+        
+        self._write_entry(entry)
+    
     def search_audit_logs(self, 
                          start_time: Optional[datetime] = None,
                          end_time: Optional[datetime] = None,
@@ -523,3 +557,19 @@ def get_structured_audit_logger(log_path: str = "./logs/audit.jsonl",
         StructuredAuditLogger instance
     """
     return StructuredAuditLogger(log_path, rotation_size, rotation_count)
+
+
+from enum import Enum
+
+
+# Add missing classes and instances for compatibility
+class LogLevel(str, Enum):
+    """Log levels for audit logging."""
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    DEBUG = "debug"
+
+
+# Global audit logger instance
+audit_logger = StructuredAuditLogger()

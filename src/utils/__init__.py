@@ -1,7 +1,7 @@
 """Utilities package for SystemManager."""
 from .errors import SystemManagerError, ErrorCategory
 from .retry import retry_with_backoff
-from .audit_enhanced import StructuredAuditLogger
+from .audit import StructuredAuditLogger
 AuditLogger = StructuredAuditLogger  # Alias for backward compatibility
 
 # Mock classes for compatibility

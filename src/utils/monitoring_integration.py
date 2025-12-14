@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from src.utils.audit_enhanced import AuditLogger, LogLevel
+from src.utils.audit import AuditLogger, LogLevel
 from src.utils.logging_config import MetricsCollector, health_checker
 
 

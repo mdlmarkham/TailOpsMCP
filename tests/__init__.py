@@ -2,7 +2,7 @@
 Test configuration and initialization for the enhanced test infrastructure.
 """
 
-# import pytest  # Commented out since pytest is not available
+import pytest  # Import pytest for fixtures
 import sys
 from pathlib import Path
 
@@ -15,7 +15,7 @@ from tests.mock_executors import *
 from tests.fixtures.target_registry_fixtures import *
 from tests.mock_policy_gate import *
 from tests.test_utils import *
-from tests.integration_test_framework import *
+# from tests.integration_test_framework import *  # Commented out due to missing dependencies
 
 
 # pytest configuration hooks

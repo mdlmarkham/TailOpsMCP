@@ -18,7 +18,7 @@ from src.models.event_models import (
 from src.models.execution import ExecutionResult
 from src.models.enhanced_fleet_inventory import EnhancedFleetInventory, TargetInfo
 from src.models.policy_models import PolicyViolation, PolicyAuditResult
-from src.utils.audit_enhanced import AuditLogger, LogLevel
+from src.utils.audit import AuditLogger, LogLevel
 from src.utils.logging_config import get_logger
 
 

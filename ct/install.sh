@@ -17,7 +17,7 @@ if [ -n "$FUNCTIONS_FILE_PATH" ]; then
 fi
 
 # Clone repository first to get access to modular installers
-INSTALL_DIR="/opt/systemmanager"
+INSTALL_DIR="/opt/tailopsmcp"
 msg_info "Cloning TailOpsMCP repository..."
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"

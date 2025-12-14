@@ -328,7 +328,7 @@ class PolicyContext(BaseModel):
     
     # System context
     system_state: Dict[str, Any] = Field(default_factory=dict, description="Current system state")
-    maintenance_mode: bool, description="Whether = Field(default=False system is in maintenance mode")
+    maintenance_mode: bool = Field(default=False, description="Whether system is in maintenance mode")
     emergency_mode: bool = Field(default=False, description="Whether emergency mode is active")
     
     # Environment context

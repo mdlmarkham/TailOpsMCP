@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Fetch community-scripts build.func and modify it to use TailOpsMCP install script
-source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func | \
+# SECURITY: Pinned to specific commit hash to prevent supply chain attacks
+# Last updated: 2024-12-14
+source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/3c8e7a1/misc/build.func | \
   sed 's|https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/install/${var_install}.sh|https://raw.githubusercontent.com/mdlmarkham/TailOpsMCP/master/ct/install.sh|')
-# Copyright (c) 2024 SystemManager Contributors
-# Author: SystemManager Team
+# Copyright (c) 2024 TailOpsMCP Contributors
+# Author: TailOpsMCP Team
 # License: MIT
-# https://github.com/mdlmarkham/SystemManager
+# https://github.com/mdlmarkham/TailOpsMCP
 
 function header_info {
 clear
@@ -20,8 +22,8 @@ EOF
 }
 header_info
 echo -e "Loading..."
-APP="SystemManager"
-var_disk="4"
+APP="TailOpsMCP"
+var_disk="8"
 var_cpu="2"
 var_ram="2048"
 var_os="debian"
@@ -56,15 +58,15 @@ function default_settings() {
 
 function update_script() {
 header_info
-if [[ ! -d /opt/systemmanager ]]; then msg_error "No ${APP} Installation Found!"; exit; fi
+if [[ ! -d /opt/tailopsmcp ]]; then msg_error "No ${APP} Installation Found!"; exit; fi
 msg_info "Updating ${APP}"
-systemctl stop systemmanager-mcp
-cd /opt/systemmanager
+systemctl stop tailopsmcp-mcp
+cd /opt/tailopsmcp
 git pull
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
-systemctl start systemmanager-mcp
+systemctl start tailopsmcp-mcp
 msg_ok "Updated ${APP}"
 exit
 }

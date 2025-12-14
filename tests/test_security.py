@@ -438,7 +438,7 @@ class TestSecurity:
     @pytest.mark.asyncio
     async def test_audit_log_integrity(self, security_test_framework):
         """Test audit log integrity."""
-        from src.utils.audit_enhanced import AuditLogger
+        from src.utils.audit import AuditLogger
         from src.utils.log_integrity import LogIntegrity
         
         audit_logger = Mock(spec=AuditLogger)

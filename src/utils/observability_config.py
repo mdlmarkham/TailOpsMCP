@@ -3,7 +3,7 @@ Configuration for audit log sinks, retention policies, and observability setting
 """
 
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 
 class AuditLogConfig:
