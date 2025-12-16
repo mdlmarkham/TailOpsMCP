@@ -1,15 +1,17 @@
 """MCP prompts for TailOpsMCP - Pre-configured workflows for common home lab tasks."""
+
 import logging
 from fastmcp import FastMCP
 
 logger = logging.getLogger(__name__)
+
 
 def register_prompts(mcp: FastMCP):
     """Register MCP prompts with FastMCP instance."""
 
     @mcp.prompt(
         description="Comprehensive security audit of the system including logs, Docker containers, and network configuration",
-        tags={"security", "audit", "homelab"}
+        tags={"security", "audit", "homelab"},
     )
     def security_audit() -> str:
         """Generate a comprehensive security audit prompt for the home lab."""
@@ -47,7 +49,7 @@ Please provide:
 
     @mcp.prompt(
         description="Quick health check of all critical home lab services",
-        tags={"monitoring", "health", "homelab"}
+        tags={"monitoring", "health", "homelab"},
     )
     def health_check() -> str:
         """Generate a health check prompt for monitoring critical services."""
@@ -80,7 +82,7 @@ Provide:
 
     @mcp.prompt(
         description="Troubleshoot a specific Docker container that's having issues",
-        tags={"docker", "troubleshooting", "homelab"}
+        tags={"docker", "troubleshooting", "homelab"},
     )
     def troubleshoot_container(container_name: str) -> str:
         """Generate a troubleshooting workflow for a Docker container."""
@@ -115,7 +117,7 @@ Provide:
 
     @mcp.prompt(
         description="Performance analysis to identify resource bottlenecks",
-        tags={"performance", "monitoring", "homelab"}
+        tags={"performance", "monitoring", "homelab"},
     )
     def performance_analysis() -> str:
         """Generate a performance analysis prompt."""
@@ -151,7 +153,7 @@ Provide:
 
     @mcp.prompt(
         description="Review and optimize network configuration for security and performance",
-        tags={"network", "security", "homelab"}
+        tags={"network", "security", "homelab"},
     )
     def network_audit() -> str:
         """Generate a network audit prompt."""
@@ -191,7 +193,7 @@ Provide:
 
     @mcp.prompt(
         description="Plan and prepare for Docker Compose stack deployment from a GitHub repository",
-        tags={"docker", "deployment", "homelab"}
+        tags={"docker", "deployment", "homelab"},
     )
     def plan_stack_deployment(repo_url: str, stack_name: str) -> str:
         """Generate a deployment planning prompt for a Docker Compose stack."""
@@ -233,7 +235,7 @@ Please provide:
 
     @mcp.prompt(
         description="Investigate and resolve high resource usage on the system",
-        tags={"performance", "troubleshooting", "homelab"}
+        tags={"performance", "troubleshooting", "homelab"},
     )
     def investigate_high_usage() -> str:
         """Generate a resource investigation prompt."""
@@ -275,7 +277,7 @@ Provide:
 
     @mcp.prompt(
         description="Backup verification and disaster recovery planning",
-        tags={"backup", "disaster-recovery", "homelab"}
+        tags={"backup", "disaster-recovery", "homelab"},
     )
     def backup_planning() -> str:
         """Generate a backup and disaster recovery planning prompt."""
@@ -315,7 +317,7 @@ Provide:
 
     @mcp.prompt(
         description="Interactive setup to discover and document applications running on this system",
-        tags={"inventory", "setup", "homelab"}
+        tags={"inventory", "setup", "homelab"},
     )
     def setup_inventory() -> str:
         """Guide user through setting up the system inventory."""

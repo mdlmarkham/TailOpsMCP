@@ -1,0 +1,26 @@
+# Development dependencies for TailOpsMCP project (Python 3.12+)
+# Install with: pip install -r requirements-dev.txt
+
+# Testing frameworks
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Code formatting and linting
+black>=23.0.0
+isort>=5.12.0
+ruff>=0.6.0
+flake8>=6.0.0
+
+# Type checking
+mypy>=1.7.0
+types-psutil>=5.9.0
+
+# Security scanning
+bandit[toml]>=1.7.10
+safety>=3.0.0
+
+# Pre-commit hooks
+pre-commit>=3.5.0
+
+# Shell script linting
+shellcheck-py>=0.10.0.0

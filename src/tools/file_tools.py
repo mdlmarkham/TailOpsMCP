@@ -19,8 +19,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("read_file")
     async def read_file(
-        target: str = "local",
         path: str,
+        target: str = "local",
         lines: int = 100,
         offset: int = 0
     ) -> dict:
@@ -45,7 +45,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute file read
             result = await executor.execute(
                 command="read_file",
@@ -73,7 +73,7 @@ def register_tools(mcp: FastMCP):
                     "error": result.error,
                     "timestamp": datetime.now().isoformat()
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="read_file",
@@ -108,7 +108,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute directory listing
             result = await executor.execute(
                 command="list_directory",
@@ -134,7 +134,7 @@ def register_tools(mcp: FastMCP):
                     "error": result.error,
                     "timestamp": datetime.now().isoformat()
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="list_directory",
@@ -147,8 +147,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("get_file_info")
     async def get_file_info(
-        target: str = "local",
-        path: str
+        path: str,
+        target: str = "local"
     ) -> dict:
         """Get file information (size, permissions, timestamps).
 
@@ -169,7 +169,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute file info query
             result = await executor.execute(
                 command="get_file_info",
@@ -193,7 +193,7 @@ def register_tools(mcp: FastMCP):
                     "error": result.error,
                     "timestamp": datetime.now().isoformat()
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="get_file_info",
@@ -206,8 +206,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("search_files")
     async def search_files(
-        target: str = "local",
         path: str,
+        target: str = "local",
         pattern: str = "*",
         max_results: int = 100
     ) -> dict:
@@ -232,7 +232,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute file search
             result = await executor.execute(
                 command="search_files",
@@ -259,7 +259,7 @@ def register_tools(mcp: FastMCP):
                     "error": result.error,
                     "timestamp": datetime.now().isoformat()
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="search_files",
@@ -305,7 +305,7 @@ def register_tools(mcp: FastMCP):
                 return await search_files(target, path, pattern)
             else:
                 return {"success": False, "error": f"Invalid action: {action}"}
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="file_operations",

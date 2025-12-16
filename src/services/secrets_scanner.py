@@ -11,7 +11,7 @@ Detects common secret patterns:
 
 import re
 import os
-from typing import Dict, List, Optional
+from typing import Dict
 from pathlib import Path
 
 
@@ -22,83 +22,103 @@ class SecretsScanner:
     SECRET_PATTERNS = {
         "aws_access_key": {
             "pattern": r"AKIA[0-9A-Z]{16}",
-            "description": "AWS Access Key ID"
+            "description": "AWS Access Key ID",
         },
         "aws_secret_key": {
             "pattern": r"aws_secret_access_key\s*=\s*['\"]?([A-Za-z0-9/+=]{40})['\"]?",
-            "description": "AWS Secret Access Key"
+            "description": "AWS Secret Access Key",
         },
         "github_token": {
             "pattern": r"gh[pousr]_[A-Za-z0-9_]{36,255}",
-            "description": "GitHub Personal Access Token"
+            "description": "GitHub Personal Access Token",
         },
         "generic_api_key": {
             "pattern": r"api[_-]?key\s*[=:]\s*['\"]?([A-Za-z0-9_\-]{20,})['\"]?",
             "description": "Generic API Key",
-            "case_insensitive": True
+            "case_insensitive": True,
         },
         "private_key": {
             "pattern": r"-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----",
-            "description": "Private Key"
+            "description": "Private Key",
         },
         "password_in_url": {
             "pattern": r"[a-z]+://[^:]+:([^@]+)@",
-            "description": "Password in connection string"
+            "description": "Password in connection string",
         },
         "slack_token": {
             "pattern": r"xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[A-Za-z0-9]{24,32}",
-            "description": "Slack Token"
+            "description": "Slack Token",
         },
         "slack_webhook": {
             "pattern": r"https://hooks\.slack\.com/services/T[A-Z0-9]+/B[A-Z0-9]+/[A-Za-z0-9]+",
-            "description": "Slack Webhook URL"
+            "description": "Slack Webhook URL",
         },
         "stripe_key": {
             "pattern": r"sk_live_[0-9a-zA-Z]{24,}",
-            "description": "Stripe Live Secret Key"
+            "description": "Stripe Live Secret Key",
         },
         "mailgun_key": {
             "pattern": r"key-[0-9a-zA-Z]{32}",
-            "description": "Mailgun API Key"
+            "description": "Mailgun API Key",
         },
-        "twilio_key": {
-            "pattern": r"SK[0-9a-f]{32}",
-            "description": "Twilio API Key"
-        },
+        "twilio_key": {"pattern": r"SK[0-9a-f]{32}", "description": "Twilio API Key"},
         "jwt_token": {
             "pattern": r"eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+",
-            "description": "JWT Token"
+            "description": "JWT Token",
         },
         "generic_secret": {
             "pattern": r"secret\s*[=:]\s*['\"]?([A-Za-z0-9_\-]{16,})['\"]?",
             "description": "Generic Secret",
-            "case_insensitive": True
+            "case_insensitive": True,
         },
         "database_url": {
             "pattern": r"(postgres|mysql|mongodb)://[^:]+:[^@]+@[^/]+",
-            "description": "Database Connection String with Credentials"
+            "description": "Database Connection String with Credentials",
         },
         "docker_auth": {
             "pattern": r'"auth":\s*"[A-Za-z0-9+/=]{20,}"',
-            "description": "Docker Registry Authentication"
+            "description": "Docker Registry Authentication",
         },
         "npm_token": {
             "pattern": r"//registry\.npmjs\.org/:_authToken=[A-Za-z0-9-]+",
-            "description": "NPM Auth Token"
-        }
+            "description": "NPM Auth Token",
+        },
     }
 
     # File extensions to scan
     SCANNABLE_EXTENSIONS = {
-        ".env", ".conf", ".config", ".ini", ".yml", ".yaml",
-        ".json", ".xml", ".properties", ".toml", ".sh", ".bash",
-        ".py", ".js", ".ts", ".rb", ".go", ".java", ".php"
+        ".env",
+        ".conf",
+        ".config",
+        ".ini",
+        ".yml",
+        ".yaml",
+        ".json",
+        ".xml",
+        ".properties",
+        ".toml",
+        ".sh",
+        ".bash",
+        ".py",
+        ".js",
+        ".ts",
+        ".rb",
+        ".go",
+        ".java",
+        ".php",
     }
 
     # Directories to skip
     SKIP_DIRS = {
-        ".git", "node_modules", "__pycache__", ".venv", "venv",
-        "vendor", "dist", "build", ".pytest_cache"
+        ".git",
+        "node_modules",
+        "__pycache__",
+        ".venv",
+        "venv",
+        "vendor",
+        "dist",
+        "build",
+        ".pytest_cache",
     }
 
     def __init__(self):
@@ -108,7 +128,7 @@ class SecretsScanner:
             flags = re.IGNORECASE if config.get("case_insensitive", False) else 0
             self.compiled_patterns[name] = {
                 "regex": re.compile(config["pattern"], flags),
-                "description": config["description"]
+                "description": config["description"],
             }
 
     async def scan_file(self, file_path: str) -> Dict:
@@ -144,35 +164,34 @@ class SecretsScanner:
 
                 for match in matches:
                     # Get line number
-                    line_num = content[:match.start()].count("\n") + 1
+                    line_num = content[: match.start()].count("\n") + 1
 
                     # Get the matched text (redacted)
                     matched_text = match.group(0)
                     redacted = self._redact_secret(matched_text)
 
-                    findings.append({
-                        "type": secret_type,
-                        "description": pattern_info["description"],
-                        "line": line_num,
-                        "matched_text": redacted,
-                        "severity": self._get_severity(secret_type)
-                    })
+                    findings.append(
+                        {
+                            "type": secret_type,
+                            "description": pattern_info["description"],
+                            "line": line_num,
+                            "matched_text": redacted,
+                            "severity": self._get_severity(secret_type),
+                        }
+                    )
 
             return {
                 "success": True,
                 "file": str(path),
                 "findings_count": len(findings),
-                "findings": findings
+                "findings": findings,
             }
 
         except Exception as e:
             return {"success": False, "error": f"Scan error: {str(e)}"}
 
     async def scan_directory(
-        self,
-        directory: str,
-        recursive: bool = True,
-        max_files: int = 1000
+        self, directory: str, recursive: bool = True, max_files: int = 1000
     ) -> Dict:
         """
         Scan a directory for secrets.
@@ -214,7 +233,10 @@ class SecretsScanner:
                         break
             else:
                 for file_path in dir_path.iterdir():
-                    if file_path.is_file() and file_path.suffix in self.SCANNABLE_EXTENSIONS:
+                    if (
+                        file_path.is_file()
+                        and file_path.suffix in self.SCANNABLE_EXTENSIONS
+                    ):
                         files_to_scan.append(file_path)
 
                         if len(files_to_scan) >= max_files:
@@ -246,7 +268,7 @@ class SecretsScanner:
                 "severity_counts": severity_counts,
                 "files": files_with_secrets,
                 "findings": all_findings[:100],  # Limit output
-                "truncated": len(all_findings) > 100
+                "truncated": len(all_findings) > 100,
             }
 
         except Exception as e:
@@ -261,7 +283,7 @@ class SecretsScanner:
                 "success": True,
                 "message": "No Docker config found",
                 "findings_count": 0,
-                "findings": []
+                "findings": [],
             }
 
         return await self.scan_file(str(docker_config_path))
@@ -282,16 +304,13 @@ class SecretsScanner:
         for env_file in env_files:
             result = await self.scan_file(str(env_file))
             if result.get("success") and result.get("findings_count", 0) > 0:
-                findings.append({
-                    "file": str(env_file),
-                    "findings": result["findings"]
-                })
+                findings.append({"file": str(env_file), "findings": result["findings"]})
 
         return {
             "success": True,
             "env_files_scanned": len(env_files),
             "files_with_secrets": len(findings),
-            "findings": findings
+            "findings": findings,
         }
 
     def _redact_secret(self, text: str) -> str:
@@ -303,16 +322,20 @@ class SecretsScanner:
     def _get_severity(self, secret_type: str) -> str:
         """Determine severity level for secret type."""
         critical_types = {
-            "aws_secret_key", "private_key", "stripe_key",
-            "github_token", "database_url"
+            "aws_secret_key",
+            "private_key",
+            "stripe_key",
+            "github_token",
+            "database_url",
         }
         high_types = {
-            "aws_access_key", "slack_token", "mailgun_key",
-            "twilio_key", "docker_auth"
+            "aws_access_key",
+            "slack_token",
+            "mailgun_key",
+            "twilio_key",
+            "docker_auth",
         }
-        medium_types = {
-            "generic_api_key", "jwt_token", "npm_token"
-        }
+        medium_types = {"generic_api_key", "jwt_token", "npm_token"}
 
         if secret_type in critical_types:
             return "CRITICAL"

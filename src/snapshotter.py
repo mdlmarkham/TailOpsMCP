@@ -15,7 +15,13 @@ class Snapshotter:
     the snapshot meets an alert condition.
     """
 
-    def __init__(self, snapshot_fn: Callable[[], Dict[str, Any]], out_dir: Optional[str] = None, interval: int = 300, alert_fn: Optional[Callable[[Dict[str, Any]], None]] = None):
+    def __init__(
+        self,
+        snapshot_fn: Callable[[], Dict[str, Any]],
+        out_dir: Optional[str] = None,
+        interval: int = 300,
+        alert_fn: Optional[Callable[[Dict[str, Any]], None]] = None,
+    ):
         self.snapshot_fn = snapshot_fn
         self.interval = interval
         self.out_dir = out_dir or os.getenv("SYSTEMMANAGER_SNAPSHOT_DIR", "./snapshots")
@@ -33,7 +39,12 @@ class Snapshotter:
                 # sanitize filename
                 path = path.replace(":", "-")
                 with open(path, "w", encoding="utf-8") as f:
-                    json.dump({"timestamp": ts, "snapshot": snap}, f, indent=2, ensure_ascii=False)
+                    json.dump(
+                        {"timestamp": ts, "snapshot": snap},
+                        f,
+                        indent=2,
+                        ensure_ascii=False,
+                    )
                 if self.alert_fn:
                     try:
                         self.alert_fn(snap)

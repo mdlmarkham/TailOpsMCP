@@ -1,20 +1,97 @@
 {
-    "chat.promptFilesRecommendations": {
-        "speckit.constitution": true,
-        "speckit.specify": true,
-        "speckit.plan": true,
-        "speckit.tasks": true,
-        "speckit.implement": true
-    },
-    "chat.tools.terminal.autoApprove": {
-        ".specify/scripts/bash/": true,
-        ".specify/scripts/powershell/": true
-    },
-    "github.copilot.chat.byok.ollamaEndpoint": "http://100.111.84.5:11434",
+    // Python Interpreter Configuration
+    "python.defaultInterpreterPath": "c:/Users/mdlma/Documents/Projects/TailOpsMCP/venv/Scripts/python.exe",
+    "python.terminal.activateEnvironment": true,
+
+    // Testing Configuration
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
     "python.testing.pytestArgs": [
         "tests"
     ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
-}
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
 
+    // Terminal Configuration
+    "terminal.integrated.env.windows": {
+        "VIRTUAL_ENV": "c:/Users/mdlma/Documents/Projects/TailOpsMCP/venv",
+        "PATH": "c:/Users/mdlma/Documents/Projects/TailOpsMCP/venv/Scripts;${env:PATH}"
+    },
+    "terminal.integrated.shellArgs.windows": [
+        "/K",
+        "c:/Users/mdlma/Documents/Projects/TailOpsMCP/venv/Scripts/activate.bat"
+    ],
+
+    // Python Path Configuration
+    "python.analysis.extraPaths": [
+        "./src"
+    ],
+    "python.envFile": "${workspaceFolder}/.env",
+
+    // Code Quality and Formatting
+    "python.formatting.provider": "black",
+    "python.linting.enabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.flake8Enabled": true,
+
+    // Auto-save and formatting
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit",
+        "source.fixAll": "explicit"
+    },
+
+    // Python-specific settings
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.completeFunctionParens": true,
+
+    // File associations
+    "files.associations": {
+        "*.py": "python"
+    },
+
+    // Exclude patterns for better performance
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.pytest_cache": true,
+        "**/htmlcov": true,
+        "**/.coverage": true,
+        "**/.mypy_cache": true,
+        "**/node_modules": true,
+        "**/.git": true
+    },
+
+    // Search exclusions
+    "search.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.pytest_cache": true,
+        "**/htmlcov": true,
+        "**/.coverage": true,
+        "**/.mypy_cache": true,
+        "**/node_modules": true
+    },
+
+    // IntelliSense and completion
+    "python.analysis.indexing": true,
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "sklearn",
+            "depth": 2
+        }
+    ],
+
+    // Debugging configuration
+    "python.defaultTestRunner": "pytest",
+
+    // Workspace trust
+    "security.workspace.trust.untrustedFiles": "open",
+
+    // Git settings
+    "git.ignoreLimitWarning": true,
+
+    // Performance optimizations
+    "python.analysis.memory.keepLibraryAst": true,
+    "python.analysis.stubPath": "./typings"
+}

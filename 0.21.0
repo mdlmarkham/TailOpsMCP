@@ -1,0 +1,7 @@
+Requirement already satisfied: pytest in c:\users\mdlma\appdata\local\programs\python\python312\lib\site-packages (8.4.2)
+Requirement already satisfied: pytest-asyncio in c:\users\mdlma\appdata\local\programs\python\python312\lib\site-packages (0.24.0)
+Requirement already satisfied: colorama>=0.4 in c:\users\mdlma\appdata\local\programs\python\python312\lib\site-packages (from pytest) (0.4.6)
+Requirement already satisfied: iniconfig>=1 in c:\users\mdlma\appdata\local\programs\python\python312\lib\site-packages (from pytest) (2.3.0)
+Requirement already satisfied: packaging>=20 in c:\users\mdlma\appdata\roaming\python\python312\site-packages (from pytest) (24.2)
+Requirement already satisfied: pluggy<2,>=1.5 in c:\users\mdlma\appdata\local\programs\python\python312\lib\site-packages (from pytest) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in c:\users\mdlma\appdata\roaming\python\python312\site-packages (from pytest) (2.18.0)

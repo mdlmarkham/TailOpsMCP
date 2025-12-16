@@ -3,7 +3,7 @@
 import pytest
 import requests_mock
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from src.auth.tsidp_login import TSIDPLoginController, PendingLogin
 from src.auth.mcp_auth_service import MCPTokenSession
 
@@ -16,7 +16,7 @@ def mock_auth_service():
         access_token="mcp_token_abc",
         expires_at=datetime.utcnow() + timedelta(hours=1),
         refresh_token="refresh_token_xyz",
-        scope="read write"
+        scope="read write",
     )
     service.exchange_tsidp_token.return_value = session
     service.get_session.return_value = session
@@ -32,7 +32,7 @@ def tsidp_controller(mock_auth_service):
         client_secret="test-client-secret",
         redirect_uri="http://localhost:8900/callback",
         scopes="openid profile email",
-        auth_service=mock_auth_service
+        auth_service=mock_auth_service,
     )
 
 
@@ -42,9 +42,7 @@ class TestPendingLogin:
     def test_pending_login_not_expired(self):
         """Test pending login within TTL."""
         login = PendingLogin(
-            state="state123",
-            code_verifier="verifier456",
-            created_at=datetime.utcnow()
+            state="state123", code_verifier="verifier456", created_at=datetime.utcnow()
         )
         assert not login.is_expired(ttl_seconds=600)
 
@@ -53,7 +51,7 @@ class TestPendingLogin:
         login = PendingLogin(
             state="state123",
             code_verifier="verifier456",
-            created_at=datetime.utcnow() - timedelta(seconds=601)
+            created_at=datetime.utcnow() - timedelta(seconds=601),
         )
         assert login.is_expired(ttl_seconds=600)
 
@@ -62,7 +60,7 @@ class TestPendingLogin:
         login = PendingLogin(
             state="state123",
             code_verifier="verifier456",
-            created_at=datetime.utcnow() - timedelta(seconds=600)
+            created_at=datetime.utcnow() - timedelta(seconds=600),
         )
         assert login.is_expired(ttl_seconds=600)
 
@@ -89,7 +87,7 @@ class TestTSIDPLoginController:
         controller = TSIDPLoginController(
             tsidp_url="https://explicit.ts.net",
             client_id="explicit-id",
-            client_secret="explicit-secret"
+            client_secret="explicit-secret",
         )
 
         assert controller.tsidp_url == "https://explicit.ts.net"
@@ -104,14 +102,19 @@ class TestTSIDPLoginController:
                 json={
                     "authorization_endpoint": "https://tsidp.example.ts.net/authorize",
                     "token_endpoint": "https://tsidp.example.ts.net/oauth/token",
-                    "issuer": "https://tsidp.example.ts.net"
-                }
+                    "issuer": "https://tsidp.example.ts.net",
+                },
             )
 
             metadata = tsidp_controller._discover_metadata()
 
-            assert metadata["authorization_endpoint"] == "https://tsidp.example.ts.net/authorize"
-            assert metadata["token_endpoint"] == "https://tsidp.example.ts.net/oauth/token"
+            assert (
+                metadata["authorization_endpoint"]
+                == "https://tsidp.example.ts.net/authorize"
+            )
+            assert (
+                metadata["token_endpoint"] == "https://tsidp.example.ts.net/oauth/token"
+            )
 
     def test_discover_metadata_caching(self, tsidp_controller):
         """Test metadata is cached after first discovery."""
@@ -120,8 +123,8 @@ class TestTSIDPLoginController:
                 "https://tsidp.example.ts.net/.well-known/openid-configuration",
                 json={
                     "authorization_endpoint": "https://tsidp.example.ts.net/authorize",
-                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token"
-                }
+                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token",
+                },
             )
 
             # First call
@@ -138,7 +141,9 @@ class TestTSIDPLoginController:
         with requests_mock.Mocker() as m:
             m.get(
                 "https://tsidp.example.ts.net/.well-known/openid-configuration",
-                json={"issuer": "https://tsidp.example.ts.net"}  # Missing required endpoints
+                json={
+                    "issuer": "https://tsidp.example.ts.net"
+                },  # Missing required endpoints
             )
 
             with pytest.raises(RuntimeError, match="missing required keys"):
@@ -169,8 +174,8 @@ class TestTSIDPLoginController:
                 "https://tsidp.example.ts.net/.well-known/openid-configuration",
                 json={
                     "authorization_endpoint": "https://tsidp.example.ts.net/authorize",
-                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token"
-                }
+                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token",
+                },
             )
 
             result = tsidp_controller.start_login()
@@ -194,7 +199,7 @@ class TestTSIDPLoginController:
         controller = TSIDPLoginController(
             tsidp_url="https://tsidp.example.ts.net",
             client_id=None,
-            auth_service=mock_auth_service
+            auth_service=mock_auth_service,
         )
 
         with pytest.raises(RuntimeError, match="TSIDP_CLIENT_ID is required"):
@@ -207,8 +212,8 @@ class TestTSIDPLoginController:
                 "https://tsidp.example.ts.net/.well-known/openid-configuration",
                 json={
                     "authorization_endpoint": "https://tsidp.example.ts.net/authorize",
-                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token"
-                }
+                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token",
+                },
             )
 
             result = tsidp_controller.start_login(state="custom-state-123")
@@ -223,8 +228,8 @@ class TestTSIDPLoginController:
                 "https://tsidp.example.ts.net/.well-known/openid-configuration",
                 json={
                     "authorization_endpoint": "https://tsidp.example.ts.net/authorize",
-                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token"
-                }
+                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token",
+                },
             )
 
             result = tsidp_controller.start_login()
@@ -232,7 +237,10 @@ class TestTSIDPLoginController:
 
             # Verify pending login is stored
             assert state in tsidp_controller._pending
-            assert tsidp_controller._pending[state].code_verifier == result["code_verifier"]
+            assert (
+                tsidp_controller._pending[state].code_verifier
+                == result["code_verifier"]
+            )
 
     def test_complete_login_success(self, tsidp_controller, mock_auth_service):
         """Test successful login completion."""
@@ -242,8 +250,8 @@ class TestTSIDPLoginController:
                 "https://tsidp.example.ts.net/.well-known/openid-configuration",
                 json={
                     "authorization_endpoint": "https://tsidp.example.ts.net/authorize",
-                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token"
-                }
+                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token",
+                },
             )
 
             # Mock token exchange
@@ -255,8 +263,8 @@ class TestTSIDPLoginController:
                     "id_token": "tsidp_id_token",
                     "expires_in": 3600,
                     "token_type": "Bearer",
-                    "scope": "openid profile email"
-                }
+                    "scope": "openid profile email",
+                },
             )
 
             # Start login to create pending state
@@ -292,15 +300,15 @@ class TestTSIDPLoginController:
                 "https://tsidp.example.ts.net/.well-known/openid-configuration",
                 json={
                     "authorization_endpoint": "https://tsidp.example.ts.net/authorize",
-                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token"
-                }
+                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token",
+                },
             )
 
             # Create expired pending login
             expired_login = PendingLogin(
                 state="expired-state",
                 code_verifier="verifier123",
-                created_at=datetime.utcnow() - timedelta(seconds=601)
+                created_at=datetime.utcnow() - timedelta(seconds=601),
             )
             tsidp_controller._pending["expired-state"] = expired_login
 
@@ -312,23 +320,22 @@ class TestTSIDPLoginController:
         with pytest.raises(RuntimeError, match="Login state expired or unknown"):
             tsidp_controller.complete_login(code="code123", state="unknown-state")
 
-    def test_complete_login_removes_pending_state(self, tsidp_controller, mock_auth_service):
+    def test_complete_login_removes_pending_state(
+        self, tsidp_controller, mock_auth_service
+    ):
         """Test complete_login removes pending state after use."""
         with requests_mock.Mocker() as m:
             m.get(
                 "https://tsidp.example.ts.net/.well-known/openid-configuration",
                 json={
                     "authorization_endpoint": "https://tsidp.example.ts.net/authorize",
-                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token"
-                }
+                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token",
+                },
             )
 
             m.post(
                 "https://tsidp.example.ts.net/oauth/token",
-                json={
-                    "access_token": "token",
-                    "id_token": "id_token"
-                }
+                json={"access_token": "token", "id_token": "id_token"},
             )
 
             # Start and complete login
@@ -350,9 +357,7 @@ class TestTSIDPLoginController:
         """Test cleanup removes expired states."""
         # Add fresh state
         fresh_login = PendingLogin(
-            state="fresh-state",
-            code_verifier="verifier1",
-            created_at=datetime.utcnow()
+            state="fresh-state", code_verifier="verifier1", created_at=datetime.utcnow()
         )
         tsidp_controller._pending["fresh-state"] = fresh_login
 
@@ -360,7 +365,7 @@ class TestTSIDPLoginController:
         expired_login = PendingLogin(
             state="expired-state",
             code_verifier="verifier2",
-            created_at=datetime.utcnow() - timedelta(seconds=601)
+            created_at=datetime.utcnow() - timedelta(seconds=601),
         )
         tsidp_controller._pending["expired-state"] = expired_login
 
@@ -384,8 +389,8 @@ class TestTSIDPLoginController:
                 "https://tsidp.example.ts.net/.well-known/openid-configuration",
                 json={
                     "authorization_endpoint": "https://tsidp.example.ts.net/authorize",
-                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token"
-                }
+                    "token_endpoint": "https://tsidp.example.ts.net/oauth/token",
+                },
             )
 
             results = []

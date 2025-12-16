@@ -24,7 +24,7 @@ CREATE TABLE workflow_blueprints (
     documentation TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Constraints
     CHECK (category IN ('provisioning', 'backup', 'upgrade', 'recovery', 'maintenance', 'monitoring', 'security', 'deployment', 'scaling', 'compliance')),
     CHECK (length(name) > 0),
@@ -49,10 +49,10 @@ CREATE TABLE workflow_executions (
     error_message TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Foreign Keys
     FOREIGN KEY (blueprint_id) REFERENCES workflow_blueprints(id) ON DELETE CASCADE,
-    
+
     -- Constraints
     CHECK (status IN ('pending', 'running', 'paused', 'completed', 'failed', 'cancelled', 'rolling_back', 'rolled_back', 'waiting_approval')),
     CHECK (start_time <= end_time OR end_time IS NULL)
@@ -73,10 +73,10 @@ CREATE TABLE workflow_step_results (
     retry_count INTEGER DEFAULT 0,
     logs TEXT, -- JSON array of log entries
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Foreign Keys
     FOREIGN KEY (execution_id) REFERENCES workflow_executions(id) ON DELETE CASCADE,
-    
+
     -- Unique constraint
     UNIQUE (execution_id, step_id)
 );
@@ -95,10 +95,10 @@ CREATE TABLE workflow_schedules (
     created_by TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Foreign Keys
     FOREIGN KEY (blueprint_id) REFERENCES workflow_blueprints(id) ON DELETE CASCADE,
-    
+
     -- Constraints
     CHECK (enabled IN (0, 1)),
     CHECK (timezone IS NOT NULL)
@@ -116,10 +116,10 @@ CREATE TABLE workflow_approvals (
     requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     responded_at DATETIME,
     expires_at DATETIME,
-    
+
     -- Foreign Keys
     FOREIGN KEY (execution_id) REFERENCES workflow_executions(id) ON DELETE CASCADE,
-    
+
     -- Constraints
     CHECK (status IN ('pending', 'approved', 'rejected', 'expired')),
     CHECK (responded_at IS NULL OR requested_at <= responded_at)
@@ -136,10 +136,10 @@ CREATE TABLE workflow_events (
     timestamp DATETIME NOT NULL,
     data TEXT, -- JSON event data
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Foreign Keys
     FOREIGN KEY (execution_id) REFERENCES workflow_executions(id) ON DELETE CASCADE,
-    
+
     -- Constraints
     CHECK (severity IN ('info', 'warning', 'error', 'critical')),
     CHECK (category IN ('workflow', 'step', 'approval', 'policy', 'system', 'alert'))
@@ -160,10 +160,10 @@ CREATE TABLE workflow_metrics (
     start_time DATETIME NOT NULL,
     end_time DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Foreign Keys
     FOREIGN KEY (execution_id) REFERENCES workflow_executions(id) ON DELETE CASCADE,
-    
+
     -- Constraints
     CHECK (total_steps >= 0),
     CHECK (completed_steps >= 0),
@@ -184,7 +184,7 @@ CREATE TABLE workflow_governance_rules (
     severity TEXT DEFAULT 'medium',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Constraints
     CHECK (policy_type IN ('security_validation', 'resource_limit', 'time_window', 'user_permission', 'change_approval', 'compliance_check')),
     CHECK (severity IN ('low', 'medium', 'high', 'critical')),
@@ -201,7 +201,7 @@ CREATE TABLE workflow_compliance_results (
     warnings TEXT, -- JSON array of warnings
     recommendations TEXT, -- JSON array of recommendations
     checked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    
+
     -- Foreign Keys
     FOREIGN KEY (blueprint_id) REFERENCES workflow_blueprints(id) ON DELETE CASCADE
 );
@@ -229,25 +229,25 @@ CREATE INDEX idx_workflow_metrics_status ON workflow_metrics(status);
 CREATE INDEX idx_workflow_metrics_blueprint ON workflow_metrics(blueprint_name);
 
 # Triggers for Updated Timestamps
-CREATE TRIGGER update_workflow_blueprints_timestamp 
+CREATE TRIGGER update_workflow_blueprints_timestamp
     AFTER UPDATE ON workflow_blueprints
     BEGIN
         UPDATE workflow_blueprints SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
     END;
 
-CREATE TRIGGER update_workflow_executions_timestamp 
+CREATE TRIGGER update_workflow_executions_timestamp
     AFTER UPDATE ON workflow_executions
     BEGIN
         UPDATE workflow_executions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
     END;
 
-CREATE TRIGGER update_workflow_schedules_timestamp 
+CREATE TRIGGER update_workflow_schedules_timestamp
     AFTER UPDATE ON workflow_schedules
     BEGIN
         UPDATE workflow_schedules SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
     END;
 
-CREATE TRIGGER update_workflow_governance_rules_timestamp 
+CREATE TRIGGER update_workflow_governance_rules_timestamp
     AFTER UPDATE ON workflow_governance_rules
     BEGIN
         UPDATE workflow_governance_rules SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
@@ -255,14 +255,14 @@ CREATE TRIGGER update_workflow_governance_rules_timestamp
 
 # Views for Common Queries
 CREATE VIEW workflow_execution_summary AS
-SELECT 
+SELECT
     we.id as execution_id,
     we.blueprint_name,
     we.status,
     we.created_by,
     we.start_time,
     we.end_time,
-    CASE 
+    CASE
         WHEN we.end_time IS NULL THEN (julianday('now') - julianday(we.start_time)) * 24 * 60
         ELSE (julianday(we.end_time) - julianday(we.start_time)) * 24 * 60
     END as execution_time_minutes,
@@ -275,7 +275,7 @@ FROM workflow_executions we
 LEFT JOIN workflow_metrics wm ON we.id = wm.execution_id;
 
 CREATE VIEW workflow_schedule_summary AS
-SELECT 
+SELECT
     ws.id as schedule_id,
     ws.blueprint_name,
     ws.schedule_expression,
@@ -290,7 +290,7 @@ FROM workflow_schedules ws
 JOIN workflow_blueprints wb ON ws.blueprint_id = wb.id;
 
 CREATE VIEW pending_approvals_summary AS
-SELECT 
+SELECT
     wa.id as approval_id,
     wa.execution_id,
     wa.step_id,
@@ -308,8 +308,8 @@ WHERE wa.status = 'pending';
 
 -- Insert default governance rules
 INSERT OR REPLACE INTO workflow_governance_rules (id, name, description, policy_type, enabled, conditions, actions, severity) VALUES
-('security_validation', 'Security Validation', 'Validate security requirements for workflow execution', 'security_validation', TRUE, 
- '{"require_security_check": true, "validate_user_permissions": true, "check_resource_access": true}', 
+('security_validation', 'Security Validation', 'Validate security requirements for workflow execution', 'security_validation', TRUE,
+ '{"require_security_check": true, "validate_user_permissions": true, "check_resource_access": true}',
  '["block_execution", "log_violation"]', 'high'),
 
 ('resource_limit', 'Resource Limit', 'Enforce resource usage limits', 'resource_limit', TRUE,

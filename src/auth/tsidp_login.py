@@ -44,10 +44,14 @@ class TSIDPLoginController:
         auth_service: Optional[GoFastMCPAuthService] = None,
         http_session: Optional[requests.Session] = None,
     ) -> None:
-        self.tsidp_url = tsidp_url or os.getenv("TSIDP_URL", "https://tsidp.tailf9480.ts.net")
+        self.tsidp_url = tsidp_url or os.getenv(
+            "TSIDP_URL", "https://tsidp.tailf9480.ts.net"
+        )
         self.client_id = client_id or os.getenv("TSIDP_CLIENT_ID")
         self.client_secret = client_secret or os.getenv("TSIDP_CLIENT_SECRET")
-        self.redirect_uri = redirect_uri or os.getenv("TSIDP_REDIRECT_URI", "http://localhost:8900/callback")
+        self.redirect_uri = redirect_uri or os.getenv(
+            "TSIDP_REDIRECT_URI", "http://localhost:8900/callback"
+        )
         self.scope = scopes or os.getenv("TSIDP_SCOPES", "openid profile email")
         self.auth_service = auth_service or GoFastMCPAuthService()
         self._http = http_session or requests.Session()
@@ -73,9 +77,13 @@ class TSIDPLoginController:
 
     @staticmethod
     def _generate_pkce_pair() -> Dict[str, str]:
-        code_verifier = base64.urlsafe_b64encode(os.urandom(64)).rstrip(b"=").decode("utf-8")
+        code_verifier = (
+            base64.urlsafe_b64encode(os.urandom(64)).rstrip(b"=").decode("utf-8")
+        )
         challenge = hashlib.sha256(code_verifier.encode("utf-8")).digest()
-        code_challenge = base64.urlsafe_b64encode(challenge).rstrip(b"=").decode("utf-8")
+        code_challenge = (
+            base64.urlsafe_b64encode(challenge).rstrip(b"=").decode("utf-8")
+        )
         return {"code_verifier": code_verifier, "code_challenge": code_challenge}
 
     def start_login(self, state: Optional[str] = None) -> Dict[str, str]:
@@ -173,7 +181,9 @@ class TSIDPLoginController:
         """Remove expired pending login states to avoid leaks."""
 
         with self._lock:
-            stale_states = [key for key, entry in self._pending.items() if entry.is_expired()]
+            stale_states = [
+                key for key, entry in self._pending.items() if entry.is_expired()
+            ]
             for key in stale_states:
                 self._pending.pop(key, None)
                 logger.debug("Removed stale TSIDP login state", extra={"state": key})

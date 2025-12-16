@@ -2,15 +2,24 @@ import json
 import os
 import sys
 import asyncio
-from types import SimpleNamespace, ModuleType
+from types import ModuleType
 
-import pytest
 
 from src.tools.stack_tools import get_stack_network_info
 
 
 def write_inventory(stack_name: str):
-    inv = {"hosts": {}, "stacks": {stack_name: {"stack_name": stack_name, "host": "node-1", "path": "/srv/webapp", "services": ["web"]}}}
+    inv = {
+        "hosts": {},
+        "stacks": {
+            stack_name: {
+                "stack_name": stack_name,
+                "host": "node-1",
+                "path": "/srv/webapp",
+                "services": ["web"],
+            }
+        },
+    }
     with open("inventory.json", "w", encoding="utf-8") as f:
         json.dump(inv, f)
 
@@ -46,8 +55,10 @@ def make_inspect_obj(cid, name, image, host_port):
         "Name": name,
         "Config": {"Image": image, "Labels": {"com.docker.compose.service": "web"}},
         "HostConfig": {"NetworkMode": "bridge"},
-        "NetworkSettings": {"Ports": {"80/tcp": [{"HostIp": "0.0.0.0", "HostPort": str(host_port)}]}},
-        "Mounts": []
+        "NetworkSettings": {
+            "Ports": {"80/tcp": [{"HostIp": "0.0.0.0", "HostPort": str(host_port)}]}
+        },
+        "Mounts": [],
     }
 
 
@@ -55,7 +66,9 @@ def test_get_stack_network_info_docker_sdk_single(monkeypatch):
     stack_name = "webapp"
     write_inventory(stack_name)
 
-    inspect_obj = make_inspect_obj("abcd1234", f"/{stack_name}_web_1", "web:1.2.3", 8080)
+    inspect_obj = make_inspect_obj(
+        "abcd1234", f"/{stack_name}_web_1", "web:1.2.3", 8080
+    )
     mock_container = MockContainer("abcd1234", f"{stack_name}_web_1", inspect_obj)
 
     # Create fake docker module with from_env returning a client
@@ -65,7 +78,9 @@ def test_get_stack_network_info_docker_sdk_single(monkeypatch):
 
     monkeypatch.setitem(sys.modules, "docker", docker_mod)
 
-    info = asyncio.get_event_loop().run_until_complete(get_stack_network_info("node-1", stack_name))
+    info = asyncio.get_event_loop().run_until_complete(
+        get_stack_network_info("node-1", stack_name)
+    )
 
     assert info["stack_name"] == stack_name
     assert len(info["containers"]) == 1
@@ -93,7 +108,9 @@ def test_get_stack_network_info_docker_sdk_conflict(monkeypatch):
 
     monkeypatch.setitem(sys.modules, "docker", docker_mod)
 
-    info = asyncio.get_event_loop().run_until_complete(get_stack_network_info("node-1", stack_name))
+    info = asyncio.get_event_loop().run_until_complete(
+        get_stack_network_info("node-1", stack_name)
+    )
 
     assert info["stack_name"] == stack_name
     assert len(info["containers"]) == 2

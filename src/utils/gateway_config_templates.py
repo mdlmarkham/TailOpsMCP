@@ -17,17 +17,17 @@ gateway:
   description: "Minimal gateway configuration for getting started"
   mode: "gateway"
   role: "standalone"
-  
+
   # Discovery settings
   discovery_method: "proxmox_api"
   discovery_interval: 300
   auto_register: false
   max_fleet_size: 20
-  
+
   # Security settings
   require_gateway_auth: true
   gateway_token: "{gateway_token}"
-  
+
   # Monitoring settings
   health_check_interval: 60
   state_sync_interval: 30
@@ -67,17 +67,17 @@ gateway:
   description: "Gateway for managing Proxmox host and containers"
   mode: "gateway"
   role: "primary"
-  
+
   # Discovery settings
   discovery_method: "proxmox_api"
   discovery_interval: 180
   auto_register: true
   max_fleet_size: 50
-  
+
   # Security settings
   require_gateway_auth: true
   gateway_token: "{gateway_token}"
-  
+
   # Monitoring settings
   health_check_interval: 45
   state_sync_interval: 20
@@ -107,7 +107,7 @@ targets:
       hostname: "{proxmox_hostname}"
       platform: "proxmox"
       tags: ["proxmox", "host", "gateway"]
-  
+
   # Gateway local target
   gateway-local:
     id: "gateway-local"
@@ -140,22 +140,22 @@ gateway:
   description: "Gateway node in a multi-gateway cluster"
   mode: "gateway"
   role: "{gateway_role}"  # primary, secondary, or standalone
-  
+
   # Discovery settings
   discovery_method: "proxmox_api"
   discovery_interval: 240
   auto_register: true
   max_fleet_size: 100
-  
+
   # Security settings
   require_gateway_auth: true
   gateway_token: "{gateway_token}"
-  
+
   # Cluster settings
   cluster_members:
     - "{primary_gateway_id}"
     - "{secondary_gateway_id}"
-  
+
   # Monitoring settings
   health_check_interval: 30
   state_sync_interval: 15
@@ -180,7 +180,7 @@ targets:
       hostname: "{hostname}"
       platform: "{platform}"
       tags: ["gateway", "local", "cluster"]
-  
+
   # Proxmox host target (if applicable)
   proxmox-host:
     id: "proxmox-host"
@@ -219,17 +219,17 @@ gateway:
   description: "Gateway for development and testing"
   mode: "gateway"
   role: "standalone"
-  
+
   # Discovery settings (disabled for development)
   discovery_method: "manual"
   discovery_interval: 600
   auto_register: false
   max_fleet_size: 10
-  
+
   # Security settings (relaxed for development)
   require_gateway_auth: false
   gateway_token: ""
-  
+
   # Monitoring settings
   health_check_interval: 120
   state_sync_interval: 60
@@ -256,7 +256,7 @@ targets:
       hostname: "{hostname}"
       platform: "{platform}"
       tags: ["development", "local", "gateway"]
-  
+
   # Mock Proxmox target for testing
   mock-proxmox:
     id: "mock-proxmox"
@@ -285,32 +285,34 @@ targets:
 
 class GatewayConfigTemplates:
     """Gateway configuration template manager."""
-    
+
     TEMPLATES = {
         "basic": BASIC_GATEWAY_TEMPLATE,
         "proxmox": PROXMOX_GATEWAY_TEMPLATE,
         "multi": MULTI_GATEWAY_TEMPLATE,
-        "development": DEVELOPMENT_GATEWAY_TEMPLATE
+        "development": DEVELOPMENT_GATEWAY_TEMPLATE,
     }
-    
+
     @classmethod
     def get_template(cls, template_name: str) -> str:
         """Get a configuration template by name."""
         if template_name not in cls.TEMPLATES:
-            raise ValueError(f"Unknown template: {template_name}. Available: {list(cls.TEMPLATES.keys())}")
-        
+            raise ValueError(
+                f"Unknown template: {template_name}. Available: {list(cls.TEMPLATES.keys())}"
+            )
+
         return cls.TEMPLATES[template_name]
-    
+
     @classmethod
     def list_templates(cls) -> list:
         """List available configuration templates."""
         return list(cls.TEMPLATES.keys())
-    
+
     @classmethod
     def render_template(cls, template_name: str, context: dict) -> str:
         """Render a configuration template with context variables."""
         template = cls.get_template(template_name)
-        
+
         # Add default context values
         default_context = {
             "gateway_id": "gateway-001",
@@ -323,26 +325,28 @@ class GatewayConfigTemplates:
             "proxmox_hostname": "proxmox-host",
             "gateway_role": "standalone",
             "primary_gateway_id": "gateway-primary",
-            "secondary_gateway_id": "gateway-secondary"
+            "secondary_gateway_id": "gateway-secondary",
         }
-        
+
         # Merge context with defaults
         merged_context = {**default_context, **context}
-        
+
         # Render template
         return template.format(**merged_context)
 
 
-def create_gateway_config(template_name: str, output_path: str, context: dict = None) -> str:
+def create_gateway_config(
+    template_name: str, output_path: str, context: dict = None
+) -> str:
     """Create a gateway configuration file from a template."""
     if context is None:
         context = {}
-    
+
     # Render template
     config_content = GatewayConfigTemplates.render_template(template_name, context)
-    
+
     # Write to file
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(config_content)
-    
+
     return output_path

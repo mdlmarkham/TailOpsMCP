@@ -31,7 +31,7 @@
    SYSTEMMANAGER_ENABLE_APPROVAL=true
    SYSTEMMANAGER_APPROVAL_WEBHOOK=https://your-approval-service.ts.net/approve
    ```
-   
+
    Your webhook must handle gateway-specific context:
    - Accept POST requests with JSON body:
      ```json
@@ -58,7 +58,7 @@
          - "system:read"
          - "container:read"
        # No write capabilities for production
-     
+
      development-web:
        id: "development-web"
        capabilities:
@@ -118,10 +118,10 @@
    server {
        listen 443 ssl;
        server_name tailopsmcp.example.com;
-       
+
        ssl_certificate /path/to/cert.pem;
        ssl_certificate_key /path/to/key.pem;
-       
+
        location / {
            proxy_pass http://127.0.0.1:8080;
            proxy_set_header Host $host;
@@ -317,5 +317,5 @@ Before deploying to production:
 
 ---
 
-**Last Updated:** 2025-01-16  
+**Last Updated:** 2025-01-16
 **Applies to:** TailOpsMCP v1.0+

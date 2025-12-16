@@ -7,23 +7,23 @@
   "tagOwners": {
     // Server tag - only ops team can tag servers
     "tag:systemmanager-server": ["group:ops", "group:admins"],
-    
+
     // Client tags - who can tag clients
     "tag:systemmanager-client-readonly": ["group:ops", "group:devs", "group:sre"],
     "tag:systemmanager-client-admin": ["group:ops"],
-    
+
     // Other organizational tags
     "tag:prod": ["group:ops"],
     "tag:staging": ["group:ops", "group:devs"],
   },
-  
+
   "groups": {
     "group:ops": ["alice@example.com", "bob@example.com"],
     "group:admins": ["alice@example.com"],
     "group:devs": ["charlie@example.com", "diana@example.com"],
     "group:sre": ["eve@example.com"],
   },
-  
+
   "acls": [
     // Read-only clients can connect to server
     {
@@ -31,21 +31,21 @@
       "src": ["tag:systemmanager-client-readonly"],
       "dst": ["tag:systemmanager-server:8080"],
     },
-    
+
     // Admin clients can connect to server
     {
       "action": "accept",
       "src": ["tag:systemmanager-client-admin"],
       "dst": ["tag:systemmanager-server:8080"],
     },
-    
+
     // Deny everyone else
     {
       "action": "deny",
       "src": ["*"],
       "dst": ["tag:systemmanager-server:*"],
     },
-    
+
     // Allow SSH for ops (optional - for debugging)
     {
       "action": "accept",
@@ -53,14 +53,14 @@
       "dst": ["tag:systemmanager-server:22"],
     },
   ],
-  
+
   // Tailscale Services for high availability
   "services": {
     "svc:systemmanager-mcp": {
       "protocol": "tcp",
       "port": 8080,
       "tags": ["tag:systemmanager-server"],
-      
+
       // Who can access the service
       "allowedGroups": ["group:ops", "group:devs", "group:sre"],
       "allowedTags": [
@@ -69,7 +69,7 @@
       ],
     },
   },
-  
+
   // SSH configuration (optional)
   "ssh": [
     {

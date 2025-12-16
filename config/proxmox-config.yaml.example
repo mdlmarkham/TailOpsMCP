@@ -27,7 +27,7 @@ proxmox:
         - "production"
         - "primary"
         - "cluster-1"
-    
+
     - host: "pve-02.example.com"
       username: "root@pam"
       api_token: "${PROXMOX_API_TOKEN_02}"
@@ -38,7 +38,7 @@ proxmox:
         - "production"
         - "secondary"
         - "cluster-1"
-    
+
     # Local development host
     - host: "localhost"
       username: "root@pam"
@@ -54,11 +54,11 @@ proxmox:
     # Storage settings
     storage: "local-lvm"
     storage_secondary: "local"
-    
+
     # Network settings
     network_bridge: "vmbr0"
     network_bridge_management: "vmbr1"
-    
+
     # Resource defaults
     default_container_cores: 2
     default_container_memory: 1024  # MB
@@ -66,20 +66,20 @@ proxmox:
     default_vm_cores: 2
     default_vm_memory: 2048  # MB
     default_vm_disk: 40  # GB
-    
+
     # Container template defaults
     container_os_template: "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.gz"
     container_features:
       nesting: false
       keyctl: false
       mount: "nfs"
-    
+
     # VM defaults
     vm_os_type: "l26"  # Linux 2.6+
     vm_vga: "qxl"
     vm_display: "qxl"
     vm_scsi_controller: "virtio-scsi-pci"
-    
+
     # SSH and authentication
     ssh_key_path: "~/.ssh/id_rsa"
     ssh_key_paths:
@@ -94,22 +94,22 @@ proxmox:
     auto_discover: true
     update_interval: 300  # seconds
     force_refresh_interval: 3600  # seconds
-    
+
     # Discovery options
     include_templates: true
     include_snaps: true
     include_backups: true
     include_storage: true
-    
+
     # Health check settings
     health_check_interval: 60  # seconds
     health_check_timeout: 10  # seconds
-    
+
     # Discovery filters
     filter_containers:
       - exclude_tags: ["template", "base"]
       - include_tags: ["managed", "production"]
-    
+
     filter_vms:
       - exclude_tags: ["template", "base"]
       - include_tags: ["managed", "production"]
@@ -121,13 +121,13 @@ proxmox:
     default_mode: "snapshot"  # snapshot, suspend, stop
     default_compression: "gzip"  # gzip, lzo, zstd
     default_schedule: "01:00"  # Daily at 1 AM
-    
+
     # Retention policies
     retention:
       daily: 7
       weekly: 4
       monthly: 12
-    
+
     # Backup notification
     notifications:
       enabled: true
@@ -135,7 +135,7 @@ proxmox:
         - "admin@example.com"
         - "ops@example.com"
       webhook_url: "${BACKUP_WEBHOOK_URL}"
-    
+
     # Backup exclusion rules
     exclude:
       containers:
@@ -148,7 +148,7 @@ proxmox:
     # Default snapshot settings
     default_retention: 24  # hours
     max_snapshots_per_resource: 10
-    
+
     # Auto-snapshot schedules
     schedules:
       - name: "daily"
@@ -166,16 +166,16 @@ proxmox:
     # API security
     api_rate_limit: 100  # requests per minute
     api_request_timeout: 30  # seconds
-    
+
     # SSL/TLS settings
     ssl_verification: true
     ssl_ca_bundle: "/etc/ssl/certs/ca-certificates.crt"
     ssl_client_cert: null
-    
+
     # Authentication
     token_rotation_interval: 86400  # 24 hours
     session_timeout: 3600  # 1 hour
-    
+
     # Access control
     allowed_operations:
       - "create_container"
@@ -193,7 +193,7 @@ proxmox:
       - "discover_hosts"
       - "discover_containers"
       - "discover_vms"
-    
+
     # Denied operations (high-risk)
     denied_operations:
       - "migrate_container"  # Requires additional approval
@@ -209,31 +209,31 @@ proxmox:
       endpoint: "/health"
       interval: 30  # seconds
       timeout: 5  # seconds
-    
+
     # Metrics collection
     metrics:
       enabled: true
       endpoint: "/metrics"
       interval: 60  # seconds
-    
+
     # Alerting
     alerts:
       enabled: true
       webhook_url: "${MONITORING_WEBHOOK_URL}"
       email_recipients: ["ops@example.com"]
-      
+
       # Alert conditions
       conditions:
         - name: "host_down"
           condition: "host_status == 'offline'"
           severity: "critical"
           notification: "immediate"
-        
+
         - name: "container_failed"
           condition: "container_status == 'error'"
           severity: "warning"
           notification: "delayed"
-        
+
         - name: "backup_failed"
           condition: "backup_status == 'failed'"
           severity: "critical"
@@ -245,7 +245,7 @@ proxmox:
     max_concurrent_operations: 10
     operation_timeout: 300  # 5 minutes
     task_monitoring_timeout: 600  # 10 minutes
-    
+
     # Resource constraints
     max_container_cores: 16
     max_container_memory: 16384  # 16 GB
@@ -253,7 +253,7 @@ proxmox:
     max_vm_cores: 32
     max_vm_memory: 65536  # 64 GB
     max_vm_disk: 2000  # 2 TB
-    
+
     # Validation rules
     validation:
       hostname_pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
@@ -273,14 +273,14 @@ proxmox:
       enabled: true
       auto_update: true
       update_interval: 300  # seconds
-    
+
     # Policy engine integration
     policy_engine:
       enabled: true
       config_path: "/etc/systemmanager/policy.yaml"
       cache_enabled: true
       cache_ttl: 300  # seconds
-    
+
     # Audit logging
     audit_logging:
       enabled: true
@@ -288,7 +288,7 @@ proxmox:
       log_file: "/var/log/systemmanager/proxmox-audit.log"
       include_parameters: false  # Don't log sensitive data
       retention_days: 90
-    
+
     # Observability integration
     observability:
       enabled: true

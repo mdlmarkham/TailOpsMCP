@@ -64,11 +64,11 @@
 ### ⚠️ Critical Issues Found
 
 #### Issue #1: Blocking CPU Sampling in Async Context
-**Severity**: HIGH  
-**Location**: `src/mcp_server.py:35`, `src/services/system_monitor.py:18`  
+**Severity**: HIGH
+**Location**: `src/mcp_server.py:35`, `src/services/system_monitor.py:18`
 **Problem**: `psutil.cpu_percent(interval=1)` blocks the event loop for 1 second, stalling all concurrent MCP requests.
 
-**Recommendation**: 
+**Recommendation**:
 ```python
 # Replace blocking call
 cpu_percent = psutil.cpu_percent(interval=None)  # Non-blocking
@@ -77,8 +77,8 @@ cpu_percent = await asyncio.to_thread(psutil.cpu_percent, interval=1)
 ```
 
 #### Issue #2: Missing Windows Platform Guard
-**Severity**: MEDIUM  
-**Location**: `src/mcp_server.py:55`  
+**Severity**: MEDIUM
+**Location**: `src/mcp_server.py:55`
 **Problem**: Direct call to `os.getloadavg()` raises `AttributeError` on Windows (not POSIX).
 
 **Recommendation**:
@@ -576,4 +576,3 @@ TOKEN=<your-token> python -c "print(__import__('base64').urlsafe_b64decode(TOKEN
 5. **Security Audit** → Run security scan on dependencies
 6. **Documentation** → Create runbook for operations team
 7. **Deploy to Production** → Follow deployment checklist
-

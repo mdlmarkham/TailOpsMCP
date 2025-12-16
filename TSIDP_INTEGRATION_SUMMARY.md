@@ -63,7 +63,7 @@ SYSTEMMANAGER_REQUIRED_SCOPES=...      # Optional scopes
 
 ### OAuth 2.1 Standards
 - ✅ **RFC 7591** - Dynamic Client Registration
-- ✅ **RFC 7662** - Token Introspection  
+- ✅ **RFC 7662** - Token Introspection
 - ✅ **RFC 8693** - Token Exchange (optional)
 - ✅ **RFC 9728** - Protected Resource Metadata
 

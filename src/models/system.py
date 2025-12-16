@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import datetime
 
 
 class MemoryUsage(BaseModel):
     """Memory usage statistics."""
+
     total: int = Field(..., description="Total memory in bytes")
     available: int = Field(..., description="Available memory in bytes")
     used: int = Field(..., description="Used memory in bytes")
@@ -13,6 +13,7 @@ class MemoryUsage(BaseModel):
 
 class DiskUsage(BaseModel):
     """Disk usage statistics."""
+
     total: int = Field(..., description="Total disk space in bytes")
     used: int = Field(..., description="Used disk space in bytes")
     free: int = Field(..., description="Free disk space in bytes")
@@ -21,6 +22,7 @@ class DiskUsage(BaseModel):
 
 class SystemStatus(BaseModel):
     """Comprehensive system status."""
+
     cpu_percent: float = Field(..., ge=0, le=100, description="CPU usage percentage")
     memory_usage: MemoryUsage = Field(..., description="Memory usage statistics")
     disk_usage: DiskUsage = Field(..., description="Disk usage statistics")

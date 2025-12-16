@@ -184,7 +184,7 @@ rules:
 
 Supported validation types:
 - **service_name**: Validates against service allowlist
-- **container_name**: Validates against container allowlist  
+- **container_name**: Validates against container allowlist
 - **stack_name**: Validates against stack allowlist
 - **file_path**: Validates file paths with traversal protection
 - **port_number**: Validates port numbers (1-65535)

@@ -1,6 +1,6 @@
 # Data Model: TailOpsMCP Server Improvements
 
-**Date**: 2025-11-15  
+**Date**: 2025-11-15
 **Purpose**: Define structured data models for production-ready MCP server
 
 ## **Core Data Models**
@@ -63,7 +63,7 @@ class ContainerInfo(BaseModel):
     ports: List[ContainerPort] = Field(default_factory=list, description="Port mappings")
     environment: Dict[str, str] = Field(default_factory=dict, description="Environment variables")
     labels: Dict[str, str] = Field(default_factory=dict, description="Container labels")
-    
+
 class ContainerStats(BaseModel):
     container_id: str = Field(..., description="Container ID")
     cpu_percent: float = Field(..., ge=0, description="CPU usage percentage")
@@ -170,7 +170,7 @@ class ErrorResponse(BaseModel):
 ```json
 {
   "get_container_list": {
-    "name": "get_container_list", 
+    "name": "get_container_list",
     "description": "List Docker containers with status information",
     "inputSchema": {
       "type": "object",
@@ -205,7 +205,7 @@ class ErrorResponse(BaseModel):
           "description": "Search pattern (glob or regex)"
         },
         "path": {
-          "type": "string", 
+          "type": "string",
           "description": "Base directory for search"
         },
         "max_results": {
@@ -236,7 +236,7 @@ class ServerConfig(BaseModel):
     auth_required: bool = Field(True, description="Authentication required")
     rate_limit: int = Field(100, description="Requests per minute")
     max_file_size: int = Field(10485760, description="Maximum file size in bytes")
-    
+
     class Config:
         env_file = ".env"
         case_sensitive = False

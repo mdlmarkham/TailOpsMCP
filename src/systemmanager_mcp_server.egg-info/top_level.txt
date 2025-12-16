@@ -1,6 +1,9 @@
 auth
 cli
+connectors
+integration
 models
+security
 server
 services
 tools

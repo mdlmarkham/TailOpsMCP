@@ -1,4 +1,5 @@
 """Docker image management tools for TailOpsMCP."""
+
 import logging
 from typing import Literal, Union
 from fastmcp import FastMCP
@@ -7,6 +8,7 @@ from src.server.dependencies import deps
 from src.server.utils import format_response, format_error
 
 logger = logging.getLogger(__name__)
+
 
 def register_tools(mcp: FastMCP):
     """Register Docker image management tools with MCP instance."""
@@ -25,6 +27,7 @@ def register_tools(mcp: FastMCP):
         try:
             client = deps.get_docker_client()
             from src.services.docker_manager import DockerManager
+
             dm = DockerManager()
             dm.client = client
             result = await dm.pull_image(image_name, tag)
@@ -34,7 +37,9 @@ def register_tools(mcp: FastMCP):
 
     @mcp.tool()
     @secure_tool("update_docker_container")
-    async def update_docker_container(name_or_id: str, pull_latest: bool = True) -> dict:
+    async def update_docker_container(
+        name_or_id: str, pull_latest: bool = True
+    ) -> dict:
         """Update a Docker container by pulling latest image and recreating it.
 
         This stops the container, pulls the latest image (if requested),
@@ -49,6 +54,7 @@ def register_tools(mcp: FastMCP):
         try:
             client = deps.get_docker_client()
             from src.services.docker_manager import DockerManager
+
             dm = DockerManager()
             dm.client = client
             result = await dm.update_container(name_or_id, pull_latest)
@@ -58,7 +64,9 @@ def register_tools(mcp: FastMCP):
 
     @mcp.tool()
     @secure_tool("list_docker_images")
-    async def list_docker_images(format: Literal["json", "toon"] = "toon") -> Union[dict, str]:
+    async def list_docker_images(
+        format: Literal["json", "toon"] = "toon",
+    ) -> Union[dict, str]:
         """List all Docker images on the system.
 
         Args:
@@ -69,6 +77,7 @@ def register_tools(mcp: FastMCP):
         try:
             client = deps.get_docker_client()
             from src.services.docker_manager import DockerManager
+
             dm = DockerManager()
             dm.client = client
             result = await dm.list_images()

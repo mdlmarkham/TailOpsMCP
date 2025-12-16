@@ -168,11 +168,11 @@ proxmox:
   security:
     ssl_verification: true
     ssl_ca_bundle: "/etc/ssl/certs/ca-certificates.crt"
-    
+
     # Rate limiting
     api_rate_limit: 60  # requests per minute
     burst_limit: 10     # burst requests
-    
+
     # Access control
     allowed_operations:
       - "create_container"
@@ -180,7 +180,7 @@ proxmox:
       - "stop_container"
       - "snapshot_create"
       - "backup_create"
-    
+
     denied_operations:
       - "delete_container"
       - "delete_snapshot"
@@ -202,16 +202,16 @@ proxmox:
       enabled: true
       interval: 60
       timeout: 10
-    
+
     metrics:
       enabled: true
       endpoint: "/metrics"
       interval: 60
-    
+
     alerts:
       enabled: true
       webhook_url: "${ALERT_WEBHOOK_URL}"
-      
+
       conditions:
         - name: "host_down"
           condition: "host_status == 'offline'"
@@ -241,12 +241,12 @@ async with ProxmoxAPI(credentials) as api:
     # Test connection
     result = await api.test_connection()
     print(f"Connected: {result.success}")
-    
+
     # List containers
     containers = await api.list_containers()
     for container in containers:
         print(f"Container {container.vmid}: {container.name}")
-    
+
     # Create container
     from src.models.proxmox_models import ContainerConfig
     config = ContainerConfig(
@@ -255,7 +255,7 @@ async with ProxmoxAPI(credentials) as api:
         cores=2,
         memory=1024
     )
-    
+
     result = await api.create_container(config)
     print(f"Created container: {result.vmid}")
 ```
@@ -339,18 +339,18 @@ cli = ProxmoxCLI()
 if cli.is_available():
     # List containers
     containers = await cli.list_containers_cli()
-    
+
     # Create container
     config = ContainerConfig(
         ostemplate="local:vztmpl/debian-12-standard_12.7-1_amd64.tar.gz",
         hostname="cli-container"
     )
     result = await cli.create_container_cli(config)
-    
+
     # Container operations
     await cli.start_container_cli(101)
     await cli.stop_container_cli(101, force=True)
-    
+
     # Snapshot operations
     await cli.create_snapshot_cli(101, "cli-snapshot")
     await cli.restore_snapshot_cli(101, "cli-snapshot")
@@ -715,7 +715,7 @@ security_context = ProxmoxSecurityContext(
 
 ```python
 from src.utils.proxmox_security import (
-    ProxmoxSecurityLogger, 
+    ProxmoxSecurityLogger,
     ProxmoxSecurityEventType,
     SecuritySeverity
 )
@@ -1023,10 +1023,10 @@ async def health_check():
         username="tailopsmcp@pve",
         api_token="your-token"
     )
-    
+
     service = ProxmoxMonitoringService([credentials])
     status = await service.manual_health_check()
-    
+
     print(f"Health Check Report: {status['summary']}")
     return status['summary']['overall_status'] == 'healthy'
 

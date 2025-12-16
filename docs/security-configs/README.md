@@ -78,11 +78,11 @@ Minimal → Production → Maximum
     - Set SYSTEMMANAGER_SHARED_SECRET
     - Set SYSTEMMANAGER_REQUIRE_AUTH=true
     - Generate tokens with appropriate scopes
-    
+
 (2) Add approval gates:
     - Set SYSTEMMANAGER_ENABLE_APPROVAL=true
     - Configure approval webhook (or use auto_approve flag)
-    
+
 (3) Add SIEM integration:
     - Forward audit logs to SIEM
     - Set up alerting rules

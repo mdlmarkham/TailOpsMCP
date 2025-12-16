@@ -6,13 +6,18 @@ operational tasks like provisioning, backup, upgrade, and recovery.
 """
 
 import logging
-from datetime import timedelta, timezone
-from typing import Dict, List, Any
+from datetime import timedelta
+from typing import List
 
 from src.models.workflow_models import (
-    WorkflowBlueprint, WorkflowBlueprintFactory, WorkflowCategory,
-    StepType, WorkflowStep, Parameter, RollbackAction, RollbackPlan,
-    Prerequisite, RetryPolicy
+    WorkflowBlueprint,
+    WorkflowCategory,
+    StepType,
+    WorkflowStep,
+    Parameter,
+    RollbackAction,
+    RollbackPlan,
+    RetryPolicy,
 )
 
 
@@ -21,18 +26,23 @@ logger = logging.getLogger(__name__)
 
 class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
     """Set up a new Type-X environment with containers, services, and networking."""
-    
-    def __init__(self, environment_name: str, container_count: int = 3, 
-                 service_type: str = "web", node_type: str = "standard"):
+
+    def __init__(
+        self,
+        environment_name: str,
+        container_count: int = 3,
+        service_type: str = "web",
+        node_type: str = "standard",
+    ):
         """Initialize environment provisioning workflow."""
-        
+
         # Define parameters
         parameters = {
             "environment_name": Parameter(
                 name="environment_name",
                 type="string",
                 required=True,
-                description="Name of the environment to provision"
+                description="Name of the environment to provision",
             ),
             "container_count": Parameter(
                 name="container_count",
@@ -40,38 +50,38 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 required=True,
                 default=container_count,
                 validation={"min": 1, "max": 100},
-                description="Number of containers to create"
+                description="Number of containers to create",
             ),
             "service_type": Parameter(
                 name="service_type",
                 type="string",
                 required=True,
                 choices=["web", "api", "database", "cache", "message-queue"],
-                description="Type of service to deploy"
+                description="Type of service to deploy",
             ),
             "node_type": Parameter(
                 name="node_type",
                 type="string",
                 required=True,
                 choices=["standard", "high-memory", "high-cpu", "gpu"],
-                description="Node type for containers"
+                description="Node type for containers",
             ),
             "backup_enabled": Parameter(
                 name="backup_enabled",
                 type="boolean",
                 required=False,
                 default=True,
-                description="Enable automatic backups"
+                description="Enable automatic backups",
             ),
             "monitoring_enabled": Parameter(
                 name="monitoring_enabled",
                 type="boolean",
                 required=False,
                 default=True,
-                description="Enable monitoring and alerting"
-            )
+                description="Enable monitoring and alerting",
+            ),
         }
-        
+
         # Define workflow steps
         steps = [
             WorkflowStep(
@@ -80,7 +90,9 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 description="Validate system prerequisites and resource availability",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=5),
-                retry_policy=RetryPolicy(max_attempts=3, initial_delay=timedelta(seconds=30))
+                retry_policy=RetryPolicy(
+                    max_attempts=3, initial_delay=timedelta(seconds=30)
+                ),
             ),
             WorkflowStep(
                 step_id="check_resource_availability",
@@ -88,7 +100,7 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 description="Check available CPU, memory, and disk resources",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=10),
-                dependencies=["validate_prerequisites"]
+                dependencies=["validate_prerequisites"],
             ),
             WorkflowStep(
                 step_id="allocate_resources",
@@ -98,7 +110,9 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 timeout=timedelta(minutes=15),
                 requires_approval=True,
                 approvers=["operations_manager"],
-                retry_policy=RetryPolicy(max_attempts=2, initial_delay=timedelta(minutes=1))
+                retry_policy=RetryPolicy(
+                    max_attempts=2, initial_delay=timedelta(minutes=1)
+                ),
             ),
             WorkflowStep(
                 step_id="create_network",
@@ -106,7 +120,7 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 description="Create dedicated network for the environment",
                 step_type=StepType.NETWORK_CONFIGURATION,
                 timeout=timedelta(minutes=10),
-                dependencies=["allocate_resources"]
+                dependencies=["allocate_resources"],
             ),
             WorkflowStep(
                 step_id="create_containers",
@@ -115,7 +129,9 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 step_type=StepType.CONTAINER_OPERATIONS,
                 timeout=timedelta(minutes=45),
                 dependencies=["create_network"],
-                retry_policy=RetryPolicy(max_attempts=3, initial_delay=timedelta(minutes=2))
+                retry_policy=RetryPolicy(
+                    max_attempts=3, initial_delay=timedelta(minutes=2)
+                ),
             ),
             WorkflowStep(
                 step_id="configure_storage",
@@ -123,7 +139,7 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 description="Set up persistent storage for containers",
                 step_type=StepType.CONTAINER_OPERATIONS,
                 timeout=timedelta(minutes=20),
-                dependencies=["create_containers"]
+                dependencies=["create_containers"],
             ),
             WorkflowStep(
                 step_id="deploy_services",
@@ -132,7 +148,9 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 step_type=StepType.SERVICE_DEPLOYMENT,
                 timeout=timedelta(minutes=30),
                 dependencies=["configure_storage"],
-                retry_policy=RetryPolicy(max_attempts=2, initial_delay=timedelta(minutes=2))
+                retry_policy=RetryPolicy(
+                    max_attempts=2, initial_delay=timedelta(minutes=2)
+                ),
             ),
             WorkflowStep(
                 step_id="configure_load_balancer",
@@ -140,7 +158,7 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 description="Set up load balancer for the environment",
                 step_type=StepType.NETWORK_CONFIGURATION,
                 timeout=timedelta(minutes=15),
-                dependencies=["deploy_services"]
+                dependencies=["deploy_services"],
             ),
             WorkflowStep(
                 step_id="setup_monitoring",
@@ -148,7 +166,7 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 description="Configure monitoring and alerting for the environment",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=20),
-                dependencies=["configure_load_balancer"]
+                dependencies=["configure_load_balancer"],
             ),
             WorkflowStep(
                 step_id="run_health_checks",
@@ -156,7 +174,7 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 description="Perform comprehensive health validation",
                 step_type=StepType.HEALTH_VALIDATION,
                 timeout=timedelta(minutes=15),
-                dependencies=["setup_monitoring"]
+                dependencies=["setup_monitoring"],
             ),
             WorkflowStep(
                 step_id="run_integration_tests",
@@ -164,7 +182,7 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 description="Run integration tests to verify functionality",
                 step_type=StepType.TESTING,
                 timeout=timedelta(minutes=30),
-                dependencies=["run_health_checks"]
+                dependencies=["run_health_checks"],
             ),
             WorkflowStep(
                 step_id="create_initial_backup",
@@ -174,7 +192,7 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 timeout=timedelta(minutes=45),
                 dependencies=["run_integration_tests"],
                 requires_approval=True,
-                approvers=["security_admin"]
+                approvers=["security_admin"],
             ),
             WorkflowStep(
                 step_id="setup_automated_backups",
@@ -182,44 +200,48 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 description="Configure automated backup schedule",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=10),
-                dependencies=["create_initial_backup"]
-            )
+                dependencies=["create_initial_backup"],
+            ),
         ]
-        
+
         # Define rollback plan
         rollback_actions = [
             RollbackAction(
                 action_id="cleanup_containers",
                 name="Cleanup Created Containers",
                 step_type=StepType.CONTAINER_OPERATIONS,
-                parameters={"action": "delete_all", "preserve_data": False}
+                parameters={"action": "delete_all", "preserve_data": False},
             ),
             RollbackAction(
                 action_id="cleanup_network",
                 name="Cleanup Network",
                 step_type=StepType.NETWORK_CONFIGURATION,
-                parameters={"action": "delete"}
+                parameters={"action": "delete"},
             ),
             RollbackAction(
                 action_id="cleanup_storage",
                 name="Cleanup Storage",
                 step_type=StepType.CONTAINER_OPERATIONS,
-                parameters={"action": "cleanup_volumes"}
+                parameters={"action": "cleanup_volumes"},
             ),
             RollbackAction(
                 action_id="cleanup_resources",
                 name="Release Allocated Resources",
                 step_type=StepType.RESOURCE_ALLOCATION,
-                parameters={"action": "release"}
-            )
+                parameters={"action": "release"},
+            ),
         ]
-        
+
         rollback_plan = RollbackPlan(
             enabled=True,
             actions=rollback_actions,
-            conditions=["container_creation_failed", "service_deployment_failed", "health_check_failed"]
+            conditions=[
+                "container_creation_failed",
+                "service_deployment_failed",
+                "health_check_failed",
+            ],
         )
-        
+
         # Initialize base workflow
         super().__init__(
             name="Environment Provisioning",
@@ -234,20 +256,22 @@ class EnvironmentProvisioningWorkflow(WorkflowBlueprint):
                 "cpu_cores": container_count * 2,
                 "memory_gb": container_count * 4,
                 "disk_gb": container_count * 50,
-                "network_bandwidth_mbps": 1000
+                "network_bandwidth_mbps": 1000,
             },
             tags={"provisioning", "environment", service_type, "production-ready"},
             owner="infrastructure-team",
-            documentation=f"Provisions a {service_type} environment with {container_count} containers and comprehensive monitoring"
+            documentation=f"Provisions a {service_type} environment with {container_count} containers and comprehensive monitoring",
         )
 
 
 class BackupOrchestrationWorkflow(WorkflowBlueprint):
     """Backup all containers across the fleet with validation."""
-    
-    def __init__(self, backup_retention_days: int = 30, backup_compression: bool = True):
+
+    def __init__(
+        self, backup_retention_days: int = 30, backup_compression: bool = True
+    ):
         """Initialize backup orchestration workflow."""
-        
+
         # Define parameters
         parameters = {
             "backup_retention_days": Parameter(
@@ -256,14 +280,14 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 required=False,
                 default=backup_retention_days,
                 validation={"min": 1, "max": 365},
-                description="Number of days to retain backups"
+                description="Number of days to retain backups",
             ),
             "backup_compression": Parameter(
                 name="backup_compression",
                 type="boolean",
                 required=False,
                 default=backup_compression,
-                description="Enable backup compression"
+                description="Enable backup compression",
             ),
             "backup_destination": Parameter(
                 name="backup_destination",
@@ -271,14 +295,14 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 required=False,
                 default="local",
                 choices=["local", "s3", "azure", "gcp"],
-                description="Backup destination"
+                description="Backup destination",
             ),
             "include_logs": Parameter(
                 name="include_logs",
                 type="boolean",
                 required=False,
                 default=False,
-                description="Include container logs in backup"
+                description="Include container logs in backup",
             ),
             "backup_schedule": Parameter(
                 name="backup_schedule",
@@ -286,10 +310,10 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 required=False,
                 default="nightly",
                 choices=["hourly", "daily", "weekly", "monthly"],
-                description="Backup frequency"
-            )
+                description="Backup frequency",
+            ),
         }
-        
+
         # Define workflow steps
         steps = [
             WorkflowStep(
@@ -297,7 +321,7 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 name="Discover Backup Targets",
                 description="Discover all containers and services that need backup",
                 step_type=StepType.DISCOVERY,
-                timeout=timedelta(minutes=15)
+                timeout=timedelta(minutes=15),
             ),
             WorkflowStep(
                 step_id="validate_backup_space",
@@ -305,7 +329,7 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 description="Validate available backup storage space",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=10),
-                dependencies=["discover_backup_targets"]
+                dependencies=["discover_backup_targets"],
             ),
             WorkflowStep(
                 step_id="create_snapshots",
@@ -314,7 +338,9 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 step_type=StepType.SNAPSHOT,
                 timeout=timedelta(minutes=90),
                 dependencies=["validate_backup_space"],
-                retry_policy=RetryPolicy(max_attempts=3, initial_delay=timedelta(minutes=2))
+                retry_policy=RetryPolicy(
+                    max_attempts=3, initial_delay=timedelta(minutes=2)
+                ),
             ),
             WorkflowStep(
                 step_id="backup_configuration",
@@ -322,7 +348,7 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 description="Backup container configurations and settings",
                 step_type=StepType.BACKUP,
                 timeout=timedelta(minutes=30),
-                dependencies=["create_snapshots"]
+                dependencies=["create_snapshots"],
             ),
             WorkflowStep(
                 step_id="backup_data_volumes",
@@ -330,7 +356,7 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 description="Backup persistent data volumes",
                 step_type=StepType.BACKUP,
                 timeout=timedelta(minutes=120),
-                dependencies=["backup_configuration"]
+                dependencies=["backup_configuration"],
             ),
             WorkflowStep(
                 step_id="upload_backups",
@@ -340,7 +366,7 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 timeout=timedelta(minutes=180),
                 dependencies=["backup_data_volumes"],
                 requires_approval=True,
-                approvers=["security_admin"]
+                approvers=["security_admin"],
             ),
             WorkflowStep(
                 step_id="verify_backup_integrity",
@@ -348,7 +374,7 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 description="Verify integrity of all created backups",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=45),
-                dependencies=["upload_backups"]
+                dependencies=["upload_backups"],
             ),
             WorkflowStep(
                 step_id="cleanup_old_backups",
@@ -356,7 +382,7 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 description="Clean up expired or old backups",
                 step_type=StepType.MAINTENANCE,
                 timeout=timedelta(minutes=30),
-                dependencies=["verify_backup_integrity"]
+                dependencies=["verify_backup_integrity"],
             ),
             WorkflowStep(
                 step_id="generate_backup_report",
@@ -364,10 +390,10 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
                 description="Generate comprehensive backup report",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=15),
-                dependencies=["cleanup_old_backups"]
-            )
+                dependencies=["cleanup_old_backups"],
+            ),
         ]
-        
+
         super().__init__(
             name="Fleet Backup Orchestration",
             description="Orchestrate comprehensive backup of all containers across the fleet",
@@ -379,20 +405,22 @@ class BackupOrchestrationWorkflow(WorkflowBlueprint):
             resource_requirements={
                 "storage_gb": 1000,
                 "network_bandwidth_mbps": 500,
-                "cpu_cores": 4
+                "cpu_cores": 4,
             },
             tags={"backup", "maintenance", "fleet", "data-protection"},
             owner="operations-team",
-            documentation="Comprehensive fleet backup with integrity validation and automated cleanup"
+            documentation="Comprehensive fleet backup with integrity validation and automated cleanup",
         )
 
 
 class SafeUpgradeWorkflow(WorkflowBlueprint):
     """Safely upgrade containers with rollback capability."""
-    
-    def __init__(self, upgrade_type: str = "rolling", maintenance_window: str = "off-hours"):
+
+    def __init__(
+        self, upgrade_type: str = "rolling", maintenance_window: str = "off-hours"
+    ):
         """Initialize safe upgrade workflow."""
-        
+
         # Define parameters
         parameters = {
             "upgrade_type": Parameter(
@@ -400,14 +428,14 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 type="string",
                 required=True,
                 choices=["rolling", "blue-green", "canary"],
-                description="Type of upgrade strategy"
+                description="Type of upgrade strategy",
             ),
             "maintenance_window": Parameter(
                 name="maintenance_window",
                 type="string",
                 required=True,
                 choices=["off-hours", "scheduled", "immediate"],
-                description="When to perform the upgrade"
+                description="When to perform the upgrade",
             ),
             "max_downtime_minutes": Parameter(
                 name="max_downtime_minutes",
@@ -415,24 +443,24 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 required=False,
                 default=30,
                 validation={"min": 1, "max": 120},
-                description="Maximum acceptable downtime in minutes"
+                description="Maximum acceptable downtime in minutes",
             ),
             "rollback_on_failure": Parameter(
                 name="rollback_on_failure",
                 type="boolean",
                 required=False,
                 default=True,
-                description="Automatically rollback on failure"
+                description="Automatically rollback on failure",
             ),
             "test_environment": Parameter(
                 name="test_environment",
                 type="string",
                 required=False,
                 default="staging",
-                description="Test environment for validation"
-            )
+                description="Test environment for validation",
+            ),
         }
-        
+
         # Define workflow steps
         steps = [
             WorkflowStep(
@@ -440,7 +468,7 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 name="Pre-upgrade Assessment",
                 description="Assess system readiness for upgrade",
                 step_type=StepType.VALIDATION,
-                timeout=timedelta(minutes=20)
+                timeout=timedelta(minutes=20),
             ),
             WorkflowStep(
                 step_id="create_pre_upgrade_snapshots",
@@ -450,7 +478,7 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 timeout=timedelta(minutes=45),
                 dependencies=["pre_upgrade_assessment"],
                 requires_approval=True,
-                approvers=["operations_manager", "security_admin"]
+                approvers=["operations_manager", "security_admin"],
             ),
             WorkflowStep(
                 step_id="backup_current_state",
@@ -458,7 +486,7 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 description="Backup current application state",
                 step_type=StepType.BACKUP,
                 timeout=timedelta(minutes=60),
-                dependencies=["create_pre_upgrade_snapshots"]
+                dependencies=["create_pre_upgrade_snapshots"],
             ),
             WorkflowStep(
                 step_id="prepare_rollback_plan",
@@ -466,7 +494,7 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 description="Prepare detailed rollback procedures",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=15),
-                dependencies=["backup_current_state"]
+                dependencies=["backup_current_state"],
             ),
             WorkflowStep(
                 step_id="upgrade_infrastructure",
@@ -475,7 +503,9 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 step_type=StepType.UPGRADE,
                 timeout=timedelta(minutes=90),
                 dependencies=["prepare_rollback_plan"],
-                retry_policy=RetryPolicy(max_attempts=2, initial_delay=timedelta(minutes=5))
+                retry_policy=RetryPolicy(
+                    max_attempts=2, initial_delay=timedelta(minutes=5)
+                ),
             ),
             WorkflowStep(
                 step_id="upgrade_containers",
@@ -484,7 +514,9 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 step_type=StepType.UPGRADE,
                 timeout=timedelta(minutes=120),
                 dependencies=["upgrade_infrastructure"],
-                retry_policy=RetryPolicy(max_attempts=2, initial_delay=timedelta(minutes=3))
+                retry_policy=RetryPolicy(
+                    max_attempts=2, initial_delay=timedelta(minutes=3)
+                ),
             ),
             WorkflowStep(
                 step_id="update_configuration",
@@ -492,7 +524,7 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 description="Update configuration for new versions",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["upgrade_containers"]
+                dependencies=["upgrade_containers"],
             ),
             WorkflowStep(
                 step_id="post_upgrade_verification",
@@ -500,7 +532,7 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 description="Verify successful upgrade",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["update_configuration"]
+                dependencies=["update_configuration"],
             ),
             WorkflowStep(
                 step_id="run_smoke_tests",
@@ -508,7 +540,7 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 description="Run smoke tests to verify basic functionality",
                 step_type=StepType.TESTING,
                 timeout=timedelta(minutes=45),
-                dependencies=["post_upgrade_verification"]
+                dependencies=["post_upgrade_verification"],
             ),
             WorkflowStep(
                 step_id="run_integration_tests",
@@ -516,7 +548,7 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 description="Run integration tests",
                 step_type=StepType.TESTING,
                 timeout=timedelta(minutes=60),
-                dependencies=["run_smoke_tests"]
+                dependencies=["run_smoke_tests"],
             ),
             WorkflowStep(
                 step_id="performance_validation",
@@ -524,7 +556,7 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 description="Validate performance after upgrade",
                 step_type=StepType.TESTING,
                 timeout=timedelta(minutes=45),
-                dependencies=["run_integration_tests"]
+                dependencies=["run_integration_tests"],
             ),
             WorkflowStep(
                 step_id="update_monitoring",
@@ -532,7 +564,7 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 description="Update monitoring for new versions",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=20),
-                dependencies=["performance_validation"]
+                dependencies=["performance_validation"],
             ),
             WorkflowStep(
                 step_id="cleanup_old_versions",
@@ -540,38 +572,42 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 description="Clean up old container versions",
                 step_type=StepType.MAINTENANCE,
                 timeout=timedelta(minutes=30),
-                dependencies=["update_monitoring"]
-            )
+                dependencies=["update_monitoring"],
+            ),
         ]
-        
+
         # Define rollback actions
         rollback_actions = [
             RollbackAction(
                 action_id="restore_snapshots",
                 name="Restore from Pre-upgrade Snapshots",
                 step_type=StepType.RESTORE,
-                parameters={"restore_point": "pre_upgrade", "verify_restore": True}
+                parameters={"restore_point": "pre_upgrade", "verify_restore": True},
             ),
             RollbackAction(
                 action_id="restore_configuration",
                 name="Restore Previous Configuration",
                 step_type=StepType.CONFIGURATION,
-                parameters={"configuration_source": "backup"}
+                parameters={"configuration_source": "backup"},
             ),
             RollbackAction(
                 action_id="restart_services",
                 name="Restart Services",
                 step_type=StepType.CONTAINER_OPERATIONS,
-                parameters={"action": "restart_all"}
-            )
+                parameters={"action": "restart_all"},
+            ),
         ]
-        
+
         rollback_plan = RollbackPlan(
             enabled=True,
             actions=rollback_actions,
-            conditions=["upgrade_failed", "health_check_failed", "performance_degradation"]
+            conditions=[
+                "upgrade_failed",
+                "health_check_failed",
+                "performance_degradation",
+            ],
         )
-        
+
         super().__init__(
             name="Safe Container Upgrade",
             description=f"Safely upgrade containers using {upgrade_type} strategy with rollback capability",
@@ -585,20 +621,22 @@ class SafeUpgradeWorkflow(WorkflowBlueprint):
                 "cpu_cores": 4,
                 "memory_gb": 8,
                 "storage_gb": 100,
-                "network_bandwidth_mbps": 200
+                "network_bandwidth_mbps": 200,
             },
             tags={"upgrade", "safety", "rollback", upgrade_type},
             owner="platform-team",
-            documentation=f"Safe {upgrade_type} upgrade with comprehensive testing and rollback capability"
+            documentation=f"Safe {upgrade_type} upgrade with comprehensive testing and rollback capability",
         )
 
 
 class DisasterRecoveryWorkflow(WorkflowBlueprint):
     """Restore container from timestamped backup with validation."""
-    
-    def __init__(self, recovery_type: str = "full", validation_level: str = "comprehensive"):
+
+    def __init__(
+        self, recovery_type: str = "full", validation_level: str = "comprehensive"
+    ):
         """Initialize disaster recovery workflow."""
-        
+
         # Define parameters
         parameters = {
             "recovery_type": Parameter(
@@ -606,36 +644,36 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 type="string",
                 required=True,
                 choices=["full", "partial", "selective"],
-                description="Type of recovery to perform"
+                description="Type of recovery to perform",
             ),
             "backup_timestamp": Parameter(
                 name="backup_timestamp",
                 type="string",
                 required=True,
-                description="Timestamp of backup to restore from (ISO format)"
+                description="Timestamp of backup to restore from (ISO format)",
             ),
             "validation_level": Parameter(
                 name="validation_level",
                 type="string",
                 required=True,
                 choices=["basic", "comprehensive", "minimal"],
-                description="Level of validation to perform"
+                description="Level of validation to perform",
             ),
             "target_environment": Parameter(
                 name="target_environment",
                 type="string",
                 required=True,
-                description="Target environment for recovery"
+                description="Target environment for recovery",
             ),
             "preserve_current_state": Parameter(
                 name="preserve_current_state",
                 type="boolean",
                 required=False,
                 default=True,
-                description="Preserve current state before recovery"
-            )
+                description="Preserve current state before recovery",
+            ),
         }
-        
+
         # Define workflow steps
         steps = [
             WorkflowStep(
@@ -643,7 +681,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 name="Validate Disaster Scenario",
                 description="Assess the disaster and recovery requirements",
                 step_type=StepType.VALIDATION,
-                timeout=timedelta(minutes=15)
+                timeout=timedelta(minutes=15),
             ),
             WorkflowStep(
                 step_id="validate_backup_availability",
@@ -651,7 +689,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Verify backup availability and integrity",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=20),
-                dependencies=["validate_disaster_scenario"]
+                dependencies=["validate_disaster_scenario"],
             ),
             WorkflowStep(
                 step_id="assess_recovery_scope",
@@ -659,7 +697,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Determine what needs to be recovered",
                 step_type=StepType.DISCOVERY,
                 timeout=timedelta(minutes=15),
-                dependencies=["validate_backup_availability"]
+                dependencies=["validate_backup_availability"],
             ),
             WorkflowStep(
                 step_id="prepare_recovery_environment",
@@ -669,7 +707,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 timeout=timedelta(minutes=30),
                 dependencies=["assess_recovery_scope"],
                 requires_approval=True,
-                approvers=["operations_manager", "security_admin"]
+                approvers=["operations_manager", "security_admin"],
             ),
             WorkflowStep(
                 step_id="preserve_current_state",
@@ -678,7 +716,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 step_type=StepType.SNAPSHOT,
                 timeout=timedelta(minutes=45),
                 dependencies=["prepare_recovery_environment"],
-                conditions=["preserve_current_state"]
+                conditions=["preserve_current_state"],
             ),
             WorkflowStep(
                 step_id="stop_affected_containers",
@@ -686,7 +724,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Stop containers that need restoration",
                 step_type=StepType.CONTAINER_OPERATIONS,
                 timeout=timedelta(minutes=30),
-                dependencies=["preserve_current_state"]
+                dependencies=["preserve_current_state"],
             ),
             WorkflowStep(
                 step_id="cleanup_corrupted_data",
@@ -694,7 +732,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Clean up any corrupted or damaged data",
                 step_type=StepType.CONTAINER_OPERATIONS,
                 timeout=timedelta(minutes=20),
-                dependencies=["stop_affected_containers"]
+                dependencies=["stop_affected_containers"],
             ),
             WorkflowStep(
                 step_id="restore_infrastructure",
@@ -703,7 +741,9 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 step_type=StepType.RESTORE,
                 timeout=timedelta(minutes=60),
                 dependencies=["cleanup_corrupted_data"],
-                retry_policy=RetryPolicy(max_attempts=2, initial_delay=timedelta(minutes=2))
+                retry_policy=RetryPolicy(
+                    max_attempts=2, initial_delay=timedelta(minutes=2)
+                ),
             ),
             WorkflowStep(
                 step_id="restore_containers",
@@ -712,7 +752,9 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 step_type=StepType.RESTORE,
                 timeout=timedelta(minutes=90),
                 dependencies=["restore_infrastructure"],
-                retry_policy=RetryPolicy(max_attempts=2, initial_delay=timedelta(minutes=3))
+                retry_policy=RetryPolicy(
+                    max_attempts=2, initial_delay=timedelta(minutes=3)
+                ),
             ),
             WorkflowStep(
                 step_id="restore_data_volumes",
@@ -721,7 +763,9 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 step_type=StepType.RESTORE,
                 timeout=timedelta(minutes=120),
                 dependencies=["restore_containers"],
-                retry_policy=RetryPolicy(max_attempts=2, initial_delay=timedelta(minutes=5))
+                retry_policy=RetryPolicy(
+                    max_attempts=2, initial_delay=timedelta(minutes=5)
+                ),
             ),
             WorkflowStep(
                 step_id="restore_configuration",
@@ -729,7 +773,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Restore configuration settings",
                 step_type=StepType.RESTORE,
                 timeout=timedelta(minutes=30),
-                dependencies=["restore_data_volumes"]
+                dependencies=["restore_data_volumes"],
             ),
             WorkflowStep(
                 step_id="verify_restoration",
@@ -737,7 +781,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Verify successful restoration",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=45),
-                dependencies=["restore_configuration"]
+                dependencies=["restore_configuration"],
             ),
             WorkflowStep(
                 step_id="update_network_configuration",
@@ -745,7 +789,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Update network settings if needed",
                 step_type=StepType.NETWORK_CONFIGURATION,
                 timeout=timedelta(minutes=20),
-                dependencies=["verify_restoration"]
+                dependencies=["verify_restoration"],
             ),
             WorkflowStep(
                 step_id="update_dns_records",
@@ -753,7 +797,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Update DNS records if required",
                 step_type=StepType.NETWORK_CONFIGURATION,
                 timeout=timedelta(minutes=15),
-                dependencies=["update_network_configuration"]
+                dependencies=["update_network_configuration"],
             ),
             WorkflowStep(
                 step_id="run_health_checks",
@@ -761,7 +805,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Perform comprehensive health validation",
                 step_type=StepType.HEALTH_VALIDATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["update_dns_records"]
+                dependencies=["update_dns_records"],
             ),
             WorkflowStep(
                 step_id="run_functionality_tests",
@@ -769,7 +813,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Test critical functionality",
                 step_type=StepType.TESTING,
                 timeout=timedelta(minutes=60),
-                dependencies=["run_health_checks"]
+                dependencies=["run_health_checks"],
             ),
             WorkflowStep(
                 step_id="update_monitoring",
@@ -777,7 +821,7 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Update monitoring for recovered systems",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=20),
-                dependencies=["run_functionality_tests"]
+                dependencies=["run_functionality_tests"],
             ),
             WorkflowStep(
                 step_id="generate_recovery_report",
@@ -785,10 +829,10 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 description="Generate disaster recovery report",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=15),
-                dependencies=["update_monitoring"]
-            )
+                dependencies=["update_monitoring"],
+            ),
         ]
-        
+
         super().__init__(
             name="Disaster Recovery",
             description=f"Recover {recovery_type} environment from backup with {validation_level} validation",
@@ -801,20 +845,24 @@ class DisasterRecoveryWorkflow(WorkflowBlueprint):
                 "cpu_cores": 8,
                 "memory_gb": 16,
                 "storage_gb": 500,
-                "network_bandwidth_mbps": 1000
+                "network_bandwidth_mbps": 1000,
             },
             tags={"recovery", "disaster", "restoration", recovery_type},
             owner="operations-team",
-            documentation=f"{recovery_type.title()} disaster recovery with {validation_level} validation"
+            documentation=f"{recovery_type.title()} disaster recovery with {validation_level} validation",
         )
 
 
 class SecurityComplianceWorkflow(WorkflowBlueprint):
     """Perform security compliance checks and remediation."""
-    
-    def __init__(self, compliance_standard: str = "iso27001", remediation_level: str = "automated"):
+
+    def __init__(
+        self,
+        compliance_standard: str = "iso27001",
+        remediation_level: str = "automated",
+    ):
         """Initialize security compliance workflow."""
-        
+
         # Define parameters
         parameters = {
             "compliance_standard": Parameter(
@@ -822,14 +870,14 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 type="string",
                 required=True,
                 choices=["iso27001", "nist", "sox", "gdpr", "hipaa", "custom"],
-                description="Compliance standard to validate against"
+                description="Compliance standard to validate against",
             ),
             "remediation_level": Parameter(
                 name="remediation_level",
                 type="string",
                 required=True,
                 choices=["automated", "manual", "hybrid"],
-                description="Level of automated remediation"
+                description="Level of automated remediation",
             ),
             "scan_scope": Parameter(
                 name="scan_scope",
@@ -837,17 +885,17 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 required=False,
                 default="full",
                 choices=["full", "critical", "configurations", "vulnerabilities"],
-                description="Scope of compliance scan"
+                description="Scope of compliance scan",
             ),
             "generate_report": Parameter(
                 name="generate_report",
                 type="boolean",
                 required=False,
                 default=True,
-                description="Generate comprehensive compliance report"
-            )
+                description="Generate comprehensive compliance report",
+            ),
         }
-        
+
         # Define workflow steps
         steps = [
             WorkflowStep(
@@ -855,7 +903,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 name="Prepare Compliance Scan",
                 description="Prepare system for compliance scanning",
                 step_type=StepType.VALIDATION,
-                timeout=timedelta(minutes=15)
+                timeout=timedelta(minutes=15),
             ),
             WorkflowStep(
                 step_id="scan_security_configurations",
@@ -863,7 +911,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 description="Scan security configurations against standards",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["prepare_compliance_scan"]
+                dependencies=["prepare_compliance_scan"],
             ),
             WorkflowStep(
                 step_id="scan_vulnerabilities",
@@ -871,7 +919,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 description="Scan for security vulnerabilities",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=60),
-                dependencies=["scan_security_configurations"]
+                dependencies=["scan_security_configurations"],
             ),
             WorkflowStep(
                 step_id="scan_access_controls",
@@ -879,7 +927,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 description="Validate access controls and permissions",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=45),
-                dependencies=["scan_vulnerabilities"]
+                dependencies=["scan_vulnerabilities"],
             ),
             WorkflowStep(
                 step_id="scan_data_protection",
@@ -887,7 +935,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 description="Check data protection measures",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["scan_access_controls"]
+                dependencies=["scan_access_controls"],
             ),
             WorkflowStep(
                 step_id="analyze_compliance_results",
@@ -895,7 +943,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 description="Analyze all compliance scan results",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["scan_data_protection"]
+                dependencies=["scan_data_protection"],
             ),
             WorkflowStep(
                 step_id="generate_compliance_gaps",
@@ -903,7 +951,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 description="Identify compliance gaps and violations",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=20),
-                dependencies=["analyze_compliance_results"]
+                dependencies=["analyze_compliance_results"],
             ),
             WorkflowStep(
                 step_id="automated_remediation",
@@ -912,7 +960,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=90),
                 dependencies=["generate_compliance_gaps"],
-                conditions=["remediation_level_automated"]
+                conditions=["remediation_level_automated"],
             ),
             WorkflowStep(
                 step_id="validate_remediation",
@@ -920,7 +968,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 description="Validate effectiveness of remediation",
                 step_type=StepType.VALIDATION,
                 timeout=timedelta(minutes=45),
-                dependencies=["automated_remediation"]
+                dependencies=["automated_remediation"],
             ),
             WorkflowStep(
                 step_id="update_security_policies",
@@ -928,7 +976,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 description="Update security policies based on findings",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["validate_remediation"]
+                dependencies=["validate_remediation"],
             ),
             WorkflowStep(
                 step_id="generate_compliance_report",
@@ -936,7 +984,7 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 description="Generate comprehensive compliance report",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["update_security_policies"]
+                dependencies=["update_security_policies"],
             ),
             WorkflowStep(
                 step_id="schedule_follow_up",
@@ -944,10 +992,10 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
                 description="Schedule follow-up compliance checks",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=15),
-                dependencies=["generate_compliance_report"]
-            )
+                dependencies=["generate_compliance_report"],
+            ),
         ]
-        
+
         super().__init__(
             name="Security Compliance",
             description=f"Perform {compliance_standard} compliance validation with {remediation_level} remediation",
@@ -956,29 +1004,27 @@ class SecurityComplianceWorkflow(WorkflowBlueprint):
             parameters=parameters,
             steps=steps,
             estimated_duration=timedelta(hours=5),
-            resource_requirements={
-                "cpu_cores": 4,
-                "memory_gb": 8,
-                "storage_gb": 50
-            },
+            resource_requirements={"cpu_cores": 4, "memory_gb": 8, "storage_gb": 50},
             tags={"compliance", "security", compliance_standard, remediation_level},
             owner="security-team",
-            documentation=f"{compliance_standard.upper()} compliance validation and remediation"
+            documentation=f"{compliance_standard.upper()} compliance validation and remediation",
         )
 
 
 class MonitoringSetupWorkflow(WorkflowBlueprint):
     """Setup comprehensive monitoring and alerting for environment."""
-    
-    def __init__(self, monitoring_tools: List[str] = None, alert_levels: List[str] = None):
+
+    def __init__(
+        self, monitoring_tools: List[str] = None, alert_levels: List[str] = None
+    ):
         """Initialize monitoring setup workflow."""
-        
+
         if monitoring_tools is None:
             monitoring_tools = ["prometheus", "grafana", "alertmanager"]
-        
+
         if alert_levels is None:
             alert_levels = ["critical", "warning", "info"]
-        
+
         # Define parameters
         parameters = {
             "monitoring_tools": Parameter(
@@ -986,8 +1032,14 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 type="list",
                 required=True,
                 default=monitoring_tools,
-                choices=["prometheus", "grafana", "alertmanager", "datadog", "newrelic"],
-                description="Monitoring tools to deploy"
+                choices=[
+                    "prometheus",
+                    "grafana",
+                    "alertmanager",
+                    "datadog",
+                    "newrelic",
+                ],
+                description="Monitoring tools to deploy",
             ),
             "alert_levels": Parameter(
                 name="alert_levels",
@@ -995,7 +1047,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 required=True,
                 default=alert_levels,
                 choices=["critical", "warning", "info", "debug"],
-                description="Alert severity levels to configure"
+                description="Alert severity levels to configure",
             ),
             "retention_period_days": Parameter(
                 name="retention_period_days",
@@ -1003,17 +1055,17 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 required=False,
                 default=30,
                 validation={"min": 1, "max": 365},
-                description="Data retention period in days"
+                description="Data retention period in days",
             ),
             "sla_targets": Parameter(
                 name="sla_targets",
                 type="dict",
                 required=False,
                 default={"availability": "99.9%", "response_time": "100ms"},
-                description="SLA targets to monitor"
-            )
+                description="SLA targets to monitor",
+            ),
         }
-        
+
         # Define workflow steps
         steps = [
             WorkflowStep(
@@ -1021,7 +1073,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 name="Assess Monitoring Requirements",
                 description="Assess monitoring requirements and scope",
                 step_type=StepType.DISCOVERY,
-                timeout=timedelta(minutes=15)
+                timeout=timedelta(minutes=15),
             ),
             WorkflowStep(
                 step_id="deploy_monitoring_infrastructure",
@@ -1029,7 +1081,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Deploy monitoring tools and infrastructure",
                 step_type=StepType.SERVICE_DEPLOYMENT,
                 timeout=timedelta(minutes=60),
-                dependencies=["assess_monitoring_requirements"]
+                dependencies=["assess_monitoring_requirements"],
             ),
             WorkflowStep(
                 step_id="configure_metrics_collection",
@@ -1037,7 +1089,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Configure metrics collection from all services",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=45),
-                dependencies=["deploy_monitoring_infrastructure"]
+                dependencies=["deploy_monitoring_infrastructure"],
             ),
             WorkflowStep(
                 step_id="setup_log_collection",
@@ -1045,7 +1097,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Configure centralized log collection",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["configure_metrics_collection"]
+                dependencies=["configure_metrics_collection"],
             ),
             WorkflowStep(
                 step_id="configure_alerting_rules",
@@ -1053,7 +1105,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Configure alerting rules and thresholds",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=45),
-                dependencies=["setup_log_collection"]
+                dependencies=["setup_log_collection"],
             ),
             WorkflowStep(
                 step_id="setup_dashboards",
@@ -1061,7 +1113,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Create monitoring dashboards",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=60),
-                dependencies=["configure_alerting_rules"]
+                dependencies=["configure_alerting_rules"],
             ),
             WorkflowStep(
                 step_id="configure_sla_monitoring",
@@ -1069,7 +1121,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Configure SLA monitoring and reporting",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["setup_dashboards"]
+                dependencies=["setup_dashboards"],
             ),
             WorkflowStep(
                 step_id="setup_notification_channels",
@@ -1077,7 +1129,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Configure notification channels for alerts",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["configure_sla_monitoring"]
+                dependencies=["configure_sla_monitoring"],
             ),
             WorkflowStep(
                 step_id="test_monitoring_system",
@@ -1085,7 +1137,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Test monitoring system functionality",
                 step_type=StepType.TESTING,
                 timeout=timedelta(minutes=45),
-                dependencies=["setup_notification_channels"]
+                dependencies=["setup_notification_channels"],
             ),
             WorkflowStep(
                 step_id="validate_alerts",
@@ -1093,7 +1145,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Validate alert delivery and escalation",
                 step_type=StepType.TESTING,
                 timeout=timedelta(minutes=30),
-                dependencies=["test_monitoring_system"]
+                dependencies=["test_monitoring_system"],
             ),
             WorkflowStep(
                 step_id="setup_monitoring_backups",
@@ -1101,7 +1153,7 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Configure backup of monitoring configuration",
                 step_type=StepType.BACKUP,
                 timeout=timedelta(minutes=20),
-                dependencies=["validate_alerts"]
+                dependencies=["validate_alerts"],
             ),
             WorkflowStep(
                 step_id="document_monitoring_setup",
@@ -1109,10 +1161,10 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
                 description="Create documentation for monitoring setup",
                 step_type=StepType.CONFIGURATION,
                 timeout=timedelta(minutes=30),
-                dependencies=["setup_monitoring_backups"]
-            )
+                dependencies=["setup_monitoring_backups"],
+            ),
         ]
-        
+
         super().__init__(
             name="Monitoring Setup",
             description=f"Setup comprehensive monitoring with {', '.join(monitoring_tools)}",
@@ -1121,91 +1173,82 @@ class MonitoringSetupWorkflow(WorkflowBlueprint):
             parameters=parameters,
             steps=steps,
             estimated_duration=timedelta(hours=6),
-            resource_requirements={
-                "cpu_cores": 2,
-                "memory_gb": 4,
-                "storage_gb": 100
-            },
-            tags={"monitoring", "alerting", "observability"}.union(set(monitoring_tools)),
+            resource_requirements={"cpu_cores": 2, "memory_gb": 4, "storage_gb": 100},
+            tags={"monitoring", "alerting", "observability"}.union(
+                set(monitoring_tools)
+            ),
             owner="operations-team",
-            documentation=f"Comprehensive monitoring setup with {', '.join(monitoring_tools)} and {', '.join(alert_levels)} alerting"
+            documentation=f"Comprehensive monitoring setup with {', '.join(monitoring_tools)} and {', '.join(alert_levels)} alerting",
         )
 
 
 # Workflow factory functions for easy instantiation
-def create_production_environment_workflow(environment_name: str, service_type: str = "web") -> EnvironmentProvisioningWorkflow:
+def create_production_environment_workflow(
+    environment_name: str, service_type: str = "web"
+) -> EnvironmentProvisioningWorkflow:
     """Create production environment workflow."""
     return EnvironmentProvisioningWorkflow(
         environment_name=environment_name,
         container_count=5,
         service_type=service_type,
-        node_type="high-memory"
+        node_type="high-memory",
     )
 
 
-def create_staging_environment_workflow(environment_name: str, service_type: str = "api") -> EnvironmentProvisioningWorkflow:
+def create_staging_environment_workflow(
+    environment_name: str, service_type: str = "api"
+) -> EnvironmentProvisioningWorkflow:
     """Create staging environment workflow."""
     return EnvironmentProvisioningWorkflow(
         environment_name=environment_name,
         container_count=3,
         service_type=service_type,
-        node_type="standard"
+        node_type="standard",
     )
 
 
 def create_daily_backup_workflow() -> BackupOrchestrationWorkflow:
     """Create daily backup workflow."""
     return BackupOrchestrationWorkflow(
-        backup_retention_days=30,
-        backup_compression=True
+        backup_retention_days=30, backup_compression=True
     )
 
 
 def create_weekly_backup_workflow() -> BackupOrchestrationWorkflow:
     """Create weekly backup workflow."""
     return BackupOrchestrationWorkflow(
-        backup_retention_days=90,
-        backup_compression=True
+        backup_retention_days=90, backup_compression=True
     )
 
 
 def create_rolling_upgrade_workflow() -> SafeUpgradeWorkflow:
     """Create rolling upgrade workflow."""
-    return SafeUpgradeWorkflow(
-        upgrade_type="rolling",
-        maintenance_window="off-hours"
-    )
+    return SafeUpgradeWorkflow(upgrade_type="rolling", maintenance_window="off-hours")
 
 
 def create_canary_upgrade_workflow() -> SafeUpgradeWorkflow:
     """Create canary upgrade workflow."""
-    return SafeUpgradeWorkflow(
-        upgrade_type="canary",
-        maintenance_window="scheduled"
-    )
+    return SafeUpgradeWorkflow(upgrade_type="canary", maintenance_window="scheduled")
 
 
 def create_full_disaster_recovery_workflow() -> DisasterRecoveryWorkflow:
     """Create full disaster recovery workflow."""
     return DisasterRecoveryWorkflow(
-        recovery_type="full",
-        validation_level="comprehensive"
+        recovery_type="full", validation_level="comprehensive"
     )
 
 
 def create_iso27001_compliance_workflow() -> SecurityComplianceWorkflow:
     """Create ISO 27001 compliance workflow."""
     return SecurityComplianceWorkflow(
-        compliance_standard="iso27001",
-        remediation_level="automated"
+        compliance_standard="iso27001", remediation_level="automated"
     )
 
 
 def create_nist_compliance_workflow() -> SecurityComplianceWorkflow:
     """Create NIST compliance workflow."""
     return SecurityComplianceWorkflow(
-        compliance_standard="nist",
-        remediation_level="hybrid"
+        compliance_standard="nist", remediation_level="hybrid"
     )
 
 
@@ -1213,13 +1256,12 @@ def create_prometheus_monitoring_workflow() -> MonitoringSetupWorkflow:
     """Create Prometheus monitoring workflow."""
     return MonitoringSetupWorkflow(
         monitoring_tools=["prometheus", "grafana", "alertmanager"],
-        alert_levels=["critical", "warning"]
+        alert_levels=["critical", "warning"],
     )
 
 
 def create_datadog_monitoring_workflow() -> MonitoringSetupWorkflow:
     """Create Datadog monitoring workflow."""
     return MonitoringSetupWorkflow(
-        monitoring_tools=["datadog"],
-        alert_levels=["critical", "warning", "info"]
+        monitoring_tools=["datadog"], alert_levels=["critical", "warning", "info"]
     )

@@ -1,14 +1,14 @@
 # Tasks: SystemManager MCP Server Improvements
 
-**Date**: 2025-11-15  
-**Feature**: SystemManager MCP Server Improvements  
-**Branch**: master  
+**Date**: 2025-11-15
+**Feature**: SystemManager MCP Server Improvements
+**Branch**: master
 **Tasks Path**: specs/master/tasks.md
 
 ## **Implementation Strategy**
 
-**MVP Scope**: Phase 1 (Foundation Upgrade) - Core MCP SDK migration and structured data models  
-**Approach**: Incremental delivery with each phase independently testable  
+**MVP Scope**: Phase 1 (Foundation Upgrade) - Core MCP SDK migration and structured data models
+**Approach**: Incremental delivery with each phase independently testable
 **Testing Strategy**: Unit tests for core logic, contract tests for MCP protocol compliance
 
 ## **Dependency Graph**
@@ -83,9 +83,9 @@ Implement comprehensive system monitoring with structured data and proper error 
 
 ## **Summary**
 
-**Total Tasks**: 24 tasks across 3 phases  
-**Parallel Opportunities**: 16 tasks marked [P] can be executed in parallel  
-**MVP Scope**: Phases 1-3 (Foundation, Security, System Monitoring) - 24 tasks  
+**Total Tasks**: 24 tasks across 3 phases
+**Parallel Opportunities**: 16 tasks marked [P] can be executed in parallel
+**MVP Scope**: Phases 1-3 (Foundation, Security, System Monitoring) - 24 tasks
 **Estimated Timeline**: 2-3 weeks with parallel execution
 
 This task breakdown provides a comprehensive roadmap for implementing the SystemManager MCP Server improvements with clear dependencies, parallel execution opportunities, and independent test criteria for each phase.

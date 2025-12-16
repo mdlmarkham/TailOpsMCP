@@ -3,7 +3,7 @@ from datetime import datetime
 from src.models.containers import ContainerInfo
 from src.models.files import FileInfo, DirectoryListing
 from src.models.network import InterfaceStats, NetworkStatus
-from src.utils.toon import container_to_toon, directory_to_toon, network_to_toon, model_to_toon
+from src.utils.toon import container_to_toon, directory_to_toon, network_to_toon
 import json
 
 
@@ -26,7 +26,13 @@ def test_directory_toon_roundtrip():
 
 
 def test_network_toon_roundtrip():
-    iface = InterfaceStats(name="eth0", addresses=["10.0.0.1"], is_up=True, bytes_sent=1000, bytes_recv=2000)
+    iface = InterfaceStats(
+        name="eth0",
+        addresses=["10.0.0.1"],
+        is_up=True,
+        bytes_sent=1000,
+        bytes_recv=2000,
+    )
     ns = NetworkStatus(interfaces=[iface], timestamp=datetime.utcnow())
     s = network_to_toon(ns)
     obj = json.loads(s)

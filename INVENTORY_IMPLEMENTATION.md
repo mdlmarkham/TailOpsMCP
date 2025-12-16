@@ -1,7 +1,7 @@
 # Application Inventory & Multi-System Support - Implementation Summary
 
-**Date:** November 16, 2025  
-**Commit:** 7234289  
+**Date:** November 16, 2025
+**Commit:** 7234289
 **Feature:** Smart Inventory Management for LXC Applications
 
 ---
@@ -26,7 +26,7 @@ class SystemIdentity:
     container_id: Optional[str]      # Proxmox VMID/CTID, e.g., "103"
     container_type: Optional[str]    # "lxc", "vm", "bare-metal"
     mcp_server_name: Optional[str]   # Custom MCP instance name
-    
+
     def get_display_name(self) -> str:
         # Returns "dev1-103" or custom name
 ```
@@ -183,7 +183,7 @@ User: "Let's set up the inventory for this system"
 AI: "I'll help you set up the inventory. First, let me check the current identity..."
 [Calls get_inventory]
 
-AI: "This system is auto-detected as 'dev1-103' (LXC container). 
+AI: "This system is auto-detected as 'dev1-103' (LXC container).
      Now scanning for installed applications..."
 [Calls scan_installed_applications]
 
@@ -440,6 +440,6 @@ ssh root@dev1.tailf9480.ts.net "cat /var/lib/systemmanager/inventory.json"
 
 ---
 
-**Commit:** `7234289`  
-**Branch:** `master`  
+**Commit:** `7234289`
+**Branch:** `master`
 **Status:** ✅ Ready for deployment

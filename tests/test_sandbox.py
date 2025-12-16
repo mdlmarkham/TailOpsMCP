@@ -9,7 +9,7 @@ from src.utils.sandbox import (
     safe_list_directory,
     safe_read_file,
     is_running_as_root,
-    _env_allowed_paths
+    _env_allowed_paths,
 )
 
 
@@ -231,10 +231,10 @@ class TestIsRunningAsRoot:
         # Mock geteuid to return non-zero
         import src.utils.sandbox as sandbox_module
 
-        original_geteuid = os.geteuid if hasattr(os, 'geteuid') else None
+        original_geteuid = os.geteuid if hasattr(os, "geteuid") else None
 
         try:
-            if hasattr(os, 'geteuid'):
+            if hasattr(os, "geteuid"):
                 os.geteuid = lambda: 1000  # Non-root UID
                 result = sandbox_module.is_running_as_root()
                 assert result is False

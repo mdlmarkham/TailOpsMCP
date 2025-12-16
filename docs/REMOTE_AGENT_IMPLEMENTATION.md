@@ -126,33 +126,33 @@ result = await analyze_service_logs_across_fleet(
 ```yaml
 remote_agents:
   enabled: true
-  
+
   connection_pool:
     max_connections: 50
     connection_timeout: 30
     idle_timeout: 300
-  
+
   ssh_config:
     port: 22
     username: "root"
     key_path: "~/.ssh/id_rsa"
     verify_host_key: true
-  
+
   tailscale_config:
     enable_port_forwarding: true
     ssh_over_tailscale: true
-  
+
   retry_policy:
     max_retries: 3
     backoff_multiplier: 2
     max_backoff: 30
-  
+
   security:
     rate_limits:
       command_execution:
         max_per_hour: 100
         max_per_minute: 10
-    
+
     access_scopes:
       observe_only:
         operations: ["get_journald_logs", "get_service_status"]
@@ -211,7 +211,7 @@ targets:
 async def analyze_service_logs_across_fleet():
     # Get production targets
     targets = await inventory_service.get_targets_by_role("production")
-    
+
     # Collect logs from each target
     all_logs = []
     for target in targets:
@@ -221,7 +221,7 @@ async def analyze_service_logs_across_fleet():
             all_logs.extend(logs)
         except Exception as e:
             logger.warning(f"Failed to get logs from {target.name}: {e}")
-    
+
     # Analyze and correlate logs
     analysis = await log_analyzer.analyze_logs(all_logs)
     return analysis
@@ -232,12 +232,12 @@ async def analyze_service_logs_across_fleet():
 async def check_fleet_service_health():
     targets = await inventory_service.get_all_targets()
     health_report = []
-    
+
     for target in targets:
         try:
             connector = ServiceConnector(target, connection_manager)
             status = await connector.get_service_status("nginx")
-            
+
             health_report.append({
                 "target": target.name,
                 "service": "nginx",
@@ -250,7 +250,7 @@ async def check_fleet_service_health():
                 "target": target.name,
                 "error": str(e)
             })
-    
+
     return health_report
 ```
 
@@ -258,12 +258,12 @@ async def check_fleet_service_health():
 ```python
 async def restart_failing_containers():
     targets = await inventory_service.get_targets_by_role("production")
-    
+
     for target in targets:
         try:
             connector = DockerConnector(target, connection_manager)
             containers = await connector.list_containers()
-            
+
             for container in containers:
                 if container.status != "running":
                     logger.info(f"Restarting container {container.name} on {target.name}")
@@ -278,28 +278,28 @@ async def update_nginx_config(targets: List[Target], new_config: str):
     for target in targets:
         try:
             connector = FileConnector(target, connection_manager)
-            
+
             # Read current config
             current_config = await connector.read_file("/etc/nginx/nginx.conf")
-            
+
             # Create backup
             result = await connector.write_file(
-                "/etc/nginx/nginx.conf.backup", 
+                "/etc/nginx/nginx.conf.backup",
                 current_config
             )
-            
+
             # Write new config
             result = await connector.write_file(
                 "/etc/nginx/nginx.conf",
                 new_config,
                 create_backup=True
             )
-            
+
             if result.success:
                 # Restart nginx
                 service_connector = ServiceConnector(target, connection_manager)
                 await service_connector.restart_service("nginx")
-                
+
         except Exception as e:
             logger.error(f"Failed to update config on {target.name}: {e}")
 ```
@@ -310,7 +310,7 @@ async def update_nginx_config(targets: List[Target], new_config: str):
 ```python
 async def collect_logs_parallel(targets: List[Target], service: str):
     import asyncio
-    
+
     async def get_logs_for_target(target):
         try:
             connector = JournaldConnector(target, connection_manager)
@@ -318,16 +318,16 @@ async def collect_logs_parallel(targets: List[Target], service: str):
         except Exception as e:
             logger.error(f"Failed to get logs from {target.name}: {e}")
             return []
-    
+
     # Execute log collection in parallel
     tasks = [get_logs_for_target(target) for target in targets]
     results = await asyncio.gather(*tasks, return_exceptions=True)
-    
+
     all_logs = []
     for logs in results:
         if isinstance(logs, list):
             all_logs.extend(logs)
-    
+
     return all_logs
 ```
 
@@ -335,23 +335,23 @@ async def collect_logs_parallel(targets: List[Target], service: str):
 ```python
 async def automated_health_checks():
     targets = await inventory_service.get_targets_by_role("production")
-    
+
     # Define services to check
     critical_services = ["nginx", "redis", "postgres"]
-    
+
     for service in critical_services:
         health_report = await check_fleet_service_health()
-        
+
         # Check for unhealthy services
         unhealthy = [h for h in health_report if not h.get("healthy", False)]
-        
+
         if unhealthy:
             # Send alerts
             await alert_service.send_alert(
                 f"Service {service} unhealthy on {len(unhealthy)} targets",
                 targets=[h["target"] for h in unhealthy]
             )
-            
+
             # Attempt automatic recovery
             for health in unhealthy:
                 if "error" not in health:

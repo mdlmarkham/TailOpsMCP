@@ -388,19 +388,19 @@ from src.services.inventory_service import InventoryService
 
 async def monitor_fleet():
     service = InventoryService()
-    
+
     # Run initial discovery
     inventory = await service.run_full_discovery()
-    
+
     # Check for issues
     unhealthy = service.get_unhealthy_targets()
     stale = service.get_stale_targets()
-    
+
     if unhealthy:
         print(f"Found {len(unhealthy)} unhealthy targets")
     if stale:
         print(f"Found {len(stale)} stale targets")
-    
+
     # Generate health report
     health = await service.run_health_check()
     print(f"Fleet health score: {health['average_health_score']}")
@@ -418,31 +418,31 @@ from src.models.inventory_snapshot import SnapshotType
 
 async def detect_changes():
     service = InventoryService()
-    
+
     # Create pre-deployment snapshot
     pre_snapshot = await service.create_snapshot(
         name="pre-deployment",
         snapshot_type=SnapshotType.PRE_DEPLOYMENT
     )
-    
+
     # Perform deployment operations...
     print("Performing deployment...")
-    
+
     # Create post-deployment snapshot
     post_snapshot = await service.create_snapshot(
         name="post-deployment",
         snapshot_type=SnapshotType.POST_DEPLOYMENT
     )
-    
+
     # Compare snapshots
     diff = service.compare_snapshots(pre_snapshot.id, post_snapshot.id)
-    
+
     # Analyze changes
     summary = diff.get_change_summary()
     print(f"Changes detected: {summary['total_changes']}")
     print(f"Entities created: {summary['entities_created']}")
     print(f"Entities modified: {summary['entities_modified']}")
-    
+
     # Check health impact
     if diff.health_impact.get('critical_changes'):
         print("WARNING: Critical changes detected!")
@@ -459,31 +459,31 @@ from datetime import datetime, timedelta
 
 async def automated_monitoring():
     service = InventoryService()
-    
+
     while True:
         # Run health check
         health = await service.run_health_check()
-        
+
         # Check for critical issues
         if health['unhealthy_targets'] > 0:
             print(f"ALERT: {health['unhealthy_targets']} unhealthy targets")
-            
+
             # Get detailed unhealthy targets
             unhealthy = service.get_unhealthy_targets()
             for target in unhealthy[:5]:  # Top 5
                 print(f"  - {target.name}: {target.health_score}")
-        
+
         # Check for stale targets
         stale = service.get_stale_targets(hours=24)
         if stale:
             print(f"WARNING: {len(stale)} targets haven't been seen in 24 hours")
-        
+
         # Create hourly snapshot
 _snapshot(
             name=f"hourly        await service.create-{datetime.now().strftime('%Y%m%d-%H')}",
             description="Automated hourly snapshot"
         )
-        
+
         # Wait 1 hour
         await asyncio.sleep(3600)
 

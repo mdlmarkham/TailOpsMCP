@@ -92,7 +92,7 @@ Result:
 Container experiencing critical memory exhaustion leading to OOM killer termination
 
 🔍 Root Cause:
-Memory leak or insufficient memory allocation. Exit code 137 indicates OOM killer 
+Memory leak or insufficient memory allocation. Exit code 137 indicates OOM killer
 intervention.
 
 💡 Recommendations:
@@ -133,7 +133,7 @@ Recommendations:
 
 ### AI-Enhanced Analysis
 ```
-Summary: Container experiencing critical memory exhaustion leading to OOM killer 
+Summary: Container experiencing critical memory exhaustion leading to OOM killer
          termination with exit code 137
 
 Root Cause: Memory leak or insufficient memory allocation. The progressive increase

@@ -10,9 +10,8 @@ Implements basic CIS Linux benchmark checks for:
 """
 
 import asyncio
-import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class CISChecker:
@@ -59,7 +58,7 @@ class CISChecker:
             "warnings": warnings,
             "skipped": skipped,
             "score": round(score, 1),
-            "checks": checks
+            "checks": checks,
         }
 
     async def _run_basic_checks(self) -> List[Dict]:
@@ -94,8 +93,12 @@ class CISChecker:
         checks = await self._run_basic_checks()
 
         # Additional filesystem checks
-        checks.append(await self._check_file_permissions("/etc/ssh/sshd_config", "600", "1.2.1"))
-        checks.append(await self._check_file_permissions("/etc/crontab", "600", "1.2.2"))
+        checks.append(
+            await self._check_file_permissions("/etc/ssh/sshd_config", "600", "1.2.1")
+        )
+        checks.append(
+            await self._check_file_permissions("/etc/crontab", "600", "1.2.2")
+        )
 
         # Additional network checks
         checks.append(await self._check_firewall_enabled("3.2.1"))
@@ -118,7 +121,9 @@ class CISChecker:
 
     # Individual Check Methods
 
-    async def _check_file_permissions(self, file_path: str, expected_perms: str, check_id: str) -> Dict:
+    async def _check_file_permissions(
+        self, file_path: str, expected_perms: str, check_id: str
+    ) -> Dict:
         """Check file permissions."""
         try:
             path = Path(file_path)
@@ -129,7 +134,7 @@ class CISChecker:
                     "name": f"File Permissions: {file_path}",
                     "status": "SKIP",
                     "message": f"File not found: {file_path}",
-                    "remediation": None
+                    "remediation": None,
                 }
 
             # Get actual permissions
@@ -146,7 +151,9 @@ class CISChecker:
                 "expected": expected_perms,
                 "actual": actual_perms,
                 "message": f"Permissions: {actual_perms} (expected: {expected_perms} or more restrictive)",
-                "remediation": f"chmod {expected_perms} {file_path}" if not passed else None
+                "remediation": f"chmod {expected_perms} {file_path}"
+                if not passed
+                else None,
             }
 
         except Exception as e:
@@ -155,7 +162,7 @@ class CISChecker:
                 "name": f"File Permissions: {file_path}",
                 "status": "WARN",
                 "message": f"Error checking permissions: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_ssh_root_login(self, check_id: str) -> Dict:
@@ -169,20 +176,27 @@ class CISChecker:
                     "name": "SSH Root Login Disabled",
                     "status": "SKIP",
                     "message": "sshd_config not found",
-                    "remediation": None
+                    "remediation": None,
                 }
 
             content = ssh_config.read_text()
 
             # Check for PermitRootLogin no
-            passed = "PermitRootLogin no" in content or "PermitRootLogin without-password" in content
+            passed = (
+                "PermitRootLogin no" in content
+                or "PermitRootLogin without-password" in content
+            )
 
             return {
                 "id": check_id,
                 "name": "SSH Root Login Disabled",
                 "status": "PASS" if passed else "FAIL",
-                "message": "Root login is disabled" if passed else "Root login is enabled",
-                "remediation": "Add 'PermitRootLogin no' to /etc/ssh/sshd_config" if not passed else None
+                "message": "Root login is disabled"
+                if passed
+                else "Root login is enabled",
+                "remediation": "Add 'PermitRootLogin no' to /etc/ssh/sshd_config"
+                if not passed
+                else None,
             }
 
         except Exception as e:
@@ -191,7 +205,7 @@ class CISChecker:
                 "name": "SSH Root Login Disabled",
                 "status": "WARN",
                 "message": f"Error checking SSH config: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_ssh_password_auth(self, check_id: str) -> Dict:
@@ -205,7 +219,7 @@ class CISChecker:
                     "name": "SSH Password Authentication",
                     "status": "SKIP",
                     "message": "sshd_config not found",
-                    "remediation": None
+                    "remediation": None,
                 }
 
             content = ssh_config.read_text()
@@ -217,8 +231,12 @@ class CISChecker:
                 "id": check_id,
                 "name": "SSH Password Authentication",
                 "status": "PASS" if key_only else "WARN",
-                "message": "Key-only authentication" if key_only else "Password authentication enabled (consider key-only)",
-                "remediation": "Add 'PasswordAuthentication no' to /etc/ssh/sshd_config for maximum security" if not key_only else None
+                "message": "Key-only authentication"
+                if key_only
+                else "Password authentication enabled (consider key-only)",
+                "remediation": "Add 'PasswordAuthentication no' to /etc/ssh/sshd_config for maximum security"
+                if not key_only
+                else None,
             }
 
         except Exception as e:
@@ -227,7 +245,7 @@ class CISChecker:
                 "name": "SSH Password Authentication",
                 "status": "WARN",
                 "message": f"Error checking SSH config: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_ssh_permit_empty_passwords(self, check_id: str) -> Dict:
@@ -241,7 +259,7 @@ class CISChecker:
                     "name": "SSH Empty Passwords Disallowed",
                     "status": "SKIP",
                     "message": "sshd_config not found",
-                    "remediation": None
+                    "remediation": None,
                 }
 
             content = ssh_config.read_text()
@@ -252,8 +270,12 @@ class CISChecker:
                 "id": check_id,
                 "name": "SSH Empty Passwords Disallowed",
                 "status": "PASS" if passed else "FAIL",
-                "message": "Empty passwords disallowed" if passed else "Empty passwords may be allowed",
-                "remediation": "Add 'PermitEmptyPasswords no' to /etc/ssh/sshd_config" if not passed else None
+                "message": "Empty passwords disallowed"
+                if passed
+                else "Empty passwords may be allowed",
+                "remediation": "Add 'PermitEmptyPasswords no' to /etc/ssh/sshd_config"
+                if not passed
+                else None,
             }
 
         except Exception as e:
@@ -262,7 +284,7 @@ class CISChecker:
                 "name": "SSH Empty Passwords Disallowed",
                 "status": "WARN",
                 "message": f"Error checking SSH config: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_ip_forwarding(self, check_id: str) -> Dict:
@@ -280,7 +302,9 @@ class CISChecker:
                     "name": "IP Forwarding Disabled",
                     "status": "PASS" if passed else "WARN",
                     "message": f"IP forwarding is {'disabled' if passed else 'enabled'}",
-                    "remediation": "Set net.ipv4.ip_forward=0 in /etc/sysctl.conf" if not passed else None
+                    "remediation": "Set net.ipv4.ip_forward=0 in /etc/sysctl.conf"
+                    if not passed
+                    else None,
                 }
             else:
                 return {
@@ -288,7 +312,7 @@ class CISChecker:
                     "name": "IP Forwarding Disabled",
                     "status": "SKIP",
                     "message": "Cannot check IP forwarding",
-                    "remediation": None
+                    "remediation": None,
                 }
 
         except Exception as e:
@@ -297,7 +321,7 @@ class CISChecker:
                 "name": "IP Forwarding Disabled",
                 "status": "WARN",
                 "message": f"Error checking IP forwarding: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_icmp_redirects(self, check_id: str) -> Dict:
@@ -314,7 +338,9 @@ class CISChecker:
                     "name": "ICMP Redirects Disabled",
                     "status": "PASS" if passed else "WARN",
                     "message": f"ICMP redirects are {'disabled' if passed else 'enabled'}",
-                    "remediation": "Set net.ipv4.conf.all.accept_redirects=0 in /etc/sysctl.conf" if not passed else None
+                    "remediation": "Set net.ipv4.conf.all.accept_redirects=0 in /etc/sysctl.conf"
+                    if not passed
+                    else None,
                 }
             else:
                 return {
@@ -322,7 +348,7 @@ class CISChecker:
                     "name": "ICMP Redirects Disabled",
                     "status": "SKIP",
                     "message": "Cannot check ICMP redirects",
-                    "remediation": None
+                    "remediation": None,
                 }
 
         except Exception as e:
@@ -331,16 +357,17 @@ class CISChecker:
                 "name": "ICMP Redirects Disabled",
                 "status": "WARN",
                 "message": f"Error: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_auditd_installed(self, check_id: str) -> Dict:
         """Check if auditd is installed."""
         try:
             process = await asyncio.create_subprocess_exec(
-                "which", "auditd",
+                "which",
+                "auditd",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             stdout, stderr = await process.communicate()
@@ -350,8 +377,12 @@ class CISChecker:
                 "id": check_id,
                 "name": "Auditd Installed",
                 "status": "PASS" if passed else "WARN",
-                "message": "auditd is installed" if passed else "auditd is not installed",
-                "remediation": "Install auditd: apt-get install auditd (Debian/Ubuntu) or yum install audit (RHEL/CentOS)" if not passed else None
+                "message": "auditd is installed"
+                if passed
+                else "auditd is not installed",
+                "remediation": "Install auditd: apt-get install auditd (Debian/Ubuntu) or yum install audit (RHEL/CentOS)"
+                if not passed
+                else None,
             }
 
         except Exception as e:
@@ -360,7 +391,7 @@ class CISChecker:
                 "name": "Auditd Installed",
                 "status": "WARN",
                 "message": f"Error: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_root_uid(self, check_id: str) -> Dict:
@@ -382,7 +413,9 @@ class CISChecker:
                 "name": "Only Root Has UID 0",
                 "status": "PASS" if passed else "FAIL",
                 "message": f"Users with UID 0: {', '.join(uid_0_users)}",
-                "remediation": f"Remove UID 0 from non-root users: {', '.join([u for u in uid_0_users if u != 'root'])}" if not passed else None
+                "remediation": f"Remove UID 0 from non-root users: {', '.join([u for u in uid_0_users if u != 'root'])}"
+                if not passed
+                else None,
             }
 
         except Exception as e:
@@ -391,7 +424,7 @@ class CISChecker:
                 "name": "Only Root Has UID 0",
                 "status": "WARN",
                 "message": f"Error: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_password_complexity(self, check_id: str) -> Dict:
@@ -406,7 +439,7 @@ class CISChecker:
                     "name": "Password Complexity Configured",
                     "status": "SKIP",
                     "message": "PAM config not found",
-                    "remediation": None
+                    "remediation": None,
                 }
 
             content = pam_file.read_text()
@@ -416,8 +449,12 @@ class CISChecker:
                 "id": check_id,
                 "name": "Password Complexity Configured",
                 "status": "PASS" if passed else "WARN",
-                "message": "Password complexity is enforced" if passed else "Password complexity may not be enforced",
-                "remediation": "Configure pam_pwquality in /etc/pam.d/common-password" if not passed else None
+                "message": "Password complexity is enforced"
+                if passed
+                else "Password complexity may not be enforced",
+                "remediation": "Configure pam_pwquality in /etc/pam.d/common-password"
+                if not passed
+                else None,
             }
 
         except Exception as e:
@@ -426,7 +463,7 @@ class CISChecker:
                 "name": "Password Complexity Configured",
                 "status": "WARN",
                 "message": f"Error: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_firewall_enabled(self, check_id: str) -> Dict:
@@ -434,9 +471,10 @@ class CISChecker:
         try:
             # Check UFW
             process = await asyncio.create_subprocess_exec(
-                "ufw", "status",
+                "ufw",
+                "status",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             stdout, stderr = await process.communicate()
@@ -449,8 +487,12 @@ class CISChecker:
                     "id": check_id,
                     "name": "Firewall Enabled",
                     "status": "PASS" if passed else "FAIL",
-                    "message": "Firewall is active" if passed else "Firewall is inactive",
-                    "remediation": "Enable firewall: ufw enable" if not passed else None
+                    "message": "Firewall is active"
+                    if passed
+                    else "Firewall is inactive",
+                    "remediation": "Enable firewall: ufw enable"
+                    if not passed
+                    else None,
                 }
             else:
                 return {
@@ -458,7 +500,7 @@ class CISChecker:
                     "name": "Firewall Enabled",
                     "status": "WARN",
                     "message": "Cannot determine firewall status",
-                    "remediation": "Install and configure a firewall (ufw recommended)"
+                    "remediation": "Install and configure a firewall (ufw recommended)",
                 }
 
         except Exception as e:
@@ -467,7 +509,7 @@ class CISChecker:
                 "name": "Firewall Enabled",
                 "status": "WARN",
                 "message": f"Error: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_unnecessary_services(self, check_id: str) -> Dict:
@@ -478,7 +520,7 @@ class CISChecker:
             "name": "Unnecessary Services Check",
             "status": "SKIP",
             "message": "Manual review required",
-            "remediation": "Review running services with 'systemctl list-units --type=service'"
+            "remediation": "Review running services with 'systemctl list-units --type=service'",
         }
 
     async def _check_kernel_parameters(self, check_id: str) -> Dict:
@@ -488,7 +530,7 @@ class CISChecker:
             "name": "Kernel Security Parameters",
             "status": "SKIP",
             "message": "Manual review required",
-            "remediation": "Review /etc/sysctl.conf for security parameters"
+            "remediation": "Review /etc/sysctl.conf for security parameters",
         }
 
     async def _check_sudo_configuration(self, check_id: str) -> Dict:
@@ -502,7 +544,7 @@ class CISChecker:
                     "name": "Sudo Configuration",
                     "status": "SKIP",
                     "message": "sudoers file not found",
-                    "remediation": None
+                    "remediation": None,
                 }
 
             # Check permissions
@@ -515,7 +557,7 @@ class CISChecker:
                 "name": "Sudo Configuration",
                 "status": "PASS" if passed else "WARN",
                 "message": f"/etc/sudoers permissions: {perms}",
-                "remediation": "chmod 440 /etc/sudoers" if not passed else None
+                "remediation": "chmod 440 /etc/sudoers" if not passed else None,
             }
 
         except Exception as e:
@@ -524,7 +566,7 @@ class CISChecker:
                 "name": "Sudo Configuration",
                 "status": "WARN",
                 "message": f"Error: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }
 
     async def _check_file_integrity_monitoring(self, check_id: str) -> Dict:
@@ -532,9 +574,10 @@ class CISChecker:
         try:
             # Check if AIDE is installed
             process = await asyncio.create_subprocess_exec(
-                "which", "aide",
+                "which",
+                "aide",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             stdout, stderr = await process.communicate()
@@ -544,8 +587,12 @@ class CISChecker:
                 "id": check_id,
                 "name": "File Integrity Monitoring",
                 "status": "PASS" if passed else "WARN",
-                "message": "AIDE is installed" if passed else "File integrity monitoring not configured",
-                "remediation": "Install AIDE: apt-get install aide (Debian/Ubuntu)" if not passed else None
+                "message": "AIDE is installed"
+                if passed
+                else "File integrity monitoring not configured",
+                "remediation": "Install AIDE: apt-get install aide (Debian/Ubuntu)"
+                if not passed
+                else None,
             }
 
         except Exception as e:
@@ -554,5 +601,5 @@ class CISChecker:
                 "name": "File Integrity Monitoring",
                 "status": "WARN",
                 "message": f"Error: {str(e)}",
-                "remediation": None
+                "remediation": None,
             }

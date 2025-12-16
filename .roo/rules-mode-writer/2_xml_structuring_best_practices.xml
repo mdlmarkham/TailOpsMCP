@@ -26,7 +26,7 @@
         Always use <step> for workflow steps, not sometimes <action> or <task>
       </example>
     </principle>
-    
+
     <principle name="semantic_naming">
       <description>Tag names should clearly describe their content</description>
       <good_examples>

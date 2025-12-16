@@ -1,4 +1,5 @@
 """System administration tools for TailOpsMCP."""
+
 import logging
 from typing import Literal
 from fastmcp import FastMCP
@@ -8,6 +9,7 @@ from src.server.utils import format_error
 
 logger = logging.getLogger(__name__)
 
+
 def register_tools(mcp: FastMCP):
     """Register system administration tools with MCP instance."""
 
@@ -16,7 +18,7 @@ def register_tools(mcp: FastMCP):
     async def manage_packages(
         action: Literal["check", "update", "install"],
         package_name: str = None,
-        auto_approve: bool = False
+        auto_approve: bool = False,
     ) -> dict:
         """Manage system packages: check updates, update all, or install specific package.
 
@@ -36,7 +38,9 @@ def register_tools(mcp: FastMCP):
             elif action == "install":
                 if not package_name:
                     return {"error": "package_name required for install action"}
-                result = await deps.package_manager.install_package(package_name, auto_approve)
+                result = await deps.package_manager.install_package(
+                    package_name, auto_approve
+                )
             else:
                 return {"error": f"Invalid action: {action}"}
             return result

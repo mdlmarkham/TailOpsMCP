@@ -24,9 +24,9 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("test_connectivity")
     async def test_connectivity(
-        target: str = "local",
         host: str,
         port: int,
+        target: str = "local",
         timeout: int = 5
     ) -> dict:
         """Test connectivity to a specific host and port.
@@ -50,7 +50,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute connectivity test
             result = await executor.execute(
                 command="test_connectivity",
@@ -77,7 +77,7 @@ def register_tools(mcp: FastMCP):
                     "error": result.error,
                     "timestamp": datetime.now().isoformat()
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="test_connectivity",
@@ -114,7 +114,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute port scan
             result = await executor.execute(
                 command="scan_ports",
@@ -139,7 +139,7 @@ def register_tools(mcp: FastMCP):
                     "error": result.error,
                     "timestamp": datetime.now().isoformat()
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="scan_ports",
@@ -173,7 +173,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute network status query
             result = await executor.execute(
                 command="network_status",
@@ -185,7 +185,7 @@ def register_tools(mcp: FastMCP):
                 return format_response(result.output, format)
             else:
                 return format_error(result.error, "get_network_status")
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="get_network_status",
@@ -217,7 +217,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute network I/O query
             result = await executor.execute(
                 command="network_io_counters",
@@ -229,7 +229,7 @@ def register_tools(mcp: FastMCP):
                 return result.output
             else:
                 return format_error(result.error, "get_network_io_counters")
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="get_network_io_counters",
@@ -277,7 +277,7 @@ def register_tools(mcp: FastMCP):
                 return await scan_ports(target, range, timeout)
             else:
                 return {"success": False, "error": f"Invalid action: {action}"}
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="network_operations",

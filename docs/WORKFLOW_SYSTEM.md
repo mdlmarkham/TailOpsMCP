@@ -237,13 +237,13 @@ workflows:
     description: "Custom operational workflow"
     category: "provisioning"
     version: "1.0.0"
-    
+
     parameters:
       environment_name:
         type: "string"
         required: true
         description: "Environment name"
-      
+
       container_count:
         type: "integer"
         required: true
@@ -251,19 +251,19 @@ workflows:
         validation:
           min: 1
           max: 100
-    
+
     steps:
       - id: "validate"
         name: "Validate Prerequisites"
         type: "validation"
         timeout_minutes: 5
-      
+
       - id: "provision"
         name: "Provision Environment"
         type: "container_operations"
         timeout_minutes: 30
         dependencies: ["validate"]
-    
+
     rollback_plan:
       enabled: true
       actions:

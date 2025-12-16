@@ -5,19 +5,17 @@ Implements local execution for operations on the gateway itself,
 providing secure local operations without network overhead.
 """
 
-import asyncio
 import logging
 import os
 import subprocess
 import json
 import shutil
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from datetime import datetime
 from pathlib import Path
 
 from src.models.policy_models import OperationType
 from src.models.execution import ExecutionResult, ExecutionStatus, ExecutionSeverity
-from src.models.fleet_inventory import ConnectionMethod, Runtime
 from src.services.execution_factory import RemoteExecutionBackend
 
 
@@ -26,26 +24,28 @@ logger = logging.getLogger(__name__)
 
 class LocalExecutionBackend(RemoteExecutionBackend):
     """Local execution backend for gateway operations."""
-    
+
     def __init__(self, target_config: Dict[str, Any]):
         """Initialize local execution backend.
-        
+
         Args:
             target_config: Target configuration (local gateway)
         """
         super().__init__(target_config)
-        
+
         # Local execution settings
-        self.working_directory = target_config.get("working_directory", "/tmp/systemmanager")
+        self.working_directory = target_config.get(
+            "working_directory", "/tmp/systemmanager"
+        )
         self.sudo_enabled = target_config.get("sudo_enabled", True)
         self.user = target_config.get("user", os.getenv("USER", "root"))
-        
+
         # Ensure working directory exists
         Path(self.working_directory).mkdir(parents=True, exist_ok=True)
-        
+
         # Capability mappings
         self._setup_capability_mappings()
-    
+
     def _setup_capability_mappings(self):
         """Setup capability to command mappings."""
         self.capability_handlers = {
@@ -54,7 +54,6 @@ class LocalExecutionBackend(RemoteExecutionBackend):
             OperationType.SERVICE_START: self._handle_service_start,
             OperationType.SERVICE_STOP: self._handle_service_stop,
             OperationType.SERVICE_STATUS: self._handle_service_status,
-            
             # Container operations (Docker/Podman)
             OperationType.CONTAINER_CREATE: self._handle_container_create,
             OperationType.CONTAINER_DELETE: self._handle_container_delete,
@@ -62,71 +61,67 @@ class LocalExecutionBackend(RemoteExecutionBackend):
             OperationType.CONTAINER_STOP: self._handle_container_stop,
             OperationType.CONTAINER_RESTART: self._handle_container_restart,
             OperationType.CONTAINER_INSPECT: self._handle_container_inspect,
-            
             # Stack operations (Docker Compose)
             OperationType.STACK_DEPLOY: self._handle_stack_deploy,
             OperationType.STACK_REMOVE: self._handle_stack_remove,
             OperationType.STACK_UPDATE: self._handle_stack_update,
-            
             # File operations
             OperationType.FILE_READ: self._handle_file_read,
             OperationType.FILE_WRITE: self._handle_file_write,
             OperationType.FILE_DELETE: self._handle_file_delete,
             OperationType.FILE_COPY: self._handle_file_copy,
-            
             # Network operations
             OperationType.NETWORK_SCAN: self._handle_network_scan,
             OperationType.NETWORK_TEST: self._handle_network_test,
             OperationType.NETWORK_STATUS: self._handle_network_status,
-            
             # Package operations
             OperationType.PACKAGE_UPDATE: self._handle_package_update,
             OperationType.PACKAGE_INSTALL: self._handle_package_install,
             OperationType.PACKAGE_REMOVE: self._handle_package_remove,
-            OperationType.PACKAGE_LIST: self._handle_package_list
+            OperationType.PACKAGE_LIST: self._handle_package_list,
         }
-    
+
     def get_supported_capabilities(self) -> List[OperationType]:
         """Get list of capabilities supported by local backend."""
         return list(self.capability_handlers.keys())
-    
+
     async def connect(self) -> bool:
         """Local backend doesn't need connection establishment."""
         # Verify we can execute commands locally
         try:
             result = subprocess.run(
-                ["whoami"], 
-                capture_output=True, 
-                text=True, 
-                timeout=5
+                ["whoami"], capture_output=True, text=True, timeout=5
             )
             return result.returncode == 0
         except Exception as e:
             logger.error(f"Local execution test failed: {e}")
             return False
-    
+
     async def disconnect(self):
         """Local backend doesn't need explicit disconnection."""
         pass
-    
+
     def is_connected(self) -> bool:
         """Local backend is always 'connected'."""
         return True
-    
+
     async def test_connection(self) -> ExecutionResult:
         """Test local execution capabilities."""
         start_time = datetime.now()
-        
+
         try:
             # Test basic command execution
             result = subprocess.run(
                 ["echo", "local_connection_test"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
-            
-            if result.returncode == 0 and result.stdout.strip() == "local_connection_test":
+
+            if (
+                result.returncode == 0
+                and result.stdout.strip() == "local_connection_test"
+            ):
                 return ExecutionResult(
                     status=ExecutionStatus.SUCCESS,
                     success=True,
@@ -137,8 +132,8 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                         "connection_method": "local",
                         "test_type": "connection",
                         "working_directory": self.working_directory,
-                        "user": self.user
-                    }
+                        "user": self.user,
+                    },
                 )
             else:
                 return ExecutionResult(
@@ -146,24 +141,27 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                     success=False,
                     severity=ExecutionSeverity.ERROR,
                     error=f"Local execution test failed: {result.stderr}",
-                    duration=(datetime.now() - start_time).total_seconds()
+                    duration=(datetime.now() - start_time).total_seconds(),
                 )
-                
+
         except Exception as e:
             return ExecutionResult(
                 status=ExecutionStatus.EXECUTION_ERROR,
                 success=False,
                 severity=ExecutionSeverity.ERROR,
                 error=f"Local execution test failed: {str(e)}",
-                duration=(datetime.now() - start_time).total_seconds()
+                duration=(datetime.now() - start_time).total_seconds(),
             )
-    
-    async def execute_capability(self, capability: OperationType, 
-                               parameters: Dict[str, Any], 
-                               target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def execute_capability(
+        self,
+        capability: OperationType,
+        parameters: Dict[str, Any],
+        target_info: Dict[str, Any],
+    ) -> ExecutionResult:
         """Execute capability operation locally."""
         start_time = datetime.now()
-        
+
         try:
             # Get capability handler
             if capability not in self.capability_handlers:
@@ -172,186 +170,214 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                     success=False,
                     severity=ExecutionSeverity.ERROR,
                     error=f"Capability {capability} not supported by local backend",
-                    duration=(datetime.now() - start_time).total_seconds()
+                    duration=(datetime.now() - start_time).total_seconds(),
                 )
-            
+
             # Execute capability
             handler = self.capability_handlers[capability]
             result = await handler(parameters, target_info)
-            
+
             return result
-            
+
         except Exception as e:
             return ExecutionResult(
                 status=ExecutionStatus.EXECUTION_ERROR,
                 success=False,
                 severity=ExecutionSeverity.ERROR,
                 error=f"Local capability execution failed: {str(e)}",
-                duration=(datetime.now() - start_time).total_seconds()
+                duration=(datetime.now() - start_time).total_seconds(),
             )
-    
+
     # Service operation handlers
-    
-    async def _handle_service_restart(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_service_restart(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle service restart operation."""
         service_name = parameters.get("service_name")
         if not service_name:
             return self._create_error_result("Service name is required")
-        
+
         cmd = ["sudo", "systemctl", "restart", service_name]
         return await self._execute_command(cmd, parameters.get("timeout", 60))
-    
-    async def _handle_service_start(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_service_start(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle service start operation."""
         service_name = parameters.get("service_name")
         if not service_name:
             return self._create_error_result("Service name is required")
-        
+
         cmd = ["sudo", "systemctl", "start", service_name]
         return await self._execute_command(cmd, parameters.get("timeout", 30))
-    
-    async def _handle_service_stop(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_service_stop(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle service stop operation."""
         service_name = parameters.get("service_name")
         if not service_name:
             return self._create_error_result("Service name is required")
-        
+
         cmd = ["sudo", "systemctl", "stop", service_name]
         return await self._execute_command(cmd, parameters.get("timeout", 30))
-    
-    async def _handle_service_status(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_service_status(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle service status operation."""
         service_name = parameters.get("service_name")
         if not service_name:
             return self._create_error_result("Service name is required")
-        
+
         cmd = ["sudo", "systemctl", "status", service_name, "--no-pager"]
         return await self._execute_command(cmd, parameters.get("timeout", 10))
-    
+
     # Container operation handlers
-    
-    async def _handle_container_create(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_container_create(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle container creation operation."""
         template = parameters.get("template")
         name = parameters.get("name")
         if not template or not name:
             return self._create_error_result("Template and name are required")
-        
+
         # Check if Docker is available
         docker_check = await self._execute_command(["which", "docker"])
         if not docker_check.success:
             return self._create_error_result("Docker is not available")
-        
+
         # Create container using Docker
         cmd = ["docker", "create", "--name", name, template]
         return await self._execute_command(cmd, parameters.get("timeout", 180))
-    
-    async def _handle_container_delete(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_container_delete(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle container deletion operation."""
         container_name = parameters.get("container_name")
         force = parameters.get("force", False)
         if not container_name:
             return self._create_error_result("Container name is required")
-        
+
         cmd = ["docker", "rm"]
         if force:
             cmd.append("-f")
         cmd.append(container_name)
-        
+
         return await self._execute_command(cmd, parameters.get("timeout", 60))
-    
-    async def _handle_container_start(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_container_start(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle container start operation."""
         container_name = parameters.get("container_name")
         if not container_name:
             return self._create_error_result("Container name is required")
-        
+
         cmd = ["docker", "start", container_name]
         return await self._execute_command(cmd, parameters.get("timeout", 60))
-    
-    async def _handle_container_stop(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_container_stop(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle container stop operation."""
         container_name = parameters.get("container_name")
         if not container_name:
             return self._create_error_result("Container name is required")
-        
+
         cmd = ["docker", "stop", container_name]
         return await self._execute_command(cmd, parameters.get("timeout", 60))
-    
-    async def _handle_container_restart(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_container_restart(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle container restart operation."""
         container_name = parameters.get("container_name")
         if not container_name:
             return self._create_error_result("Container name is required")
-        
+
         cmd = ["docker", "restart", container_name]
         return await self._execute_command(cmd, parameters.get("timeout", 90))
-    
-    async def _handle_container_inspect(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_container_inspect(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle container inspection operation."""
         container_name = parameters.get("container_name")
         if not container_name:
             return self._create_error_result("Container name is required")
-        
+
         cmd = ["docker", "inspect", container_name]
         return await self._execute_command(cmd, parameters.get("timeout", 30))
-    
+
     # Stack operation handlers
-    
-    async def _handle_stack_deploy(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_stack_deploy(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle stack deployment operation."""
         stack_name = parameters.get("stack_name")
         config = parameters.get("config")
         if not stack_name:
             return self._create_error_result("Stack name is required")
-        
+
         # Write config to temporary file
         config_file = Path(self.working_directory) / f"{stack_name}_config.json"
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(config or {}, f)
-        
+
         cmd = ["docker", "stack", "deploy", "-c", str(config_file), stack_name]
         result = await self._execute_command(cmd, parameters.get("timeout", 300))
-        
+
         # Cleanup config file
         try:
             config_file.unlink(missing_ok=True)
         except Exception:
             pass
-        
+
         return result
-    
-    async def _handle_stack_remove(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_stack_remove(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle stack removal operation."""
         stack_name = parameters.get("stack_name")
         if not stack_name:
             return self._create_error_result("Stack name is required")
-        
+
         cmd = ["docker", "stack", "rm", stack_name]
         return await self._execute_command(cmd, parameters.get("timeout", 180))
-    
-    async def _handle_stack_update(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_stack_update(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle stack update operation."""
         stack_name = parameters.get("stack_name")
         if not stack_name:
             return self._create_error_result("Stack name is required")
-        
+
         cmd = ["docker", "stack", "deploy", "--update-delay", "10s", stack_name]
         return await self._execute_command(cmd, parameters.get("timeout", 240))
-    
+
     # File operation handlers
-    
-    async def _handle_file_read(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_file_read(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle file read operation."""
         file_path = parameters.get("file_path")
         encoding = parameters.get("encoding", "utf-8")
         if not file_path:
             return self._create_error_result("File path is required")
-        
+
         try:
-            with open(file_path, 'r', encoding=encoding) as f:
+            with open(file_path, "r", encoding=encoding) as f:
                 content = f.read()
-            
+
             return ExecutionResult(
                 status=ExecutionStatus.SUCCESS,
                 success=True,
@@ -362,26 +388,28 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                     "capability": OperationType.FILE_READ.value,
                     "file_path": file_path,
                     "encoding": encoding,
-                    "file_size": len(content)
-                }
+                    "file_size": len(content),
+                },
             )
         except Exception as e:
             return self._create_error_result(f"Failed to read file: {str(e)}")
-    
-    async def _handle_file_write(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_file_write(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle file write operation."""
         file_path = parameters.get("file_path")
         content = parameters.get("content")
         if not file_path or content is None:
             return self._create_error_result("File path and content are required")
-        
+
         try:
             # Ensure directory exists
             Path(file_path).parent.mkdir(parents=True, exist_ok=True)
-            
-            with open(file_path, 'w') as f:
+
+            with open(file_path, "w") as f:
                 f.write(content)
-            
+
             return ExecutionResult(
                 status=ExecutionStatus.SUCCESS,
                 success=True,
@@ -391,18 +419,20 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                 metadata={
                     "capability": OperationType.FILE_WRITE.value,
                     "file_path": file_path,
-                    "bytes_written": len(content)
-                }
+                    "bytes_written": len(content),
+                },
             )
         except Exception as e:
             return self._create_error_result(f"Failed to write file: {str(e)}")
-    
-    async def _handle_file_delete(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_file_delete(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle file delete operation."""
         file_path = parameters.get("file_path")
         if not file_path:
             return self._create_error_result("File path is required")
-        
+
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
@@ -411,7 +441,7 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                     success=True,
                     severity=ExecutionSeverity.INFO,
                     output=f"Successfully deleted {file_path}",
-                    duration=0.0
+                    duration=0.0,
                 )
             else:
                 return ExecutionResult(
@@ -419,18 +449,22 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                     success=True,
                     severity=ExecutionSeverity.WARNING,
                     output=f"File {file_path} does not exist",
-                    duration=0.0
+                    duration=0.0,
                 )
         except Exception as e:
             return self._create_error_result(f"Failed to delete file: {str(e)}")
-    
-    async def _handle_file_copy(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_file_copy(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle file copy operation."""
         source_path = parameters.get("source_path")
         dest_path = parameters.get("dest_path")
         if not source_path or not dest_path:
-            return self._create_error_result("Source and destination paths are required")
-        
+            return self._create_error_result(
+                "Source and destination paths are required"
+            )
+
         try:
             shutil.copy2(source_path, dest_path)
             return ExecutionResult(
@@ -438,99 +472,129 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                 success=True,
                 severity=ExecutionSeverity.INFO,
                 output=f"Successfully copied {source_path} to {dest_path}",
-                duration=0.0
+                duration=0.0,
             )
         except Exception as e:
             return self._create_error_result(f"Failed to copy file: {str(e)}")
-    
+
     # Network operation handlers
-    
-    async def _handle_network_scan(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_network_scan(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle network scan operation."""
         target_host = parameters.get("host", "192.168.1.0/24")
         port = parameters.get("port")
-        
+
         cmd = ["nmap"]
         if port:
             cmd.extend(["-p", str(port)])
         cmd.append(target_host)
-        
+
         return await self._execute_command(cmd, parameters.get("timeout", 120))
-    
-    async def _handle_network_test(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_network_test(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle network test operation."""
         host = parameters.get("host")
         port = parameters.get("port")
-        
+
         if port:
             cmd = ["nc", "-z", "-v", host, str(port)]
         else:
             cmd = ["ping", "-c", "4", host]
-        
+
         return await self._execute_command(cmd, parameters.get("timeout", 30))
-    
-    async def _handle_network_status(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_network_status(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle network status operation."""
         cmd = ["ip", "addr", "show", "&&", "ip", "route", "show"]
         return await self._execute_command(cmd, parameters.get("timeout", 15))
-    
+
     # Package operation handlers
-    
-    async def _handle_package_update(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_package_update(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle package update operation."""
         package_name = parameters.get("package_name")
-        
+
         if package_name:
-            cmd = ["sudo", "apt", "update", "&&", "sudo", "apt", "install", "--upgrade", package_name]
+            cmd = [
+                "sudo",
+                "apt",
+                "update",
+                "&&",
+                "sudo",
+                "apt",
+                "install",
+                "--upgrade",
+                package_name,
+            ]
         else:
             cmd = ["sudo", "apt", "update", "&&", "apt", "list", "--upgradable"]
-        
+
         return await self._execute_command(cmd, parameters.get("timeout", 300))
-    
-    async def _handle_package_install(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_package_install(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle package installation operation."""
         package_name = parameters.get("package_name")
         if not package_name:
             return self._create_error_result("Package name is required")
-        
+
         cmd = ["sudo", "apt", "install", package_name]
         return await self._execute_command(cmd, parameters.get("timeout", 180))
-    
-    async def _handle_package_remove(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_package_remove(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle package removal operation."""
         package_name = parameters.get("package_name")
         if not package_name:
             return self._create_error_result("Package name is required")
-        
+
         cmd = ["sudo", "apt", "remove", package_name]
         return await self._execute_command(cmd, parameters.get("timeout", 120))
-    
-    async def _handle_package_list(self, parameters: Dict[str, Any], target_info: Dict[str, Any]) -> ExecutionResult:
+
+    async def _handle_package_list(
+        self, parameters: Dict[str, Any], target_info: Dict[str, Any]
+    ) -> ExecutionResult:
         """Handle package listing operation."""
         cmd = ["dpkg", "-l", "|", "grep", "^ii"]
         return await self._execute_command(cmd, parameters.get("timeout", 60))
-    
+
     # Helper methods
-    
-    async def _execute_command(self, cmd: List[str], timeout: int = 300) -> ExecutionResult:
+
+    async def _execute_command(
+        self, cmd: List[str], timeout: int = 300
+    ) -> ExecutionResult:
         """Execute a command and return execution result."""
         start_time = datetime.now()
-        
+
         try:
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 timeout=timeout,
-                cwd=self.working_directory
+                cwd=self.working_directory,
             )
-            
+
             duration = (datetime.now() - start_time).total_seconds()
-            
+
             return ExecutionResult(
-                status=ExecutionStatus.SUCCESS if result.returncode == 0 else ExecutionStatus.EXECUTION_ERROR,
+                status=ExecutionStatus.SUCCESS
+                if result.returncode == 0
+                else ExecutionStatus.EXECUTION_ERROR,
                 success=result.returncode == 0,
-                severity=ExecutionSeverity.INFO if result.returncode == 0 else ExecutionSeverity.ERROR,
+                severity=ExecutionSeverity.INFO
+                if result.returncode == 0
+                else ExecutionSeverity.ERROR,
                 exit_code=result.returncode,
                 output=result.stdout,
                 error=result.stderr if result.stderr else None,
@@ -538,10 +602,10 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                 metadata={
                     "command": " ".join(cmd),
                     "working_directory": self.working_directory,
-                    "user": self.user
-                }
+                    "user": self.user,
+                },
             )
-            
+
         except subprocess.TimeoutExpired:
             duration = (datetime.now() - start_time).total_seconds()
             return ExecutionResult(
@@ -550,10 +614,7 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                 severity=ExecutionSeverity.ERROR,
                 error=f"Command timed out after {timeout} seconds",
                 duration=duration,
-                metadata={
-                    "command": " ".join(cmd),
-                    "timeout": timeout
-                }
+                metadata={"command": " ".join(cmd), "timeout": timeout},
             )
         except Exception as e:
             duration = (datetime.now() - start_time).total_seconds()
@@ -563,12 +624,9 @@ class LocalExecutionBackend(RemoteExecutionBackend):
                 severity=ExecutionSeverity.ERROR,
                 error=f"Command execution failed: {str(e)}",
                 duration=duration,
-                metadata={
-                    "command": " ".join(cmd),
-                    "error_type": type(e).__name__
-                }
+                metadata={"command": " ".join(cmd), "error_type": type(e).__name__},
             )
-    
+
     def _create_error_result(self, error_message: str) -> ExecutionResult:
         """Create an error execution result."""
         return ExecutionResult(
@@ -576,5 +634,5 @@ class LocalExecutionBackend(RemoteExecutionBackend):
             success=False,
             severity=ExecutionSeverity.ERROR,
             error=error_message,
-            duration=0.0
+            duration=0.0,
         )

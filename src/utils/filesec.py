@@ -9,8 +9,7 @@ Implements path restrictions and size limits to prevent:
 """
 
 import os
-from typing import List, Set, Optional
-from pathlib import Path
+from typing import List, Optional
 
 
 # Default allowed paths (can be overridden via config)
@@ -45,48 +44,51 @@ ALWAYS_DENY_PATTERNS = [
 MAX_FILE_READ_SIZE = 10 * 1024 * 1024
 
 
-def is_path_allowed(path: str, allowed_paths: Optional[List[str]] = None) -> tuple[bool, str]:
+def is_path_allowed(
+    path: str, allowed_paths: Optional[List[str]] = None
+) -> tuple[bool, str]:
     """Check if a file path is allowed for access.
-    
+
     Args:
         path: Path to check
         allowed_paths: List of allowed path prefixes (default: DEFAULT_ALLOWED_PATHS)
-        
+
     Returns:
         (allowed: bool, reason: str)
     """
     if allowed_paths is None:
         allowed_paths = DEFAULT_ALLOWED_PATHS
-    
+
     try:
         # Resolve to absolute path and symlinks to prevent traversal
         resolved_path = os.path.realpath(path)  # This resolves symlinks
-        
+
         # Check against deny patterns first
         from fnmatch import fnmatch
+
         for pattern in ALWAYS_DENY_PATTERNS:
             if fnmatch(resolved_path, pattern):
                 return False, f"Path matches deny pattern: {pattern}"
-        
+
         # Check if path starts with any allowed prefix (using resolved paths)
         for allowed in allowed_paths:
             allowed_resolved = os.path.realpath(allowed)
             if resolved_path.startswith(allowed_resolved):
                 return True, "Path allowed"
-        
+
         return False, f"Path not in allowed list: {allowed_paths}"
-        
+
     except Exception as e:
         return False, f"Path validation error: {e}"
 
 
 def check_file_size(path: str, max_size: int = MAX_FILE_READ_SIZE) -> tuple[bool, str]:
     """Check if file size is within limits.
-    
+
     Args:
         path: Path to file
         max_size: Maximum allowed size in bytes
-        
+
     Returns:
         (allowed: bool, reason: str)
     """
@@ -101,15 +103,15 @@ def check_file_size(path: str, max_size: int = MAX_FILE_READ_SIZE) -> tuple[bool
 
 def sanitize_path(path: str) -> str:
     """Sanitize a file path to prevent traversal attacks.
-    
+
     Args:
         path: Input path
-        
+
     Returns:
         Sanitized absolute path
     """
     # Remove null bytes
-    path = path.replace('\x00', '')
-    
+    path = path.replace("\x00", "")
+
     # Resolve to absolute path
     return os.path.abspath(path)

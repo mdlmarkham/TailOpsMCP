@@ -36,7 +36,7 @@ Your existing `tailscale-service.json`:
 ```bash
 # Navigate to https://login.tailscale.com/admin/services
 # Click "Advertise" → "Define a Service"
-# 
+#
 # Name: systemmanager-mcp
 # Description: TailOpsMCP Server - Remote system management and monitoring
 # Endpoints: tcp:8080
@@ -224,7 +224,7 @@ def test_srv_discovery():
     """Test DNS SRV record discovery"""
     if not HAS_DNS:
         return False
-    
+
     print("\n🔍 Testing DNS SRV discovery...")
     try:
         answers = dns.resolver.resolve('_systemmanager-mcp._tcp.yourtailnet.ts.net', 'SRV')
@@ -245,13 +245,13 @@ def test_direct_ip():
 if __name__ == "__main__":
     print("🧪 Tailscale Service Discovery Test\n")
     print("=" * 60)
-    
+
     results = {
         "MagicDNS": test_magicdns(),
         "SRV Records": test_srv_discovery(),
         "TailVIP": test_direct_ip()
     }
-    
+
     print("\n" + "=" * 60)
     print("📊 Results:")
     for method, result in results.items():

@@ -12,26 +12,26 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Primary development server"
-    
+
     connection:
       host: "192.168.1.100"  # Update with your server IP
       username: "admin"      # Update with your username
       key_path: "${SSH_KEY_LOCAL_SERVER}"  # Set this environment variable
       port: 22
-      
+
     capabilities:
       # Basic read-only operations
       - "system:read"
       - "container:read"
       - "file:read"
       - "network:read"
-      
+
     constraints:
       timeout: 30
       concurrency: 5
       audit_level: "basic"
       require_approval: false  # Disabled for development
-      
+
     metadata:
       environment: "development"
       owner: "admin"

@@ -1,0 +1,424 @@
+name: Code Quality Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  code-quality-analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-quality-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-quality-
+            ${{ runner.os }}-pip-
+
+      - name: Install development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install radon
+          pip install -e .
+
+      - name: Run comprehensive quality checks
+        id: quality-checks
+        run: |
+          echo "Running comprehensive quality analysis..."
+          python scripts/run_quality_checks.py --all --verbose --output quality-summary.json
+          
+          # Parse quality summary for PR comment
+          python -c "
+          import json
+          try:
+              with open('quality-summary.json') as f:
+                  data = json.load(f)
+              print('QUALITY_SUMMARY_JSON=' + json.dumps({
+                  'overall_score': data.get('metrics', {}).get('overall_score', 0),
+                  'total_issues': data.get('metrics', {}).get('total_issues_found', 0),
+                  'security_issues': data.get('metrics', {}).get('total_security_issues', 0),
+                  'type_errors': data.get('metrics', {}).get('total_type_errors', 0),
+                  'tests_passed': data.get('summary', {}).get('tests', {}).get('tests_passed', 0),
+                  'tests_failed': data.get('summary', {}).get('tests', {}).get('tests_failed', 0),
+                  'coverage_percent': data.get('summary', {}).get('tests', {}).get('coverage_percent', 0)
+              }))
+          except Exception as e:
+              print(f'Error parsing quality summary: {e}')
+          " >> $GITHUB_OUTPUT
+
+      - name: Run security scanning scripts
+        id: security-scan
+        run: |
+          echo "Running comprehensive security scanning..."
+          python scripts/scan.py --full --output security-analysis.json
+          
+          # Parse security results for summary
+          python -c "
+          import json
+          try:
+              with open('security-analysis.json') as f:
+                  data = json.load(f)
+              critical_issues = data.get('summary', {}).get('critical_issues', 0)
+              high_issues = data.get('summary', {}).get('high_issues', 0)
+              print(f'SECURITY_CRITICAL={critical_issues}')
+              print(f'SECURITY_HIGH={high_issues}')
+          except Exception as e:
+              print(f'Error parsing security analysis: {e}')
+              print('SECURITY_CRITICAL=0')
+              print('SECURITY_HIGH=0')
+          " >> $GITHUB_OUTPUT
+
+      - name: Run pre-commit validation
+        run: |
+          echo "Running pre-commit validation..."
+          pre-commit run --all-files
+
+      - name: Check quality gates
+        run: |
+          echo "Evaluating quality gates..."
+          
+          # Load quality summary
+          python -c "
+          import json
+          import sys
+          
+          try:
+              with open('quality-summary.json') as f:
+                  data = json.load(f)
+              
+              metrics = data.get('metrics', {})
+              overall_score = metrics.get('overall_score', 0)
+              security_issues = metrics.get('total_security_issues', 0)
+              type_errors = metrics.get('total_type_errors', 0)
+              coverage = data.get('summary', {}).get('tests', {}).get('coverage_percent', 0)
+              
+              print(f'Overall Quality Score: {overall_score:.1f}%')
+              print(f'Security Issues: {security_issues}')
+              print(f'Type Errors: {type_errors}')
+              print(f'Test Coverage: {coverage:.1f}%')
+              
+              # Quality gate checks
+              gates_passed = True
+              
+              if overall_score < 70:
+                  print('❌ Quality Gate FAILED: Overall score below 70%')
+                  gates_passed = False
+              else:
+                  print('✅ Quality Gate PASSED: Overall score >= 70%')
+              
+              if security_issues > 0:
+                  print('❌ Security Gate FAILED: Security issues found')
+                  gates_passed = False
+              else:
+                  print('✅ Security Gate PASSED: No security issues')
+              
+              if coverage < 80:
+                  print('❌ Coverage Gate FAILED: Test coverage below 80%')
+                  gates_passed = False
+              else:
+                  print('✅ Coverage Gate PASSED: Test coverage >= 80%')
+              
+              if not gates_passed:
+                  sys.exit(1)
+                  
+          except Exception as e:
+              print(f'Error evaluating quality gates: {e}')
+              sys.exit(1)
+          "
+
+      - name: Upload quality reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: quality-reports-${{ github.run_number }}
+          path: |
+            quality-summary.json
+            quality-reports/
+            security-analysis.json
+            **/*-report.json
+            **/*-report.txt
+            htmlcov/
+
+      - name: Comment PR with quality metrics
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let qualitySummary = {};
+            let securityAnalysis = {};
+            
+            try {
+              if (fs.existsSync('quality-summary.json')) {
+                qualitySummary = JSON.parse(fs.readFileSync('quality-summary.json', 'utf8'));
+              }
+            } catch (error) {
+              console.log('Could not read quality summary:', error.message);
+            }
+            
+            try {
+              if (fs.existsSync('security-analysis.json')) {
+                securityAnalysis = JSON.parse(fs.readFileSync('security-analysis.json', 'utf8'));
+              }
+            } catch (error) {
+              console.log('Could not read security analysis:', error.message);
+            }
+            
+            const metrics = qualitySummary.metrics || {};
+            const summary = qualitySummary.summary || {};
+            const securitySummary = securityAnalysis.summary || {};
+            
+            const overallScore = metrics.overall_score || 0;
+            const totalIssues = metrics.total_issues_found || 0;
+            const securityIssues = metrics.total_security_issues || 0;
+            const typeErrors = metrics.total_type_errors || 0;
+            const tests = summary.tests || {};
+            const coverage = tests.coverage_percent || 0;
+            
+            const criticalIssues = securitySummary.critical_issues || 0;
+            const highIssues = securitySummary.high_issues || 0;
+            
+            let comment = `## 📊 Code Quality Analysis Results\n\n`;
+            
+            // Overall score with emoji
+            if (overallScore >= 80) {
+              comment += `### 🎯 Overall Quality Score: ${overallScore.toFixed(1)}% ✅\n`;
+            } else if (overallScore >= 70) {
+              comment += `### 🎯 Overall Quality Score: ${overallScore.toFixed(1)}% ⚠️\n`;
+            } else {
+              comment += `### 🎯 Overall Quality Score: ${overallScore.toFixed(1)}% ❌\n`;
+            }
+            
+            comment += `\n`;
+            
+            // Quality metrics breakdown
+            comment += `### 📈 Quality Metrics\n`;
+            comment += `- **Code Issues**: ${totalIssues} found\n`;
+            comment += `- **Type Errors**: ${typeErrors} found\n`;
+            comment += `- **Security Issues**: ${securityIssues} found\n`;
+            comment += `- **Test Coverage**: ${coverage.toFixed(1)}%\n`;
+            
+            if (tests.tests_passed !== undefined) {
+              comment += `- **Tests**: ${tests.tests_passed} passed, ${tests.tests_failed || 0} failed\n`;
+            }
+            
+            comment += `\n`;
+            
+            // Security analysis
+            comment += `### 🔒 Security Analysis\n`;
+            if (criticalIssues > 0 || highIssues > 0) {
+              comment += `- **Critical Issues**: ${criticalIssues} ❌\n`;
+              comment += `- **High Priority Issues**: ${highIssues} ⚠️\n`;
+            } else {
+              comment += `- **No critical or high-priority security issues found** ✅\n`;
+            }
+            
+            comment += `\n`;
+            
+            // Quality gates status
+            comment += `### 🛡️ Quality Gates Status\n`;
+            const gates = [];
+            
+            if (overallScore >= 70) gates.push('✅ Overall Quality Score >= 70%');
+            else gates.push('❌ Overall Quality Score < 70%');
+            
+            if (securityIssues === 0) gates.push('✅ No Security Issues');
+            else gates.push(`❌ ${securityIssues} Security Issues Found`);
+            
+            if (coverage >= 80) gates.push('✅ Test Coverage >= 80%');
+            else gates.push(`❌ Test Coverage < 80%`);
+            
+            if (typeErrors === 0) gates.push('✅ No Type Errors');
+            else gates.push(`❌ ${typeErrors} Type Errors Found`);
+            
+            comment += gates.join('\n');
+            comment += `\n\n`;
+            
+            // Recommendations
+            comment += `### 💡 Recommendations\n`;
+            if (overallScore < 80) {
+              comment += `- Improve overall code quality to reach 80% threshold\n`;
+            }
+            if (coverage < 80) {
+              comment += `- Increase test coverage to reach 80% threshold\n`;
+            }
+            if (securityIssues > 0) {
+              comment += `- Address all security issues before merging\n`;
+            }
+            if (typeErrors > 0) {
+              comment += `- Fix type annotation issues for better type safety\n`;
+            }
+            
+            if (overallScore >= 80 && coverage >= 80 && securityIssues === 0) {
+              comment += `- Great work! All quality gates are passing 🎉\n`;
+            }
+            
+            comment += `\n📁 **Detailed reports are available in the Actions artifacts.**`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  code-complexity-analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: code-quality-analysis
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install radon
+
+      - name: Run complexity analysis
+        run: |
+          echo "Running complexity analysis..."
+          
+          # Cyclomatic complexity
+          radon cc src --json > complexity-cyclomatic.json || true
+          radon cc src --show-complexity > complexity-cyclomatic-readable.txt || true
+          
+          # Maintainability index
+          radon mi src --json > complexity-maintainability.json || true
+          
+          # Analyze results
+          python -c "
+          import json
+          import sys
+          
+          try:
+              with open('complexity-cyclomatic.json') as f:
+                  cc_data = json.load(f)
+              
+              high_complexity_files = 0
+              total_functions = 0
+              
+              for file_path, file_data in cc_data.items():
+                  for func_data in file_data.get('functions', []):
+                      total_functions += 1
+                      rank = func_data.get('rank', 'A')
+                      if rank in ['D', 'E', 'F']:
+                          high_complexity_files += 1
+                          print(f'High complexity function: {func_data.get(\"name\", \"Unknown\")} in {file_path} (rank: {rank})')
+              
+              print(f'Total functions analyzed: {total_functions}')
+              print(f'High complexity functions: {high_complexity_files}')
+              
+              if high_complexity_files > 0:
+                  print('⚠️ Some functions have high complexity - consider refactoring')
+              else:
+                  print('✅ All functions have acceptable complexity')
+                  
+          except Exception as e:
+              print(f'Error analyzing complexity: {e}')
+          "
+
+      - name: Upload complexity reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: complexity-reports-${{ github.run_number }}
+          path: |
+            complexity-cyclomatic.json
+            complexity-cyclomatic-readable.txt
+            complexity-maintainability.json
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety pip-audit
+
+      - name: Check for vulnerable dependencies
+        run: |
+          echo "Checking for vulnerable dependencies..."
+          
+          # Safety check
+          safety check --json --output safety-vulnerabilities.json || true
+          
+          # pip-audit check
+          pip-audit --format=json --output=pip-audit-vulnerabilities.json || true
+          
+          # Parse results
+          python -c "
+          import json
+          
+          safety_vulns = 0
+          audit_vulns = 0
+          
+          try:
+              with open('safety-vulnerabilities.json') as f:
+                  safety_data = json.load(f)
+                  safety_vulns = len(safety_data)
+          except:
+              pass
+          
+          try:
+              with open('pip-audit-vulnerabilities.json') as f:
+                  audit_data = json.load(f)
+                  audit_vulns = len(audit_data.get('vulnerabilities', []))
+          except:
+              pass
+          
+          print(f'Safety vulnerabilities found: {safety_vulns}')
+          print(f'Pip-audit vulnerabilities found: {audit_vulns}')
+          
+          total_vulns = safety_vulns + audit_vulns
+          if total_vulns > 0:
+              print('⚠️ Dependency vulnerabilities detected!')
+          else:
+              print('✅ No dependency vulnerabilities found')
+          "
+
+      - name: Upload dependency reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: dependency-reports-${{ github.run_number }}
+          path: |
+            safety-vulnerabilities.json
+            pip-audit-vulnerabilities.json

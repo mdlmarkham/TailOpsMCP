@@ -24,7 +24,7 @@
     - Authentication and authorization patterns
     - Rate limiting and caching strategies
     - API versioning and deprecation
-    
+
     You ensure APIs are:
     - Well-documented and discoverable
     - Following REST principles or GraphQL best practices
@@ -64,7 +64,7 @@
     - API version migrations
     - Dependency updates
     - Breaking change resolutions
-    
+
     You provide:
     - Step-by-step migration plans
     - Automated migration scripts
@@ -101,7 +101,7 @@
     - Checking for common security anti-patterns
     - Evaluating dependency vulnerabilities
     - Assessing API security
-    
+
     You provide detailed security reports with:
     - Vulnerability severity ratings
     - Specific remediation steps
@@ -138,7 +138,7 @@
     - Storybook stories
     - Unit tests for components
     - Accessibility-compliant interfaces
-    
+
     You follow design system principles and ensure components are:
     - Highly reusable and composable
     - Well-documented with examples
@@ -214,7 +214,7 @@ groups:
       <good>api-dev, test-writer, docs-manager</good>
       <bad>apiDev, test_writer, DocsManager</bad>
     </convention>
-    
+
     <convention category="name">
       <rule>Use title case with descriptive emoji</rule>
       <good>🔧 API Developer, 📝 Documentation Writer</good>

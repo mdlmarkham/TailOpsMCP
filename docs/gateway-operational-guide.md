@@ -135,12 +135,12 @@ Deploy gateways per network segment to limit blast radius:
 production-a-gateway:
   segment: "production-a"
   targets: ["web-a-01", "db-a-01", "cache-a-01"]
-  
-# Production Segment B  
+
+# Production Segment B
 production-b-gateway:
   segment: "production-b"
   targets: ["web-b-01", "db-b-01", "cache-b-01"]
-  
+
 # Staging Segment
 staging-gateway:
   segment: "staging"
@@ -155,8 +155,8 @@ Multiple gateways can manage overlapping target sets:
 # Primary gateway for production
 primary-gateway:
   targets: ["web-01", "db-01", "cache-01", "monitoring-01"]
-  
-# Secondary gateway for redundancy  
+
+# Secondary gateway for redundancy
 secondary-gateway:
   targets: ["web-01", "db-01", "cache-01", "logging-01"]
 ```

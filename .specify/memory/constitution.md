@@ -108,4 +108,3 @@ Versioning policy (summary):
 - PATCH: Editorial clarifications, wording fixes, or non-substantive refinements.
 
 **Version**: 0.1.1 | **Ratified**: TODO(RATIFICATION_DATE): initial adoption date to be recorded | **Last Amended**: 2025-11-15
-

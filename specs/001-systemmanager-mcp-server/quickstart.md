@@ -1,6 +1,6 @@
 # Quickstart: SystemManager MCP Server
 
-**Date**: 2025-11-15  
+**Date**: 2025-11-15
 **Purpose**: Get the SystemManager MCP server running quickly with basic configuration.
 
 ## Prerequisites
@@ -120,11 +120,11 @@ async def main():
         # Get system status
         status = await client.call_tool("get_system_status", {})
         print("System Status:", status)
-        
+
         # List Docker containers
         containers = await client.call_tool("get_container_list", {})
         print("Containers:", containers)
-        
+
         # List directory
         files = await client.call_tool("list_directory", {"path": "/var/log"})
         print("Log files:", files)

@@ -1,8 +1,8 @@
 # Feature Specification: SystemManager MCP Server
 
-**Feature Branch**: `001-systemmanager-mcp-server`  
-**Created**: 2025-11-15  
-**Status**: Draft  
+**Feature Branch**: `001-systemmanager-mcp-server`
+**Created**: 2025-11-15
+**Status**: Draft
 **Input**: User description: "I want to build the core MCP server that gets deployed to the remote system, The initial deployment should focus on providing basic information about the system status, networking, filesystem, containers etc. Deployment should be simple. The server should natively support being deployed as a Tailscale Service https://tailscale.com/kb/1552/tailscale-services although that should not be required."
 
 ## User Scenarios & Testing *(mandatory)*

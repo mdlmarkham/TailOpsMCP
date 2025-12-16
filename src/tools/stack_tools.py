@@ -42,8 +42,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("deploy_stack")
     async def deploy_stack(
-        target: str = "local",
         stack: str,
+        target: str = "local",
         dry_run: bool = False,
         force: bool = False
     ) -> dict:
@@ -60,7 +60,7 @@ def register_tools(mcp: FastMCP):
             from src.server.dependencies import deps
             policy_gate = deps.policy_gate
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
-            
+
             await policy_gate.authorize(
                 operation="deploy_stack",
                 target=target,
@@ -81,7 +81,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute stack deployment
             result = await executor.execute(
                 command="deploy_stack",
@@ -112,7 +112,7 @@ def register_tools(mcp: FastMCP):
                     "target": target,
                     "error": result.error
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="deploy_stack",
@@ -125,8 +125,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("pull_stack")
     async def pull_stack(
-        target: str = "local",
         stack: str,
+        target: str = "local",
         dry_run: bool = False
     ) -> dict:
         """Pull latest images for a Docker stack.
@@ -141,7 +141,7 @@ def register_tools(mcp: FastMCP):
             from src.server.dependencies import deps
             policy_gate = deps.policy_gate
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
-            
+
             await policy_gate.authorize(
                 operation="pull_stack",
                 target=target,
@@ -162,7 +162,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute stack pull
             result = await executor.execute(
                 command="pull_stack",
@@ -193,7 +193,7 @@ def register_tools(mcp: FastMCP):
                     "target": target,
                     "error": result.error
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="pull_stack",
@@ -206,8 +206,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("restart_stack")
     async def restart_stack(
-        target: str = "local",
         stack: str,
+        target: str = "local",
         dry_run: bool = False
     ) -> dict:
         """Restart a Docker stack.
@@ -222,7 +222,7 @@ def register_tools(mcp: FastMCP):
             from src.server.dependencies import deps
             policy_gate = deps.policy_gate
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
-            
+
             await policy_gate.authorize(
                 operation="restart_stack",
                 target=target,
@@ -243,7 +243,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute stack restart
             result = await executor.execute(
                 command="restart_stack",
@@ -274,7 +274,7 @@ def register_tools(mcp: FastMCP):
                     "target": target,
                     "error": result.error
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="restart_stack",
@@ -287,8 +287,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("get_stack_status")
     async def get_stack_status(
-        target: str = "local",
         stack: str,
+        target: str = "local",
         format: Literal["json", "toon"] = "toon"
     ) -> Union[dict, str]:
         """Get status of a Docker stack.
@@ -311,7 +311,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute stack status query
             result = await executor.execute(
                 command="stack_status",
@@ -323,7 +323,7 @@ def register_tools(mcp: FastMCP):
                 return format_response(result.output, format)
             else:
                 return format_error(result.error, "get_stack_status")
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="get_stack_status",
@@ -357,7 +357,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute stack list query
             result = await executor.execute(
                 command="list_stacks",
@@ -369,7 +369,7 @@ def register_tools(mcp: FastMCP):
                 return format_response(result.output, format)
             else:
                 return format_error(result.error, "list_stacks")
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="list_stacks",
@@ -421,7 +421,7 @@ def register_tools(mcp: FastMCP):
                 return await list_stacks(target, format)
             else:
                 return {"success": False, "error": f"Invalid action: {action}"}
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="stack_operations",

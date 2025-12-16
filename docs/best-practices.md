@@ -28,7 +28,7 @@ gateway-a:
   segment: "production-a"
   targets: ["web-a-01", "db-a-01", "cache-a-01"]
 
-# Production Segment B  
+# Production Segment B
 gateway-b:
   segment: "production-b"
   targets: ["web-b-01", "db-b-01", "cache-b-01"]
@@ -275,7 +275,7 @@ gateway-b:
       }
     },
     "tailopsmcp-secondary": {
-      "command": "python", 
+      "command": "python",
       "args": ["-m", "src.mcp_server"],
       "env": {
         "SYSTEMMANAGER_TARGETS_CONFIG": "/opt/systemmanager/secondary/targets.yaml"

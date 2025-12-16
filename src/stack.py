@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import shlex
 import subprocess
 from dataclasses import dataclass
 from typing import List, Optional
@@ -26,7 +25,13 @@ class StackManager:
         self.path = os.path.abspath(path)
 
     def _run(self, cmd: List[str], cwd: Optional[str] = None) -> GitResult:
-        proc = subprocess.Popen(cmd, cwd=cwd or self.path, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        proc = subprocess.Popen(
+            cmd,
+            cwd=cwd or self.path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
         out, err = proc.communicate()
         return GitResult(proc.returncode, out, err)
 

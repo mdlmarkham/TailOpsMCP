@@ -1,6 +1,6 @@
 # Data Model: SystemManager MCP Server
 
-**Date**: 2025-11-15  
+**Date**: 2025-11-15
 **Purpose**: Define the core data structures and entities for the MCP server implementation.
 
 ## Core Entities

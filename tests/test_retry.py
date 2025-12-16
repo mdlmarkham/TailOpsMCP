@@ -2,7 +2,6 @@
 
 import pytest
 import asyncio
-from unittest.mock import Mock, AsyncMock
 from src.utils.retry import retry_with_backoff
 
 
@@ -92,6 +91,7 @@ class TestRetryWithBackoff:
     @pytest.mark.asyncio
     async def test_retry_preserves_function_metadata(self):
         """Test retry decorator preserves function name and docstring."""
+
         @retry_with_backoff(max_retries=2)
         async def documented_function():
             """This is a documented function."""
@@ -103,6 +103,7 @@ class TestRetryWithBackoff:
     @pytest.mark.asyncio
     async def test_retry_with_arguments(self):
         """Test retry decorator works with function arguments."""
+
         @retry_with_backoff(max_retries=2, base_delay=0.01)
         async def function_with_args(x, y, z=10):
             if x < 5:
@@ -158,6 +159,7 @@ class TestRetryWithBackoff:
     @pytest.mark.asyncio
     async def test_retry_custom_delay(self):
         """Test retry with custom base delay."""
+
         @retry_with_backoff(max_retries=1, base_delay=0.5)
         async def slow_retry():
             raise ValueError("Fail")
@@ -176,6 +178,7 @@ class TestRetryWithBackoff:
     @pytest.mark.asyncio
     async def test_retry_return_values(self):
         """Test retry correctly returns function return values."""
+
         @retry_with_backoff(max_retries=2, base_delay=0.01)
         async def return_complex_value():
             return {"status": "ok", "data": [1, 2, 3]}

@@ -12,26 +12,26 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Main web application server"
-    
+
     connection:
       host: "192.168.1.101"
       username: "webadmin"
       key_path: "${SSH_KEY_WEB_SERVER_01}"
       port: 22
-      
+
     capabilities:
       - "system:read"
       - "container:read"
       - "container:control"
       - "file:read"
       - "network:read"
-      
+
     constraints:
       timeout: 30
       concurrency: 10
       audit_level: "medium"
       require_approval: true
-      
+
     metadata:
       environment: "production"
       role: "web-server"
@@ -43,26 +43,26 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Load-balanced web server"
-    
+
     connection:
       host: "192.168.1.102"
       username: "webadmin"
       key_path: "${SSH_KEY_WEB_SERVER_02}"
       port: 22
-      
+
     capabilities:
       - "system:read"
       - "container:read"
       - "container:control"
       - "file:read"
       - "network:read"
-      
+
     constraints:
       timeout: 30
       concurrency: 10
       audit_level: "medium"
       require_approval: true
-      
+
     metadata:
       environment: "production"
       role: "web-server"
@@ -75,26 +75,26 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Main PostgreSQL database"
-    
+
     connection:
       host: "192.168.1.110"
       username: "dba"
       key_path: "${SSH_KEY_DATABASE_PRIMARY}"
       port: 22
-      
+
     capabilities:
       - "system:read"
       - "container:read"
       - "database:read"
       - "database:backup"
       - "file:read"
-      
+
     constraints:
       timeout: 60
       concurrency: 3
       audit_level: "high"
       require_approval: true
-      
+
     metadata:
       environment: "production"
       role: "database"
@@ -106,25 +106,25 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Read-only database replica"
-    
+
     connection:
       host: "192.168.1.111"
       username: "dba"
       key_path: "${SSH_KEY_DATABASE_REPLICA}"
       port: 22
-      
+
     capabilities:
       - "system:read"
       - "container:read"
       - "database:read"
       - "file:read"
-      
+
     constraints:
       timeout: 60
       concurrency: 3
       audit_level: "high"
       require_approval: true
-      
+
     metadata:
       environment: "production"
       role: "database"
@@ -137,26 +137,26 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Central monitoring and logging"
-    
+
     connection:
       host: "192.168.1.120"
       username: "monitor"
       key_path: "${SSH_KEY_MONITORING}"
       port: 22
-      
+
     capabilities:
       - "system:read"
       - "container:read"
       - "file:read"
       - "monitoring:read"
       - "logs:read"
-      
+
     constraints:
       timeout: 30
       concurrency: 5
       audit_level: "medium"
       require_approval: false  # Monitoring operations are safe
-      
+
     metadata:
       environment: "production"
       role: "monitoring"
@@ -169,26 +169,26 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Redis caching layer"
-    
+
     connection:
       host: "192.168.1.130"
       username: "cache"
       key_path: "${SSH_KEY_CACHE}"
       port: 22
-      
+
     capabilities:
       - "system:read"
       - "container:read"
       - "cache:read"
       - "cache:control"
       - "file:read"
-      
+
     constraints:
       timeout: 30
       concurrency: 5
       audit_level: "medium"
       require_approval: true
-      
+
     metadata:
       environment: "production"
       role: "cache"

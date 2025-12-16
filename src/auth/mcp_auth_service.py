@@ -58,7 +58,9 @@ class GoFastMCPAuthService:
         session_store: Optional[Dict[str, MCPTokenSession]] = None,
         http_session: Optional[requests.Session] = None,
     ) -> None:
-        self.base_url = base_url or os.getenv("SYSTEMMANAGER_MCP_AUTH_URL", DEFAULT_AUTH_URL)
+        self.base_url = base_url or os.getenv(
+            "SYSTEMMANAGER_MCP_AUTH_URL", DEFAULT_AUTH_URL
+        )
         self.client_id = client_id or os.getenv("MCP_AUTH_CLIENT_ID")
         self.client_secret = client_secret or os.getenv("MCP_AUTH_CLIENT_SECRET")
         self._session_store: Dict[str, MCPTokenSession] = session_store or {}
@@ -71,17 +73,27 @@ class GoFastMCPAuthService:
         """Send a POST request to the GoFast auth server."""
 
         headers = {"Content-Type": "application/json"}
-        logger.debug("Sending payload to GoFast auth server", extra={"payload_keys": list(payload.keys())})
-        response = self._http.post(self.base_url, json=payload, timeout=30, headers=headers)
+        logger.debug(
+            "Sending payload to GoFast auth server",
+            extra={"payload_keys": list(payload.keys())},
+        )
+        response = self._http.post(
+            self.base_url, json=payload, timeout=30, headers=headers
+        )
         try:
             response.raise_for_status()
         except requests.HTTPError as exc:  # pragma: no cover - network failures in CI
-            logger.error("GoFast auth server returned error", extra={"status": response.status_code, "body": response.text})
+            logger.error(
+                "GoFast auth server returned error",
+                extra={"status": response.status_code, "body": response.text},
+            )
             raise RuntimeError(f"GoFast MCP auth request failed: {exc}") from exc
 
         return response.json()
 
-    def _persist_session(self, session_id: str, token_payload: Dict[str, Any]) -> MCPTokenSession:
+    def _persist_session(
+        self, session_id: str, token_payload: Dict[str, Any]
+    ) -> MCPTokenSession:
         expires_in = token_payload.get("expires_in", 3600)
         expires_at = datetime.utcnow() + timedelta(seconds=int(expires_in))
         session = MCPTokenSession(
@@ -93,7 +105,10 @@ class GoFastMCPAuthService:
             raw_response=token_payload,
         )
         self._session_store[session_id] = session
-        logger.info("Stored MCP token session", extra={"session_id": session_id, "expires_at": expires_at.isoformat()})
+        logger.info(
+            "Stored MCP token session",
+            extra={"session_id": session_id, "expires_at": expires_at.isoformat()},
+        )
         return session
 
     def exchange_tsidp_token(
@@ -126,7 +141,12 @@ class GoFastMCPAuthService:
             payload.update(extra)
 
         token_payload = self._post_json(payload)
-        session_key = session_id or token_payload.get("subject") or token_payload.get("sub") or str(int(time.time()))
+        session_key = (
+            session_id
+            or token_payload.get("subject")
+            or token_payload.get("sub")
+            or str(int(time.time()))
+        )
         return self._persist_session(session_key, token_payload)
 
     def login_with_credentials(
@@ -165,7 +185,9 @@ class GoFastMCPAuthService:
         if not session:
             return None
         if session.is_expired():
-            logger.info("MCP session expired; removing", extra={"session_id": session_id})
+            logger.info(
+                "MCP session expired; removing", extra={"session_id": session_id}
+            )
             self._session_store.pop(session_id, None)
             return None
         return session

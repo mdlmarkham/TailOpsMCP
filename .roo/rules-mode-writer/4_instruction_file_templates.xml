@@ -37,7 +37,7 @@
         - Constraints or limitations
       </details>
     </step>
-    
+
     <step number="2">
       <action>Gather necessary context</action>
       <tools>
@@ -112,7 +112,7 @@
         <bad>bad_example-name</bad>
       </examples>
     </convention>
-    
+
     <convention category="structure">
       <rule>How to structure code/files</rule>
       <template>

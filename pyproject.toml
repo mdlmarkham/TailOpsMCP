@@ -3,7 +3,7 @@ name = "systemmanager-mcp-server"
 version = "1.0.0"
 description = "MCP Server for remote system management with Docker, filesystem, and network monitoring"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [
     {name = "SystemManager Team", email = "team@systemmanager.dev"},
 ]
@@ -28,11 +28,26 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
+    # Testing
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
+
+    # Code formatting and linting
     "black>=23.0.0",
+    "isort>=5.12.0",
+    "ruff>=0.6.0",
+    "flake8>=6.0.0",
+
+    # Type checking
     "mypy>=1.0.0",
     "types-psutil>=5.9.0",
+
+    # Security scanning
+    "bandit[toml]>=1.7.0",
+    "safety>=3.0.0",
+
+    # Pre-commit hooks
+    "pre-commit>=3.5.0",
 ]
 
 [project.scripts]

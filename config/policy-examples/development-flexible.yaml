@@ -9,7 +9,7 @@ policies:
   enable_dry_run: false   # Disable dry run for faster development workflow
   require_approval_for_admin: false
   audit_all_operations: true
-  
+
   # Global rules (apply to all targets)
   global_policies:
     - name: "development_observation"
@@ -41,7 +41,7 @@ policies:
           required: false
           min: 1
           max: 65535
-    
+
     - name: "development_package_management"
       description: "Package management for development"
       enabled: true
@@ -60,7 +60,7 @@ policies:
           required: true
           max_length: 256  # More permissive for development packages
           pattern: "^[a-zA-Z0-9][a-zA-Z0-9._+-]*$"
-  
+
   # Role-based policies
   role_policies:
     gateway:
@@ -92,7 +92,7 @@ policies:
             required: true
             max_length: 2048
             pattern: "^[^<>:\"|?*]+$"
-    
+
     development:
       - name: "development_full_container_access"
         description: "Full container access for development"
@@ -123,7 +123,7 @@ policies:
             type: "dict"
             required: false
             default: {}
-      
+
       - name: "development_stack_management"
         description: "Full stack management for development"
         enabled: true
@@ -145,7 +145,7 @@ policies:
             type: "dict"
             required: true
             description: "Stack configuration (Docker Compose, etc.)"
-      
+
       - name: "development_backup_operations"
         description: "Full backup operations for development"
         enabled: true
@@ -174,7 +174,7 @@ policies:
             required: false
             default: "full"
             allowed_values: ["full", "incremental", "differential"]
-      
+
       - name: "development_snapshot_operations"
         description: "Full snapshot operations for development"
         enabled: true
@@ -202,7 +202,7 @@ policies:
             type: "string"
             required: false
             max_length: 512
-      
+
       - name: "development_service_management"
         description: "Full service management for development"
         enabled: true
@@ -226,7 +226,7 @@ policies:
             min: 10
             max: 600
             default: 60
-    
+
     staging:
       - name: "staging_balanced_access"
         description: "Balanced access for staging environment"
@@ -263,7 +263,7 @@ policies:
             required: true
             max_length: 96
             pattern: "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
-  
+
   # Emergency policies (simplified for development)
   emergency_policies:
     - name: "development_emergency"

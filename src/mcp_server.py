@@ -20,12 +20,13 @@ from src.tools import register_all_tools
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
 # Initialize secure logging configuration
 from src.utils.secure_logging import setup_secure_logging
+
 setup_secure_logging()
 
 # Create FastMCP instance with auth
@@ -52,7 +53,9 @@ if __name__ == "__main__":
     if auth_mode == "oidc":
         logger.info("OIDC authentication via TSIDP")
         logger.info("Users will authenticate with their Tailscale identity")
-        logger.info(f"OIDC Issuer: {os.getenv('TSIDP_URL', 'https://tsidp.tailf9480.ts.net')}")
+        logger.info(
+            f"OIDC Issuer: {os.getenv('TSIDP_URL', 'https://tsidp.tailf9480.ts.net')}"
+        )
     else:
         logger.info("Token-based authentication")
 

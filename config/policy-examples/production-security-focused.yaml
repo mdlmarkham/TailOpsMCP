@@ -9,7 +9,7 @@ policies:
   enable_dry_run: true
   require_approval_for_admin: true
   audit_all_operations: true
-  
+
   # Global rules (apply to all targets)
   global_policies:
     - name: "emergency_operations"
@@ -34,7 +34,7 @@ policies:
           required: true
           max_length: 64
           pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
-    
+
     - name: "system_observation"
       description: "Read-only system monitoring operations"
       enabled: true
@@ -51,7 +51,7 @@ policies:
           required: true
           max_length: 1024
           pattern: "^[^<>:\"|?*]+$"
-  
+
   # Role-based policies
   role_policies:
     production:
@@ -83,7 +83,7 @@ policies:
             min: 30
             max: 300
             default: 60
-      
+
       - name: "production_backup_operations"
         description: "Production backup operations with approval"
         enabled: true
@@ -107,7 +107,7 @@ policies:
             required: true
             max_length: 1024
             pattern: "^[^<>:\"|?*]+$"
-      
+
       - name: "production_container_restrictions"
         description: "Strict container operations in production"
         enabled: true
@@ -126,7 +126,7 @@ policies:
             max_length: 64
             pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
             allowlist_source: "list_production_containers"
-      
+
       - name: "production_dangerous_operations"
         description: "Dangerous operations that are denied in production"
         enabled: true
@@ -138,7 +138,7 @@ policies:
         target_roles: [production]
         allowed: false
         requires_approval: false
-    
+
     development:
       - name: "development_full_access"
         description: "Full development environment access"
@@ -204,7 +204,7 @@ policies:
             required: true
             max_length: 128
             pattern: "^[a-zA-Z0-9][a-zA-Z0-9._+-]*$"
-    
+
     staging:
       - name: "staging_moderate_access"
         description: "Moderate access for staging environment"
@@ -243,7 +243,7 @@ policies:
             required: true
             max_length: 64
             pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
-  
+
   # Emergency policies (highest priority)
   emergency_policies:
     - name: "emergency_override"

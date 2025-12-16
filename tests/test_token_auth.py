@@ -1,4 +1,3 @@
-import os
 import base64
 import json
 import hmac
@@ -11,7 +10,7 @@ from src.auth.token_auth import TokenVerifier, TokenClaims
 
 
 def make_hmac_token(claims: dict, secret: bytes) -> str:
-    payload = json.dumps(claims, separators=(",",":")).encode()
+    payload = json.dumps(claims, separators=(",", ":")).encode()
     payload_b64 = base64.urlsafe_b64encode(payload).rstrip(b"=").decode()
     sig = hmac.new(secret, payload_b64.encode(), hashlib.sha256).hexdigest()
     return f"{payload_b64}.{sig}"

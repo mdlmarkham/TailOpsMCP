@@ -1,0 +1,33 @@
+Collecting croniter
+  Using cached croniter-6.0.0-py2.py3-none-any.whl.metadata (32 kB)
+Collecting radon
+  Downloading radon-6.0.1-py2.py3-none-any.whl.metadata (8.2 kB)
+Collecting coverage
+  Using cached coverage-7.13.0-cp313-cp313-win_amd64.whl.metadata (8.7 kB)
+Collecting pytest-cov
+  Using cached pytest_cov-7.0.0-py3-none-any.whl.metadata (31 kB)
+Collecting python-dateutil (from croniter)
+  Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting pytz>2021.1 (from croniter)
+  Using cached pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+Collecting mando<0.8,>=0.6 (from radon)
+  Downloading mando-0.7.1-py2.py3-none-any.whl.metadata (7.4 kB)
+Requirement already satisfied: colorama>=0.4.1 in c:\users\mdlma\documents\projects\tailopsmcp\.venv\lib\site-packages (from radon) (0.4.6)
+Collecting six (from mando<0.8,>=0.6->radon)
+  Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Requirement already satisfied: pluggy>=1.2 in c:\users\mdlma\documents\projects\tailopsmcp\.venv\lib\site-packages (from pytest-cov) (1.6.0)
+Requirement already satisfied: pytest>=7 in c:\users\mdlma\documents\projects\tailopsmcp\.venv\lib\site-packages (from pytest-cov) (9.0.2)
+Requirement already satisfied: iniconfig>=1.0.1 in c:\users\mdlma\documents\projects\tailopsmcp\.venv\lib\site-packages (from pytest>=7->pytest-cov) (2.3.0)
+Requirement already satisfied: packaging>=22 in c:\users\mdlma\documents\projects\tailopsmcp\.venv\lib\site-packages (from pytest>=7->pytest-cov) (25.0)
+Requirement already satisfied: pygments>=2.7.2 in c:\users\mdlma\documents\projects\tailopsmcp\.venv\lib\site-packages (from pytest>=7->pytest-cov) (2.19.2)
+Using cached croniter-6.0.0-py2.py3-none-any.whl (25 kB)
+Downloading radon-6.0.1-py2.py3-none-any.whl (52 kB)
+Downloading mando-0.7.1-py2.py3-none-any.whl (28 kB)
+Using cached coverage-7.13.0-cp313-cp313-win_amd64.whl (221 kB)
+Using cached pytest_cov-7.0.0-py3-none-any.whl (22 kB)
+Using cached pytz-2025.2-py2.py3-none-any.whl (509 kB)
+Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+Installing collected packages: pytz, six, coverage, python-dateutil, mando, radon, pytest-cov, croniter
+
+Successfully installed coverage-7.13.0 croniter-6.0.0 mando-0.7.1 pytest-cov-7.0.0 python-dateutil-2.9.0.post0 pytz-2025.2 radon-6.0.1 six-1.17.0

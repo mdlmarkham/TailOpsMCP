@@ -70,7 +70,7 @@ Use troubleshoot_container for my nginx container
 ---
 
 ### ⚡ Performance Analysis
-**Name:** `performance_analysis`  
+**Name:** `performance_analysis`
 **Tags:** performance, monitoring, homelab
 
 System-wide performance analysis:
@@ -87,7 +87,7 @@ Run performance_analysis to see what's slowing down my system
 ---
 
 ### 🌐 Network Audit
-**Name:** `network_audit`  
+**Name:** `network_audit`
 **Tags:** network, security, homelab
 
 Complete network security and configuration review:
@@ -105,8 +105,8 @@ Perform a network_audit on my home lab
 ---
 
 ### 🚀 Plan Stack Deployment
-**Name:** `plan_stack_deployment`  
-**Arguments:** `repo_url` (required), `stack_name` (required)  
+**Name:** `plan_stack_deployment`
+**Arguments:** `repo_url` (required), `stack_name` (required)
 **Tags:** docker, deployment, homelab
 
 Plan Docker Compose stack deployment from GitHub:
@@ -123,13 +123,13 @@ Use plan_stack_deployment for https://github.com/user/monitoring-stack called "m
 ---
 
 ### 📈 Investigate High Usage
-**Name:** `investigate_high_usage`  
+**Name:** `investigate_high_usage`
 **Tags:** performance, troubleshooting, homelab
 
 Investigate and resolve high resource usage:
 - Immediate resource assessment
 - Historical analysis
-- Docker container investigation  
+- Docker container investigation
 - Root cause identification
 - Remediation steps
 
@@ -141,7 +141,7 @@ My system is slow, run investigate_high_usage
 ---
 
 ### 💾 Backup Planning
-**Name:** `backup_planning`  
+**Name:** `backup_planning`
 **Tags:** backup, disaster-recovery, homelab
 
 Backup and disaster recovery planning:
@@ -159,7 +159,7 @@ Help me create a backup plan using the backup_planning prompt
 ---
 
 ### 📦 Setup Inventory
-**Name:** `setup_inventory`  
+**Name:** `setup_inventory`
 **Tags:** inventory, setup, homelab
 
 Interactive workflow to set up the system inventory for application tracking:
@@ -218,13 +218,13 @@ from mcp import ClientSession
 async with ClientSession(...) as session:
     # List available prompts
     prompts = await session.list_prompts()
-    
+
     # Get a specific prompt
     result = await session.get_prompt(
         "troubleshoot_container",
         arguments={"container_name": "nginx"}
     )
-    
+
     # The result contains the formatted message for the AI
     print(result.messages[0].content.text)
 ```
@@ -242,7 +242,7 @@ def my_custom_prompt(param1: str, param2: int = 10) -> str:
     """Generate your custom prompt."""
     return f"""
     Custom workflow instructions for the AI assistant:
-    
+
     1. First step using {param1}
     2. Second step with {param2}
     3. Final recommendations
@@ -277,10 +277,10 @@ Summary:
 Critical Issues:
 1. Container 'web' running as root without security profile
    Fix: Add security_opt: ["no-new-privileges:true"] to compose file
-   
+
 2. Port 22 (SSH) exposed to 0.0.0.0
    Fix: sudo ufw allow from 10.0.0.0/8 to any port 22
-   
+
 3. Failed login attempts from 192.168.1.unknown (15 times)
    Fix: Consider fail2ban installation
 
@@ -301,10 +301,10 @@ Root Cause: Out of memory - container hitting 256MB limit
 Fix Steps:
 1. Increase memory limit in docker-compose.yml:
    mem_limit: 512m
-   
+
 2. Restart container:
    docker-compose up -d postgres
-   
+
 3. Monitor memory usage:
    docker stats postgres
 

@@ -150,7 +150,7 @@ policies:
   deny_by_default: true
   enable_dry_run: true
   require_approval_for_admin: true
-  
+
   global_policies:
     - name: "rule_name"
       description: "Rule description"
@@ -165,13 +165,13 @@ policies:
           required: true
           max_length: 64
           pattern: "^[a-zA-Z0-9]+$"
-  
+
   role_policies:
     production:
       - # Production-specific rules
     development:
       - # Development-specific rules
-  
+
   emergency_policies:
     - # Emergency override rules
 ```

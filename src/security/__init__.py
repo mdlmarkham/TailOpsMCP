@@ -139,13 +139,13 @@ def security_health_check() -> Dict[str, Any]:
     monitor = get_security_monitor()
     access_engine = get_access_engine()
     audit_logger = get_audit_logger()
-    
+
     return {
         "monitoring_active": monitor._monitoring_active,
         "total_alerts": len(monitor.get_alerts()),
         "active_rules": len([r for r in monitor._rules.values() if r.enabled]),
-        "access_engine_initial is not None,
-        "audit_loggerized": access_engine_initialized": audit_logger is not None,
+        "access_engine_initialized": access_engine is not None,
+        "audit_logger_initialized": audit_logger is not None,
         "timestamp": datetime.now().isoformat()
     }
 
@@ -154,16 +154,16 @@ def security_report(target_path: str = ".", output_path: Optional[str] = None) -
     scanner = SecurityScanner()
     compliance_checker = get_compliance_checker()
     monitor = get_security_monitor()
-    
+
     # Perform scans
     scan_results = scanner.scan(target_path)
     compliance_results = compliance_checker.check_compliance(target_path)
-    
+
     # Generate reports
     scan_report = scanner.generate_report(scan_results)
     compliance_report = compliance_checker.generate_compliance_report(compliance_results)
     dashboard_data = monitor.get_dashboard_data()
-    
+
     # Compile comprehensive report
     comprehensive_report = {
         "report_metadata": {
@@ -183,12 +183,12 @@ def security_report(target_path: str = ".", output_path: Optional[str] = None) -
         },
         "recommendations": _generate_security_recommendations(scan_results, compliance_results, dashboard_data)
     }
-    
+
     # Save report if path provided
     if output_path:
         with open(output_path, 'w') as f:
             json.dump(comprehensive_report, f, indent=2, default=str)
-    
+
     return comprehensive_report
 
 def enable_security_monitoring() -> None:
@@ -205,13 +205,13 @@ def disable_security_monitoring() -> None:
 
 def reset_security_config() -> None:
     """Reset security configuration # Clear caches to defaults."""
-   
+
     get_access_engine().clear_cache()
-    
+
     # Reset monitoring rules to defaults
     monitor = get_security_monitor()
     monitor._initialize_default_rules()
-    
+
     logger.info("Security configuration reset to defaults")
 
 # Backward compatibility aliases for existing code
@@ -225,7 +225,7 @@ SecurityScannerEngine = SecurityScanner
 __all__ = [
     # Core scanner
     'SecurityScanner',
-    'SecurityScanConfig', 
+    'SecurityScanConfig',
     'ScanResult',
     'ScanType',
     'SeverityLevel',
@@ -233,7 +233,7 @@ __all__ = [
     'quick_security_scan',
     'scan_for_secrets',
     'scan_vulnerabilities',
-    
+
     # Core audit
     'AuditLogger',
     'AuditEvent',
@@ -247,7 +247,7 @@ __all__ = [
     'log_access',
     'log_modification',
     'log_security_event',
-    
+
     # Core access control
     'AccessControlEngine',
     'SecurityContext',
@@ -263,7 +263,7 @@ __all__ = [
     'get_user_permissions',
     'grant_user_role',
     'revoke_user_role',
-    
+
     # Core compliance
     'ComplianceChecker',
     'ComplianceCheck',
@@ -276,7 +276,7 @@ __all__ = [
     'check_cis_compliance',
     'check_owasp_compliance',
     'check_nist_compliance',
-    
+
     # Core monitoring
     'SecurityMonitor',
     'SecurityAlert',
@@ -290,7 +290,7 @@ __all__ = [
     'record_security_metric',
     'create_security_alert',
     'get_security_dashboard',
-    
+
     # Convenience functions
     'quick_security_audit',
     'security_health_check',
@@ -298,14 +298,14 @@ __all__ = [
     'enable_security_monitoring',
     'disable_security_monitoring',
     'reset_security_config',
-    
+
     # Backward compatibility
     'SecurityAuditLogger',
     'SecurityAccessControl',
     'SecurityComplianceChecker',
     'SecurityMonitoringSystem',
     'SecurityScannerEngine',
-    
+
     # Package info
     '__version__',
     '__author__',
@@ -327,28 +327,28 @@ def get_package_info() -> dict:
     }
 
 # Helper functions
-def _calculate_security_score(scan_results: List[ScanResult], 
+def _calculate_security_score(scan_results: List[ScanResult],
                              compliance_results: List[ComplianceResult],
                              dashboard_data: Dict[str, Any]) -> float:
     """Calculate overall security health score."""
     score = 100.0
-    
+
     # Deduct points for vulnerabilities
     total_vulns = sum(len(r.vulnerabilities) for r in scan_results)
     score -= min(total_vulns * 5, 30)  # Max 30 points deduction
-    
+
     # Deduct points for secrets found
     total_secrets = sum(len(r.secrets_found) for r in scan_results)
     score -= min(total_secrets * 10, 40)  # Max 40 points deduction
-    
+
     # Deduct points for compliance violations
     failed_compliance = len([r for r in compliance_results if not r.passed])
     score -= min(failed_compliance * 2, 20)  # Max 20 points deduction
-    
+
     # Deduct points for active alerts
     active_alerts = dashboard_data["alert_summary"]["active"]
     score -= min(active_alerts * 3, 15)  # Max 15 points deduction
-    
+
     return max(score, 0.0)
 
 def _generate_security_recommendations(scan_results: List[ScanResult],
@@ -356,32 +356,32 @@ def _generate_security_recommendations(scan_results: List[ScanResult],
                                      dashboard_data: Dict[str, Any]) -> List[str]:
     """Generate security recommendations."""
     recommendations = []
-    
+
     # Critical issues
     critical_vulns = [v for r in scan_results for v in r.vulnerabilities if v.severity == SeverityLevel.CRITICAL.value]
     if critical_vulns:
         recommendations.append("IMMEDIATE: Address all critical security vulnerabilities")
-    
+
     # High severity issues
     high_vulns = [v for r in scan_results for v in r.vulnerabilities if v.severity == SeverityLevel.HIGH.value]
     if high_vulns:
         recommendations.append("HIGH PRIORITY: Fix high-severity vulnerabilities within 7 days")
-    
+
     # Secrets exposure
     total_secrets = sum(len(r.secrets_found) for r in scan_results)
     if total_secrets > 0:
         recommendations.append("URGENT: Remove all exposed secrets and rotate credentials")
-    
+
     # Compliance issues
     failed_compliance = [r for r in compliance_results if not r.passed]
     if failed_compliance:
         recommendations.append("Address compliance violations to meet security standards")
-    
+
     # Active alerts
     active_alerts = dashboard_data["alert_summary"]["active"]
     if active_alerts > 0:
         recommendations.append(f"Investigate and resolve {active_alerts} active security alerts")
-    
+
     # General recommendations
     recommendations.extend([
         "Implement regular automated security scanning",
@@ -390,7 +390,7 @@ def _generate_security_recommendations(scan_results: List[ScanResult],
         "Maintain up-to-date security policies and procedures",
         "Provide security training for development and operations teams"
     ])
-    
+
     return recommendations
 
 # Initialize package logging
@@ -416,13 +416,13 @@ def _initialize_security_package():
         handler.setFormatter(formatter)
         security_logger.addHandler(handler)
         security_logger.setLevel(logging.INFO)
-    
+
     # Initialize core security components
     get_security_monitor()  # Initialize monitoring
     get_access_engine()     # Initialize access control
     get_audit_logger()      # Initialize audit logging
     get_compliance_checker() # Initialize compliance checking
-    
+
     logger.info("Security package fully initialized")
 
 # Run initialization

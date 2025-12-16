@@ -4,6 +4,7 @@ This is a minimal HTTP example assuming your MCP server is reachable via a
 Tailscale Service at `mcp-api.<tailnet>.ts.net` and is serving an HTTP JSON
 endpoint that proxies MCP tool calls. Adjust URL/transport to your setup.
 """
+
 import requests
 
 TAILSCALE_SERVICE = "https://mcp-api.example.ts.net:443"

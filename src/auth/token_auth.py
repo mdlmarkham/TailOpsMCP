@@ -6,7 +6,6 @@ import hashlib
 import hmac
 import json
 import os
-import asyncio
 import inspect
 from functools import wraps
 from typing import Any, Dict, List, Optional
@@ -21,10 +20,10 @@ class TokenClaims(BaseModel):
     scopes: List[str]
     host_tags: Optional[List[str]] = None
     expiry: Optional[datetime.datetime]
-    
+
     def __init__(self, **data):
-        if 'host_tags' not in data:
-            data['host_tags'] = []
+        if "host_tags" not in data:
+            data["host_tags"] = []
         super().__init__(**data)
 
     @classmethod
@@ -65,48 +64,66 @@ class TokenVerifier:
 
     def verify(self, token: str) -> TokenClaims:
         if not token:
-            raise SystemManagerError("missing token", category=ErrorCategory.UNAUTHORIZED)
+            raise SystemManagerError(
+                "missing token", category=ErrorCategory.UNAUTHORIZED
+            )
 
         # Try JWT path first
         if self.jwt_secret and self._jwt:
             try:
                 payload = self._jwt.decode(token, self.jwt_secret, algorithms=["HS256"])
             except Exception as e:  # pragma: no cover - runtime handling
-                raise SystemManagerError(f"invalid JWT: {e}", category=ErrorCategory.UNAUTHORIZED)
+                raise SystemManagerError(
+                    f"invalid JWT: {e}", category=ErrorCategory.UNAUTHORIZED
+                )
             try:
                 return TokenClaims.from_dict(payload)
-            except ValidationError as ve:
-                raise SystemManagerError("invalid token claims", category=ErrorCategory.UNAUTHORIZED)
+            except ValidationError:
+                raise SystemManagerError(
+                    "invalid token claims", category=ErrorCategory.UNAUTHORIZED
+                )
 
         # Else try HMAC-shared-secret format: "<base64url_payload>.<hex_signature>"
         if self.shared_secret:
             try:
                 payload_b64, sig_hex = token.split(".")
             except ValueError:
-                raise SystemManagerError("malformed token", category=ErrorCategory.UNAUTHORIZED)
+                raise SystemManagerError(
+                    "malformed token", category=ErrorCategory.UNAUTHORIZED
+                )
 
             try:
                 # base64 urlsafe may be missing padding
                 padding = "=" * (-len(payload_b64) % 4)
                 payload_bytes = base64.urlsafe_b64decode(payload_b64 + padding)
                 expected_sig = hmac.new(
-                    key=self.shared_secret.encode("utf-8"), msg=payload_b64.encode("utf-8"), digestmod=hashlib.sha256
+                    key=self.shared_secret.encode("utf-8"),
+                    msg=payload_b64.encode("utf-8"),
+                    digestmod=hashlib.sha256,
                 ).hexdigest()
             except Exception:
-                raise SystemManagerError("malformed token payload", category=ErrorCategory.UNAUTHORIZED)
+                raise SystemManagerError(
+                    "malformed token payload", category=ErrorCategory.UNAUTHORIZED
+                )
 
             if not hmac.compare_digest(expected_sig, sig_hex):
-                raise SystemManagerError("invalid token signature", category=ErrorCategory.UNAUTHORIZED)
+                raise SystemManagerError(
+                    "invalid token signature", category=ErrorCategory.UNAUTHORIZED
+                )
 
             try:
                 payload_json = json.loads(payload_bytes)
             except Exception:
-                raise SystemManagerError("invalid token payload JSON", category=ErrorCategory.UNAUTHORIZED)
+                raise SystemManagerError(
+                    "invalid token payload JSON", category=ErrorCategory.UNAUTHORIZED
+                )
 
             try:
                 claims = TokenClaims.from_dict(payload_json)
             except ValidationError:
-                raise SystemManagerError("invalid token claims", category=ErrorCategory.UNAUTHORIZED)
+                raise SystemManagerError(
+                    "invalid token claims", category=ErrorCategory.UNAUTHORIZED
+                )
 
             # Check expiry if present
             # Use timezone-aware datetime comparison
@@ -118,12 +135,16 @@ class TokenVerifier:
                     # Assume UTC for naive datetimes
                     expiry = expiry.replace(tzinfo=datetime.timezone.utc)
                 if expiry < now:
-                    raise SystemManagerError("token expired", category=ErrorCategory.UNAUTHORIZED)
+                    raise SystemManagerError(
+                        "token expired", category=ErrorCategory.UNAUTHORIZED
+                    )
 
             return claims
 
         # No verifier configured
-        raise SystemManagerError("no token verifier configured", category=ErrorCategory.CONFIGURATION)
+        raise SystemManagerError(
+            "no token verifier configured", category=ErrorCategory.CONFIGURATION
+        )
 
 
 def require_scopes(required: List[str]):
@@ -143,6 +164,7 @@ def require_scopes(required: List[str]):
     def decorator(fn):
         # Support decorating async and sync functions
         if inspect.iscoroutinefunction(fn):
+
             @wraps(fn)
             async def async_wrapper(*args, **kwargs):
                 token = None
@@ -159,7 +181,9 @@ def require_scopes(required: List[str]):
                 claims = verifier.verify(token)
                 missing = [s for s in required if s not in (claims.scopes or [])]
                 if missing:
-                    raise SystemManagerError("insufficient scopes", category=ErrorCategory.FORBIDDEN)
+                    raise SystemManagerError(
+                        "insufficient scopes", category=ErrorCategory.FORBIDDEN
+                    )
 
                 kwargs["_token_claims"] = claims
                 return await fn(*args, **kwargs)
@@ -167,6 +191,7 @@ def require_scopes(required: List[str]):
             return async_wrapper
 
         else:
+
             @wraps(fn)
             def sync_wrapper(*args, **kwargs):
                 token = None
@@ -183,7 +208,9 @@ def require_scopes(required: List[str]):
                 claims = verifier.verify(token)
                 missing = [s for s in required if s not in (claims.scopes or [])]
                 if missing:
-                    raise SystemManagerError("insufficient scopes", category=ErrorCategory.FORBIDDEN)
+                    raise SystemManagerError(
+                        "insufficient scopes", category=ErrorCategory.FORBIDDEN
+                    )
 
                 kwargs["_token_claims"] = claims
                 return fn(*args, **kwargs)

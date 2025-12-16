@@ -10,7 +10,7 @@ security:
     real_time_processing: true
     database_path: "./logs/security_audit.db"
     log_file_path: "./logs/security_audit.log"
-    
+
   # Identity Management Configuration
   identity_management:
     session_timeout: 3600  # 1 hour in seconds
@@ -19,7 +19,7 @@ security:
     oidc_enabled: true
     tailscale_integration: true
     session_cleanup_interval: 300  # 5 minutes
-    
+
   # Access Control Configuration
   access_control:
     default_deny: true
@@ -27,21 +27,21 @@ security:
     risk_based_access: true
     separation_of_duties: true
     approval_chain_required: true
-    
+
   # Security Monitoring Configuration
   security_monitoring:
     threat_detection_enabled: true
     anomaly_detection: true
     real_time_alerts: true
     automated_response: false  # Enable with caution
-    
+
     # Threat Detection Thresholds
     brute_force_threshold: 5
     brute_force_time_window: 300  # 5 minutes
     privilege_escalation_threshold: 3
     data_dumping_threshold: 100
     lateral_movement_threshold: 5
-    
+
   # Compliance Framework Configuration
   compliance:
     standards: ["SOC2", "ISO27001", "PCI-DSS"]
@@ -49,7 +49,7 @@ security:
     evidence_collection: true
     retention_policies: true
     assessment_frequency: "quarterly"
-    
+
   # Data Retention Policies
   retention:
     audit_logs: 2555  # 7 years
@@ -58,7 +58,7 @@ security:
     security_alerts: 365  # 1 year
     compliance_reports: 2555  # 7 years
     threat_intelligence: 90  # 90 days
-    
+
   # Network Security Configuration
   network_security:
     private_ip_ranges:
@@ -85,14 +85,14 @@ authentication:
       email: "email"
       groups: "groups"
       roles: "roles"
-      
+
   # Session Management
   session_management:
     token_length: 32
     refresh_enabled: true
     revocation_enabled: true
     concurrent_sessions_limit: 3
-    
+
   # Multi-Factor Authentication
   mfa:
     required_for_roles: ["admin", "security", "operations"]
@@ -117,7 +117,7 @@ authorization:
       user:
         permissions: ["targets:read", "targets:connect", "logs:read"]
         description: "Standard user access"
-        
+
   # Contextual Access Control
   contextual:
     time_restrictions:
@@ -141,7 +141,7 @@ monitoring:
       high: ["15min"]
       medium: ["1hour"]
       low: ["24hour"]
-      
+
   # Log Analysis
   log_analysis:
     enabled: true
@@ -149,7 +149,7 @@ monitoring:
     analysis_interval: 300  # 5 minutes
     pattern_matching: true
     anomaly_detection: true
-      
+
   # Threat Intelligence
   threat_intelligence:
     enabled: true
@@ -166,14 +166,14 @@ incident_response:
       brute_force: ["block_ip", "alert_security"]
       privilege_escalation: ["alert_security", "require_approval"]
       data_exfiltration: ["block_operation", "alert_management"]
-      
+
   # Manual Response
   manual_response:
     escalation_matrix:
       level_1: ["security_team"]
       level_2: ["security_manager"]
       level_3: ["cto", "legal"]
-      
+
   # Communication
   communication:
     channels:
@@ -199,7 +199,7 @@ compliance:
       - "CC6.3"  # User Access Management
       - "CC7.1"  # System Operations
       - "CC8.1"  # Change Management
-      
+
   # ISO 27001 Configuration
   iso27001:
     enabled: true
@@ -209,7 +209,7 @@ compliance:
       - "A.9.4.1"  # Information Access Restriction
       - "A.12.4.1"  # Event Logging
       - "A.12.6.1"  # Technical Vulnerability Management
-      
+
   # PCI DSS Configuration
   pci_dss:
     enabled: false  # Enable only if handling payment data
@@ -217,7 +217,7 @@ compliance:
       - "8.2.3"  # Multi-factor Authentication
       - "10.1"   # Audit Trails
       - "10.2"   # Automated Audit Trails
-      
+
   # GDPR Configuration
   gdpr:
     enabled: false  # Enable only if handling EU personal data
@@ -237,7 +237,7 @@ risk_management:
       - "operation_type"
       - "time_context"
       - "location_context"
-      
+
   # Risk Scoring
   risk_scoring:
     thresholds:
@@ -245,7 +245,7 @@ risk_management:
       medium: 0.6
       high: 0.8
       critical: 0.95
-      
+
   # Risk Mitigation
   mitigation:
     automatic_blocking: false
@@ -263,21 +263,21 @@ policies:
     require_symbols: true
     prevent_reuse: 5
     max_age: 90  # days
-    
+
   # Session Policy
   session_policy:
     idle_timeout: 1800  # 30 minutes
     absolute_timeout: 3600  # 1 hour
     concurrent_sessions: 3
     session_regeneration: true
-    
+
   # Access Policy
   access_policy:
     default_deny: true
     least_privilege: true
     periodic_review: true
     review_frequency: 90  # days
-    
+
   # Data Handling Policy
   data_policy:
     classification_required: true
@@ -295,7 +295,7 @@ environments:
         automated_response: false
     compliance:
       standards: ["internal"]
-      
+
   staging:
     security:
       audit_logging:
@@ -304,7 +304,7 @@ environments:
         real_time_alerts: true
     compliance:
       standards: ["SOC2", "ISO27001"]
-      
+
   production:
     security:
       audit_logging:
@@ -325,13 +325,13 @@ notifications:
     recipients:
       security_team: ["security@example.com"]
       management: ["management@example.com"]
-      
+
   # Compliance Reports
   compliance_reports:
     enabled: true
     frequency: "monthly"
     recipients: ["compliance@example.com"]
-    
+
   # System Health
   system_health:
     enabled: true
@@ -346,19 +346,19 @@ integrations:
     serve_enabled: true
     auth_enabled: true
     oidc_enabled: true
-    
+
   # Proxmox Integration
   proxmox:
     enabled: false  # Enable if using Proxmox
     api_endpoint: ""
     credentials: ""
-    
+
   # SIEM Integration
   siem:
     enabled: false
     endpoint: ""
     api_key: ""
-    
+
   # Threat Intelligence
   threat_intel:
     enabled: false
@@ -372,13 +372,13 @@ development:
     enabled: false
     mock_services: false
     bypass_authentication: false
-    
+
   # Debug Configuration
   debug:
     enabled: false
     log_level: "INFO"
     audit_all_requests: false
-    
+
   # Development Security
   dev_security:
     allow_localhost: true

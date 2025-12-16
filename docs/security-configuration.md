@@ -98,7 +98,7 @@ targets:
       "dst": ["tag:tailopsmcp-gateway:8080"]
     },
     {
-      "action": "accept", 
+      "action": "accept",
       "src": ["tag:tailopsmcp-gateway"],
       "dst": ["tag:managed-targets:*"]
     }

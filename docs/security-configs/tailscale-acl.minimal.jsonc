@@ -11,7 +11,7 @@
       "dst": ["*:8080"],
     },
   ],
-  
+
   // No tag-based controls
   // Relies on tailnet membership alone
 }

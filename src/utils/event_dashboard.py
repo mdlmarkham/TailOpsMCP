@@ -6,8 +6,8 @@ This module provides a web-based dashboard for visualizing events, trends, and s
 
 import asyncio
 import json
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict
 from pathlib import Path
 
 from aiohttp import web, WSMsgType
@@ -23,145 +23,139 @@ from src.utils.logging_config import get_logger
 
 class EventDashboard:
     """Web-based event dashboard."""
-    
+
     def __init__(self, host: str = "localhost", port: int = 8080):
         self.host = host
         self.port = port
         self.logger = get_logger("event_dashboard")
         self.app = None
         self.websocket_connections = set()
-        
+
         # Initialize services
         self.event_reporting = get_event_reporting()
         self.event_store = get_event_store()
         self.event_alerting = get_event_alerting()
         self.event_analyzer = get_event_analyzer()
-    
+
     async def create_app(self) -> web.Application:
         """Create the web application."""
         # Setup Jinja2 templates
         template_dir = Path("./templates")
         template_dir.mkdir(exist_ok=True)
-        
+
         self.app = web.Application()
-        
+
         # Add Jinja2 template loader
         loader = jinja2.FileSystemLoader(str(template_dir))
         aiohttp_jinja2.setup(self.app, loader=loader)
-        
+
         # Add routes
-        self.app.router.add_get('/', self.index_handler)
-        self.app.router.add_get('/api/events', self.events_api_handler)
-        self.app.router.add_get('/api/health', self.health_api_handler)
-        self.app.router.add_get('/api/security', self.security_api_handler)
-        self.app.router.add_get('/api/alerts', self.alerts_api_handler)
-        self.app.router.add_get('/api/trends', self.trends_api_handler)
-        self.app.router.add_get('/api/statistics', self.statistics_api_handler)
-        self.app.router.add_websocket('/ws', self.websocket_handler)
-        
+        self.app.router.add_get("/", self.index_handler)
+        self.app.router.add_get("/api/events", self.events_api_handler)
+        self.app.router.add_get("/api/health", self.health_api_handler)
+        self.app.router.add_get("/api/security", self.security_api_handler)
+        self.app.router.add_get("/api/alerts", self.alerts_api_handler)
+        self.app.router.add_get("/api/trends", self.trends_api_handler)
+        self.app.router.add_get("/api/statistics", self.statistics_api_handler)
+        self.app.router.add_websocket("/ws", self.websocket_handler)
+
         # Add static files route
         static_dir = Path("./static")
         static_dir.mkdir(exist_ok=True)
-        self.app.router.add_static('/static', str(static_dir))
-        
+        self.app.router.add_static("/static", str(static_dir))
+
         return self.app
-    
+
     async def index_handler(self, request) -> web.Response:
         """Handle dashboard index page."""
         try:
             # Get dashboard data
             dashboard_data = await self._get_dashboard_data()
-            
+
             return aiohttp_jinja2.render_template(
-                'dashboard.html', 
-                request, 
-                dashboard_data
+                "dashboard.html", request, dashboard_data
             )
         except Exception as e:
             self.logger.error(f"Error rendering dashboard: {e}")
             return web.Response(text=f"Dashboard error: {e}", status=500)
-    
+
     async def events_api_handler(self, request) -> web.Response:
         """Handle events API endpoint."""
         try:
             # Parse query parameters
-            hours = int(request.query.get('hours', 24))
-            limit = int(request.query.get('limit', 100))
-            
+            hours = int(request.query.get("hours", 24))
+            limit = int(request.query.get("limit", 100))
+
             # Get events
             from src.models.event_models import EventFilters
+
             time_range = TimeRange.from_hours(hours)
             filters = EventFilters(
                 start_time=time_range.start_time,
                 end_time=time_range.end_time,
-                limit=limit
+                limit=limit,
             )
-            
+
             events = await self.event_store.get_events(filters)
             events_data = [event.to_dict() for event in events]
-            
-            return web.json_response({
-                "success": True,
-                "events": events_data,
-                "total": len(events_data),
-                "time_range": {
-                    "hours": hours,
-                    "start_time": time_range.start_time.isoformat(),
-                    "end_time": time_range.end_time.isoformat()
+
+            return web.json_response(
+                {
+                    "success": True,
+                    "events": events_data,
+                    "total": len(events_data),
+                    "time_range": {
+                        "hours": hours,
+                        "start_time": time_range.start_time.isoformat(),
+                        "end_time": time_range.end_time.isoformat(),
+                    },
                 }
-            })
-            
+            )
+
         except Exception as e:
             self.logger.error(f"Events API error: {e}")
-            return web.json_response({
-                "success": False,
-                "error": str(e)
-            }, status=500)
-    
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
     async def health_api_handler(self, request) -> web.Response:
         """Handle health API endpoint."""
         try:
-            hours = int(request.query.get('hours', 24))
+            hours = int(request.query.get("hours", 24))
             time_range = TimeRange.from_hours(hours)
-            health_report = await self.event_reporting.generate_health_report(time_range)
-            
-            return web.json_response({
-                "success": True,
-                "health_data": health_report.to_dict()
-            })
-            
+            health_report = await self.event_reporting.generate_health_report(
+                time_range
+            )
+
+            return web.json_response(
+                {"success": True, "health_data": health_report.to_dict()}
+            )
+
         except Exception as e:
             self.logger.error(f"Health API error: {e}")
-            return web.json_response({
-                "success": False,
-                "error": str(e)
-            }, status=500)
-    
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
     async def security_api_handler(self, request) -> web.Response:
         """Handle security API endpoint."""
         try:
-            hours = int(request.query.get('hours', 24))
+            hours = int(request.query.get("hours", 24))
             time_range = TimeRange.from_hours(hours)
-            security_report = await self.event_reporting.generate_security_report(time_range)
-            
-            return web.json_response({
-                "success": True,
-                "security_data": security_report.to_dict()
-            })
-            
+            security_report = await self.event_reporting.generate_security_report(
+                time_range
+            )
+
+            return web.json_response(
+                {"success": True, "security_data": security_report.to_dict()}
+            )
+
         except Exception as e:
             self.logger.error(f"Security API error: {e}")
-            return web.json_response({
-                "success": False,
-                "error": str(e)
-            }, status=500)
-    
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
     async def alerts_api_handler(self, request) -> web.Response:
         """Handle alerts API endpoint."""
         try:
             alerts = await self.event_alerting.get_active_alerts()
             alerts_data = []
-            
+
             for alert in alerts:
                 alert_dict = {
                     "id": alert.id,
@@ -172,88 +166,79 @@ class EventDashboard:
                     "status": alert.status.value,
                     "created_at": alert.created_at.isoformat(),
                     "event_count": alert.event_count,
-                    "escalation_level": alert.escalation_level
+                    "escalation_level": alert.escalation_level,
                 }
                 alerts_data.append(alert_dict)
-            
+
             alert_stats = await self.event_alerting.get_alert_statistics()
-            
-            return web.json_response({
-                "success": True,
-                "alerts": alerts_data,
-                "statistics": alert_stats
-            })
-            
+
+            return web.json_response(
+                {"success": True, "alerts": alerts_data, "statistics": alert_stats}
+            )
+
         except Exception as e:
             self.logger.error(f"Alerts API error: {e}")
-            return web.json_response({
-                "success": False,
-                "error": str(e)
-            }, status=500)
-    
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
     async def trends_api_handler(self, request) -> web.Response:
         """Handle trends API endpoint."""
         try:
-            days = int(request.query.get('days', 7))
+            days = int(request.query.get("days", 7))
             time_range = TimeRange.from_days(days)
-            
+
             # Get events for trend analysis
             from src.models.event_models import EventFilters
+
             filters = EventFilters(
                 start_time=time_range.start_time,
                 end_time=time_range.end_time,
-                limit=10000
+                limit=10000,
             )
             events = await self.event_store.get_events(filters)
-            
+
             # Analyze trends
             trends = await self.event_analyzer.detect_trends(events)
             trends_data = [trend.__dict__ for trend in trends]
-            
-            return web.json_response({
-                "success": True,
-                "trends": trends_data,
-                "total_events": len(events),
-                "time_range": {
-                    "days": days,
-                    "start_time": time_range.start_time.isoformat(),
-                    "end_time": time_range.end_time.isoformat()
+
+            return web.json_response(
+                {
+                    "success": True,
+                    "trends": trends_data,
+                    "total_events": len(events),
+                    "time_range": {
+                        "days": days,
+                        "start_time": time_range.start_time.isoformat(),
+                        "end_time": time_range.end_time.isoformat(),
+                    },
                 }
-            })
-            
+            )
+
         except Exception as e:
             self.logger.error(f"Trends API error: {e}")
-            return web.json_response({
-                "success": False,
-                "error": str(e)
-            }, status=500)
-    
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
     async def statistics_api_handler(self, request) -> web.Response:
         """Handle statistics API endpoint."""
         try:
-            hours = int(request.query.get('hours', 24))
+            hours = int(request.query.get("hours", 24))
             stats = await self.event_store.get_statistics(hours)
-            
-            return web.json_response({
-                "success": True,
-                "statistics": stats.to_dict()
-            })
-            
+
+            return web.json_response({"success": True, "statistics": stats.to_dict()})
+
         except Exception as e:
             self.logger.error(f"Statistics API error: {e}")
-            return web.json_response({
-                "success": False,
-                "error": str(e)
-            }, status=500)
-    
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
     async def websocket_handler(self, request) -> web.WebSocketResponse:
         """Handle WebSocket connections for real-time updates."""
         ws = web.WebSocketResponse()
         await ws.prepare(request)
-        
+
         self.websocket_connections.add(ws)
-        self.logger.info(f"WebSocket client connected. Total clients: {len(self.websocket_connections)}")
-        
+        self.logger.info(
+            f"WebSocket client connected. Total clients: {len(self.websocket_connections)}"
+        )
+
         try:
             async for msg in ws:
                 if msg.type == WSMsgType.TEXT:
@@ -264,89 +249,99 @@ class EventDashboard:
                         await ws.send_str(json.dumps({"error": "Invalid JSON"}))
                 elif msg.type == WSMsgType.ERROR:
                     self.logger.error(f"WebSocket error: {ws.exception()}")
-                    
+
         except Exception as e:
             self.logger.error(f"WebSocket handler error: {e}")
         finally:
             self.websocket_connections.discard(ws)
-            self.logger.info(f"WebSocket client disconnected. Total clients: {len(self.websocket_connections)}")
-        
+            self.logger.info(
+                f"WebSocket client disconnected. Total clients: {len(self.websocket_connections)}"
+            )
+
         return ws
-    
-    async def _handle_websocket_message(self, ws: web.WebSocketResponse, data: Dict[str, Any]) -> None:
+
+    async def _handle_websocket_message(
+        self, ws: web.WebSocketResponse, data: Dict[str, Any]
+    ) -> None:
         """Handle incoming WebSocket messages."""
-        message_type = data.get('type')
-        
-        if message_type == 'subscribe':
+        message_type = data.get("type")
+
+        if message_type == "subscribe":
             # Send initial data
             await self._send_initial_data(ws)
-        elif message_type == 'get_alerts':
+        elif message_type == "get_alerts":
             # Send current alerts
             alerts = await self.event_alerting.get_active_alerts()
             alerts_data = [alert.id for alert in alerts]
-            await ws.send_str(json.dumps({
-                "type": "alerts_update",
-                "alerts": alerts_data
-            }))
-    
+            await ws.send_str(
+                json.dumps({"type": "alerts_update", "alerts": alerts_data})
+            )
+
     async def _send_initial_data(self, ws: web.WebSocketResponse) -> None:
         """Send initial dashboard data to WebSocket client."""
         try:
             # Get basic statistics
             stats = await self.event_store.get_statistics(24)
             alerts = await self.event_alerting.get_active_alerts()
-            
+
             # Send data
-            await ws.send_str(json.dumps({
-                "type": "initial_data",
-                "statistics": stats.to_dict(),
-                "active_alerts": len(alerts),
-                "timestamp": datetime.utcnow().isoformat()
-            }))
-            
+            await ws.send_str(
+                json.dumps(
+                    {
+                        "type": "initial_data",
+                        "statistics": stats.to_dict(),
+                        "active_alerts": len(alerts),
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                )
+            )
+
         except Exception as e:
             self.logger.error(f"Error sending initial WebSocket data: {e}")
-    
+
     async def _get_dashboard_data(self) -> Dict[str, Any]:
         """Get data for the main dashboard page."""
         try:
             # Get various data sources
             time_range = TimeRange.last_24_hours()
-            
+
             # Statistics
             stats = await self.event_store.get_statistics(24)
-            
+
             # Health report
-            health_report = await self.event_reporting.generate_health_report(time_range)
-            
+            health_report = await self.event_reporting.generate_health_report(
+                time_range
+            )
+
             # Security report
-            security_report = await self.event_reporting.generate_security_report(time_range)
-            
+            security_report = await self.event_reporting.generate_security_report(
+                time_range
+            )
+
             # Alerts
             alerts = await self.event_alerting.get_active_alerts()
             alert_stats = await self.event_alerting.get_alert_statistics()
-            
+
             # Recent events
             from src.models.event_models import EventFilters
+
             filters = EventFilters(
-                start_time=time_range.start_time,
-                end_time=time_range.end_time,
-                limit=50
+                start_time=time_range.start_time, end_time=time_range.end_time, limit=50
             )
             recent_events = await self.event_store.get_events(filters)
-            
+
             # Event severity distribution
             severity_counts = {}
             for event in recent_events:
                 severity = event.severity.value
                 severity_counts[severity] = severity_counts.get(severity, 0) + 1
-            
+
             # Event source distribution
             source_counts = {}
             for event in recent_events:
                 source = event.source.value
                 source_counts[source] = source_counts.get(source, 0) + 1
-            
+
             return {
                 "system_name": "TailOpsMCP Observability Dashboard",
                 "last_updated": datetime.utcnow().isoformat(),
@@ -355,64 +350,61 @@ class EventDashboard:
                     "critical_events_24h": stats.critical_events,
                     "error_events_24h": stats.error_events,
                     "warning_events_24h": stats.warning_events,
-                    "active_alerts": len(alerts)
+                    "active_alerts": len(alerts),
                 },
                 "health": {
                     "fleet_health_score": health_report.fleet_health_score,
                     "health_status": health_report.system_health_status,
                     "healthy_systems": health_report.healthy_systems,
-                    "total_systems": health_report.total_systems
+                    "total_systems": health_report.total_systems,
                 },
                 "security": {
                     "security_score": security_report.security_score,
                     "security_status": security_report.security_status,
                     "total_security_events": security_report.total_security_events,
-                    "critical_security_events": security_report.critical_security_events
+                    "critical_security_events": security_report.critical_security_events,
                 },
                 "alerts": {
                     "active_alerts": len(alerts),
-                    "alert_statistics": alert_stats
+                    "alert_statistics": alert_stats,
                 },
                 "events": {
                     "recent_events": [event.to_dict() for event in recent_events[:10]],
                     "severity_distribution": severity_counts,
-                    "source_distribution": source_counts
+                    "source_distribution": source_counts,
                 },
-                "websocket_url": f"ws://{self.host}:{self.port}/ws"
+                "websocket_url": f"ws://{self.host}:{self.port}/ws",
             }
-            
+
         except Exception as e:
             self.logger.error(f"Error getting dashboard data: {e}")
-            return {
-                "error": str(e),
-                "last_updated": datetime.utcnow().isoformat()
-            }
-    
+            return {"error": str(e), "last_updated": datetime.utcnow().isoformat()}
+
     async def broadcast_update(self, data: Dict[str, Any]) -> None:
         """Broadcast update to all connected WebSocket clients."""
         if not self.websocket_connections:
             return
-        
+
         message = json.dumps(data)
         disconnected_clients = set()
-        
+
         for client in self.websocket_connections:
             try:
                 await client.send_str(message)
             except Exception:
                 disconnected_clients.add(client)
-        
+
         # Remove disconnected clients
         self.websocket_connections -= disconnected_clients
-    
+
     async def start_server(self) -> None:
         """Start the dashboard server."""
         if self.app is None:
             self.app = await self.create_app()
-        
+
         self.logger.info(f"Starting event dashboard on {self.host}:{self.port}")
         await web._run_app(self.app, host=self.host, port=self.port)
-    
+
     async def stop_server(self) -> None:
         """Stop the dashboard server."""
         if self.app:
@@ -638,12 +630,12 @@ DASHBOARD_HTML = """
     <script>
         // WebSocket connection for real-time updates
         const ws = new WebSocket('{{ websocket_url }}');
-        
+
         ws.onopen = function(event) {
             console.log('WebSocket connected');
             ws.send(JSON.stringify({type: 'subscribe'}));
         };
-        
+
         ws.onmessage = function(event) {
             const data = JSON.parse(event.data);
             if (data.type === 'initial_data') {
@@ -652,7 +644,7 @@ DASHBOARD_HTML = """
                 updateAlerts(data.alerts);
             }
         };
-        
+
         ws.onclose = function(event) {
             console.log('WebSocket disconnected');
         };
@@ -661,7 +653,7 @@ DASHBOARD_HTML = """
         function initCharts() {
             const severityCtx = document.getElementById('severityChart').getContext('2d');
             const severityData = {{ events.severity_distribution|tojson }};
-            
+
             new Chart(severityCtx, {
                 type: 'doughnut',
                 data: {
@@ -711,18 +703,18 @@ async def create_dashboard_templates():
     """Create dashboard templates."""
     template_dir = Path("./templates")
     template_dir.mkdir(exist_ok=True)
-    
+
     dashboard_template = template_dir / "dashboard.html"
-    with open(dashboard_template, 'w') as f:
+    with open(dashboard_template, "w") as f:
         f.write(DASHBOARD_HTML)
-    
+
     # Create static files
     static_dir = Path("./static")
     static_dir.mkdir(exist_ok=True)
-    
+
     # Create basic CSS
     css_file = static_dir / "dashboard.css"
-    with open(css_file, 'w') as f:
+    with open(css_file, "w") as f:
         f.write("""
 /* Additional dashboard styles */
 .dashboard-container {
@@ -757,16 +749,18 @@ def get_event_dashboard(host: str = "localhost", port: int = 8080) -> EventDashb
     return _dashboard_instance
 
 
-async def start_event_dashboard(host: str = "localhost", port: int = 8080) -> EventDashboard:
+async def start_event_dashboard(
+    host: str = "localhost", port: int = 8080
+) -> EventDashboard:
     """Start the event dashboard server."""
     dashboard = get_event_dashboard(host, port)
-    
+
     # Create templates
     await create_dashboard_templates()
-    
+
     # Start server
     await dashboard.start_server()
-    
+
     return dashboard
 
 
@@ -774,15 +768,16 @@ async def start_event_dashboard(host: str = "localhost", port: int = 8080) -> Ev
 async def run_dashboard_server():
     """Run dashboard server standalone."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="TailOpsMCP Event Dashboard")
     parser.add_argument("--host", default="localhost", help="Dashboard host")
     parser.add_argument("--port", type=int, default=8080, help="Dashboard port")
     args = parser.parse_args()
-    
+
     await start_event_dashboard(args.host, args.port)
 
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(asyncio.run(run_dashboard_server()))

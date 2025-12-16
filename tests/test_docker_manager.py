@@ -9,7 +9,7 @@ from src.services.docker_manager import DockerManager
 @pytest.fixture
 def docker_manager(mock_docker_client):
     """Create DockerManager with mocked Docker client."""
-    with patch('docker.from_env', return_value=mock_docker_client):
+    with patch("docker.from_env", return_value=mock_docker_client):
         manager = DockerManager()
         manager.client = mock_docker_client
         return manager
@@ -18,7 +18,7 @@ def docker_manager(mock_docker_client):
 @pytest.fixture
 def docker_manager_no_client():
     """Create DockerManager without Docker client (simulating Docker not available)."""
-    with patch('docker.from_env', side_effect=Exception("Docker not available")):
+    with patch("docker.from_env", side_effect=Exception("Docker not available")):
         manager = DockerManager()
         return manager
 
@@ -28,13 +28,13 @@ class TestDockerManagerInitialization:
 
     def test_init_with_docker_available(self, mock_docker_client):
         """Test initialization when Docker is available."""
-        with patch('docker.from_env', return_value=mock_docker_client):
+        with patch("docker.from_env", return_value=mock_docker_client):
             manager = DockerManager()
             assert manager.client is not None
 
     def test_init_without_docker_available(self):
         """Test initialization when Docker is not available."""
-        with patch('docker.from_env', side_effect=Exception("Docker not available")):
+        with patch("docker.from_env", side_effect=Exception("Docker not available")):
             manager = DockerManager()
             assert manager.client is None
 
@@ -96,9 +96,13 @@ class TestGetContainerInfo:
         assert "environment" in result["data"]
 
     @pytest.mark.asyncio
-    async def test_get_container_info_not_found(self, docker_manager, mock_docker_client):
+    async def test_get_container_info_not_found(
+        self, docker_manager, mock_docker_client
+    ):
         """Test getting info for non-existent container."""
-        mock_docker_client.containers.get.side_effect = docker.errors.NotFound("Container not found")
+        mock_docker_client.containers.get.side_effect = docker.errors.NotFound(
+            "Container not found"
+        )
 
         result = await docker_manager.get_container_info("nonexistent")
 
@@ -129,7 +133,9 @@ class TestStartContainer:
     @pytest.mark.asyncio
     async def test_start_container_not_found(self, docker_manager, mock_docker_client):
         """Test starting non-existent container."""
-        mock_docker_client.containers.get.side_effect = docker.errors.NotFound("Not found")
+        mock_docker_client.containers.get.side_effect = docker.errors.NotFound(
+            "Not found"
+        )
 
         result = await docker_manager.start_container("nonexistent")
 
@@ -159,7 +165,9 @@ class TestStopContainer:
     @pytest.mark.asyncio
     async def test_stop_container_not_found(self, docker_manager, mock_docker_client):
         """Test stopping non-existent container."""
-        mock_docker_client.containers.get.side_effect = docker.errors.NotFound("Not found")
+        mock_docker_client.containers.get.side_effect = docker.errors.NotFound(
+            "Not found"
+        )
 
         result = await docker_manager.stop_container("nonexistent")
 
@@ -179,9 +187,13 @@ class TestRestartContainer:
         mock_docker_client.containers.get.return_value.restart.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_restart_container_not_found(self, docker_manager, mock_docker_client):
+    async def test_restart_container_not_found(
+        self, docker_manager, mock_docker_client
+    ):
         """Test restarting non-existent container."""
-        mock_docker_client.containers.get.side_effect = docker.errors.NotFound("Not found")
+        mock_docker_client.containers.get.side_effect = docker.errors.NotFound(
+            "Not found"
+        )
 
         result = await docker_manager.restart_container("nonexistent")
 
@@ -201,7 +213,9 @@ class TestGetContainerLogs:
         assert "Log line 1" in result["data"]
 
     @pytest.mark.asyncio
-    async def test_get_container_logs_custom_tail(self, docker_manager, mock_docker_client):
+    async def test_get_container_logs_custom_tail(
+        self, docker_manager, mock_docker_client
+    ):
         """Test getting logs with custom tail parameter."""
         result = await docker_manager.get_container_logs("test-container", tail=50)
 
@@ -209,9 +223,13 @@ class TestGetContainerLogs:
         mock_docker_client.containers.get.return_value.logs.assert_called_with(tail=50)
 
     @pytest.mark.asyncio
-    async def test_get_container_logs_not_found(self, docker_manager, mock_docker_client):
+    async def test_get_container_logs_not_found(
+        self, docker_manager, mock_docker_client
+    ):
         """Test getting logs for non-existent container."""
-        mock_docker_client.containers.get.side_effect = docker.errors.NotFound("Not found")
+        mock_docker_client.containers.get.side_effect = docker.errors.NotFound(
+            "Not found"
+        )
 
         result = await docker_manager.get_container_logs("nonexistent")
 
@@ -242,7 +260,9 @@ class TestPullImage:
     @pytest.mark.asyncio
     async def test_pull_image_api_error(self, docker_manager, mock_docker_client):
         """Test handling API error during pull."""
-        mock_docker_client.images.pull.side_effect = docker.errors.APIError("Pull failed")
+        mock_docker_client.images.pull.side_effect = docker.errors.APIError(
+            "Pull failed"
+        )
 
         result = await docker_manager.pull_image("invalid-image")
 
@@ -282,7 +302,9 @@ class TestUpdateContainer:
     """Test updating containers with new images."""
 
     @pytest.mark.asyncio
-    async def test_update_container_with_new_image(self, docker_manager, mock_docker_client):
+    async def test_update_container_with_new_image(
+        self, docker_manager, mock_docker_client
+    ):
         """Test updating container when new image is available."""
         # Mock different image IDs to simulate update
         old_container = mock_docker_client.containers.get.return_value
@@ -294,7 +316,9 @@ class TestUpdateContainer:
         new_image.attrs = {"Size": 150000000}
         mock_docker_client.images.pull.return_value = new_image
 
-        result = await docker_manager.update_container("test-container", pull_latest=True)
+        result = await docker_manager.update_container(
+            "test-container", pull_latest=True
+        )
 
         assert result["success"] is True
         assert result["updated"] is True
@@ -302,7 +326,9 @@ class TestUpdateContainer:
         assert result["new_image_id"][:6] == "newimg"
 
     @pytest.mark.asyncio
-    async def test_update_container_no_new_image(self, docker_manager, mock_docker_client):
+    async def test_update_container_no_new_image(
+        self, docker_manager, mock_docker_client
+    ):
         """Test updating container when already on latest image."""
         # Mock same image ID
         container = mock_docker_client.containers.get.return_value
@@ -313,24 +339,32 @@ class TestUpdateContainer:
         image.attrs = {"Size": 142000000}
         mock_docker_client.images.pull.return_value = image
 
-        result = await docker_manager.update_container("test-container", pull_latest=True)
+        result = await docker_manager.update_container(
+            "test-container", pull_latest=True
+        )
 
         assert result["success"] is True
         assert result["updated"] is False
         assert "already using latest" in result["message"].lower()
 
     @pytest.mark.asyncio
-    async def test_update_container_without_pull(self, docker_manager, mock_docker_client):
+    async def test_update_container_without_pull(
+        self, docker_manager, mock_docker_client
+    ):
         """Test updating container without pulling new image."""
         container = mock_docker_client.containers.get.return_value
 
-        result = await docker_manager.update_container("test-container", pull_latest=False)
+        result = await docker_manager.update_container(
+            "test-container", pull_latest=False
+        )
 
         assert result["success"] is True
         assert result["updated"] is False
 
     @pytest.mark.asyncio
-    async def test_update_container_host_network_mode(self, docker_manager, mock_docker_client):
+    async def test_update_container_host_network_mode(
+        self, docker_manager, mock_docker_client
+    ):
         """Test updating container with host network mode (no port bindings)."""
         # Setup container with host network
         container = mock_docker_client.containers.get.return_value
@@ -342,7 +376,9 @@ class TestUpdateContainer:
         new_image.attrs = {"Size": 150000000}
         mock_docker_client.images.pull.return_value = new_image
 
-        result = await docker_manager.update_container("test-container", pull_latest=True)
+        result = await docker_manager.update_container(
+            "test-container", pull_latest=True
+        )
 
         assert result["success"] is True
         # Verify ports were not added for host network
@@ -350,7 +386,9 @@ class TestUpdateContainer:
         assert "ports" not in run_call.kwargs
 
     @pytest.mark.asyncio
-    async def test_update_container_bridge_network_with_ports(self, docker_manager, mock_docker_client):
+    async def test_update_container_bridge_network_with_ports(
+        self, docker_manager, mock_docker_client
+    ):
         """Test updating container with bridge network mode (includes port bindings)."""
         container = mock_docker_client.containers.get.return_value
         container.attrs["HostConfig"]["NetworkMode"] = "bridge"
@@ -361,7 +399,9 @@ class TestUpdateContainer:
         new_image.attrs = {"Size": 150000000}
         mock_docker_client.images.pull.return_value = new_image
 
-        result = await docker_manager.update_container("test-container", pull_latest=True)
+        result = await docker_manager.update_container(
+            "test-container", pull_latest=True
+        )
 
         assert result["success"] is True
         # Verify ports were added for bridge network
@@ -369,7 +409,9 @@ class TestUpdateContainer:
         assert "ports" in run_call.kwargs
 
     @pytest.mark.asyncio
-    async def test_update_container_preserves_config(self, docker_manager, mock_docker_client):
+    async def test_update_container_preserves_config(
+        self, docker_manager, mock_docker_client
+    ):
         """Test update preserves container configuration."""
         container = mock_docker_client.containers.get.return_value
         container.image.id = "oldimg123"
@@ -379,7 +421,9 @@ class TestUpdateContainer:
         new_image.attrs = {"Size": 150000000}
         mock_docker_client.images.pull.return_value = new_image
 
-        result = await docker_manager.update_container("test-container", pull_latest=True)
+        result = await docker_manager.update_container(
+            "test-container", pull_latest=True
+        )
 
         # Verify configuration was preserved
         run_call = mock_docker_client.containers.run.call_args
@@ -390,7 +434,9 @@ class TestUpdateContainer:
     @pytest.mark.asyncio
     async def test_update_container_not_found(self, docker_manager, mock_docker_client):
         """Test updating non-existent container."""
-        mock_docker_client.containers.get.side_effect = docker.errors.NotFound("Not found")
+        mock_docker_client.containers.get.side_effect = docker.errors.NotFound(
+            "Not found"
+        )
 
         result = await docker_manager.update_container("nonexistent")
 
@@ -398,9 +444,13 @@ class TestUpdateContainer:
         assert "not found" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_update_container_pull_fails(self, docker_manager, mock_docker_client):
+    async def test_update_container_pull_fails(
+        self, docker_manager, mock_docker_client
+    ):
         """Test update when image pull fails."""
-        mock_docker_client.images.pull.side_effect = docker.errors.APIError("Pull failed")
+        mock_docker_client.images.pull.side_effect = docker.errors.APIError(
+            "Pull failed"
+        )
 
         result = await docker_manager.update_container("test-container")
 

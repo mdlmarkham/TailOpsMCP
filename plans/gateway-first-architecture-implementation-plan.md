@@ -34,7 +34,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 ### Phase 1: Critical Security Hardening (Immediate Priority)
 
 #### 1.1 SSH Security Hardening
-**Priority**: Critical  
+**Priority**: Critical
 **Files**: `src/services/ssh_executor.py`
 - Implement strict host key verification
 - Add certificate-based authentication support
@@ -43,7 +43,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 - Enable strict SSH cipher selection
 
 #### 1.2 PolicyGate Async/Sync Fixes
-**Priority**: Critical  
+**Priority**: Critical
 **Files**: `src/services/policy_gate.py`, `src/auth/middleware.py`
 - Fix async/sync method signature mismatches
 - Implement proper dependency injection for PolicyGate
@@ -51,7 +51,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 - Implement policy caching for performance
 
 #### 1.3 Path Traversal Protection
-**Priority**: Critical  
+**Priority**: Critical
 **Files**: `src/services/file_explorer.py`, `src/utils/sandbox.py`
 - Implement proper sandbox utilities for file operations
 - Add symlink traversal detection and prevention
@@ -59,7 +59,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 - Add file access permission checks
 
 #### 1.4 Debug Logging Security
-**Priority**: Critical  
+**Priority**: Critical
 **Files**: `src/mcp_server.py`, `src/utils/logging_config.py`
 - Remove debug logging in production environments
 - Implement structured logging with sensitive data redaction
@@ -68,7 +68,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 ### Phase 2: Execution Abstraction Layer Enhancement
 
 #### 2.1 Secure Execution Framework
-**Priority**: High  
+**Priority**: High
 **Files**: `src/services/executor_factory.py`, `src/services/ssh_executor.py`, `src/services/local_executor.py`
 - Implement pluggable execution backends with security controls
 - Add command sanitization and validation for all executors
@@ -76,7 +76,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 - Add execution timeouts and resource limits
 
 #### 2.2 Gateway Orchestration Service
-**Priority**: High  
+**Priority**: High
 **Files**: `src/services/gateway_orchestrator.py` (new)
 - Implement centralized gateway management
 - Add fleet state consolidation and monitoring
@@ -86,7 +86,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 ### Phase 3: Gateway Architecture Formalization
 
 #### 3.1 Architecture Specification
-**Priority**: High  
+**Priority**: High
 **Files**: `docs/gateway-architecture.md`
 - Define clear operational boundaries between Local and Gateway modes
 - Document security-first design principles
@@ -94,7 +94,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 - Define deployment patterns and scaling strategies
 
 #### 3.2 Configuration Management
-**Priority**: High  
+**Priority**: High
 **Files**: `src/utils/gateway_config.py`, `config/gateway.yaml.example`
 - Implement secure configuration management
 - Add environment-specific configuration templates
@@ -104,7 +104,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 ### Phase 4: Security and Audit Framework
 
 #### 4.1 Comprehensive Audit System
-**Priority**: Medium  
+**Priority**: Medium
 **Files**: `src/utils/audit_enhanced.py`, `src/services/audit_service.py`
 - Implement centralized audit logging
 - Add correlation ID tracking for operations
@@ -112,7 +112,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 - Add real-time security monitoring
 
 #### 4.2 Token Management
-**Priority**: Medium  
+**Priority**: Medium
 **Files**: `src/auth/token_manager.py`
 - Implement token revocation mechanisms
 - Add token rotation capabilities
@@ -122,7 +122,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 ### Phase 5: Testing and Documentation
 
 #### 5.1 Security Testing Framework
-**Priority**: Medium  
+**Priority**: Medium
 **Files**: `tests/test_security_*.py`
 - Implement security vulnerability testing
 - Add penetration testing scenarios
@@ -130,7 +130,7 @@ This plan formalizes the Gateway-First Architecture for TailOpsMCP while address
 - Add compliance validation tests
 
 #### 5.2 Documentation and Migration
-**Priority**: Medium  
+**Priority**: Medium
 **Files**: `docs/gateway-deployment-patterns.md`, `docs/migration-guide.md`
 - Create comprehensive deployment guides
 - Document migration strategies from Local to Gateway mode

@@ -28,10 +28,10 @@ graph TD
     D -- Target Validation --> E[Target Registry]
     E -- Capability Enforcement --> F[Execution Layer]
     F -- All Operations --> G[Audit Trail]
-    
+
     H[Threat: LLM Imagination] -- Prevented by --> I[Capability Allowlisting]
     I -- Explicit Authorization --> J[Target Registry]
-    
+
     K[Benefit: Reduced Blast Radius] -- Gateway Isolation --> L[Segment-Per-Gateway]
     L -- Target Separation --> M[Limited Impact]
 ```
@@ -205,7 +205,7 @@ SYSTEMMANAGER_AUDIT_LOG=/var/log/systemmanager/audit.log
     "tag:systemmanager-server": ["group:ops"],
     "tag:systemmanager-client": ["group:ops", "group:automation"],
   },
-  
+
   "acls": [
     // Only tagged clients can reach the MCP server
     {
@@ -213,7 +213,7 @@ SYSTEMMANAGER_AUDIT_LOG=/var/log/systemmanager/audit.log
       "src": ["tag:systemmanager-client"],
       "dst": ["tag:systemmanager-server:8080"],
     },
-    
+
     // Deny everything else
     {
       "action": "deny",
@@ -221,7 +221,7 @@ SYSTEMMANAGER_AUDIT_LOG=/var/log/systemmanager/audit.log
       "dst": ["tag:systemmanager-server:*"],
     },
   ],
-  
+
   "services": {
     "svc:systemmanager-mcp": {
       "protocol": "tcp",

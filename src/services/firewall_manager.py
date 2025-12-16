@@ -9,7 +9,7 @@ Supports:
 import asyncio
 import shutil
 import re
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 
 class FirewallManager:
@@ -27,10 +27,7 @@ class FirewallManager:
         elif self.iptables_available:
             return await self._get_iptables_status()
         else:
-            return {
-                "success": False,
-                "error": "No firewall found (ufw or iptables)"
-            }
+            return {"success": False, "error": "No firewall found (ufw or iptables)"}
 
     async def list_rules(self) -> Dict:
         """List all firewall rules."""
@@ -39,10 +36,7 @@ class FirewallManager:
         elif self.iptables_available:
             return await self._list_iptables_rules()
         else:
-            return {
-                "success": False,
-                "error": "No firewall found"
-            }
+            return {"success": False, "error": "No firewall found"}
 
     async def add_rule(
         self,
@@ -50,7 +44,7 @@ class FirewallManager:
         port: Optional[int] = None,
         protocol: str = "tcp",
         from_ip: Optional[str] = None,
-        comment: Optional[str] = None
+        comment: Optional[str] = None,
     ) -> Dict:
         """
         Add a firewall rule.
@@ -69,7 +63,10 @@ class FirewallManager:
             return {"success": False, "error": "Action must be 'allow' or 'deny'"}
 
         if protocol not in ["tcp", "udp", "any"]:
-            return {"success": False, "error": "Protocol must be 'tcp', 'udp', or 'any'"}
+            return {
+                "success": False,
+                "error": "Protocol must be 'tcp', 'udp', or 'any'",
+            }
 
         if self.ufw_available:
             return await self._add_ufw_rule(action, port, protocol, from_ip, comment)
@@ -101,9 +98,11 @@ class FirewallManager:
         """Get UFW status."""
         try:
             process = await asyncio.create_subprocess_exec(
-                "ufw", "status", "verbose",
+                "ufw",
+                "status",
+                "verbose",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             stdout, stderr = await process.communicate()
@@ -115,8 +114,12 @@ class FirewallManager:
 
             # Parse status
             status_active = "Status: active" in output
-            default_incoming = "deny (incoming)" if "deny (incoming)" in output else "allow (incoming)"
-            default_outgoing = "deny (outgoing)" if "deny (outgoing)" in output else "allow (outgoing)"
+            default_incoming = (
+                "deny (incoming)" if "deny (incoming)" in output else "allow (incoming)"
+            )
+            default_outgoing = (
+                "deny (outgoing)" if "deny (outgoing)" in output else "allow (outgoing)"
+            )
 
             return {
                 "success": True,
@@ -124,7 +127,7 @@ class FirewallManager:
                 "active": status_active,
                 "default_incoming": default_incoming,
                 "default_outgoing": default_outgoing,
-                "raw_output": output
+                "raw_output": output,
             }
 
         except Exception as e:
@@ -134,9 +137,11 @@ class FirewallManager:
         """List UFW rules."""
         try:
             process = await asyncio.create_subprocess_exec(
-                "ufw", "status", "numbered",
+                "ufw",
+                "status",
+                "numbered",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             stdout, stderr = await process.communicate()
@@ -154,16 +159,13 @@ class FirewallManager:
                 if match:
                     rule_num = int(match.group(1))
                     rule_text = match.group(2).strip()
-                    rules.append({
-                        "number": rule_num,
-                        "rule": rule_text
-                    })
+                    rules.append({"number": rule_num, "rule": rule_text})
 
             return {
                 "success": True,
                 "firewall": "ufw",
                 "rule_count": len(rules),
-                "rules": rules
+                "rules": rules,
             }
 
         except Exception as e:
@@ -175,7 +177,7 @@ class FirewallManager:
         port: Optional[int],
         protocol: str,
         from_ip: Optional[str],
-        comment: Optional[str]
+        comment: Optional[str],
     ) -> Dict:
         """Add UFW rule."""
         try:
@@ -197,9 +199,7 @@ class FirewallManager:
                 cmd.extend(["comment", comment])
 
             process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
 
             stdout, stderr = await process.communicate()
@@ -210,7 +210,7 @@ class FirewallManager:
             return {
                 "success": True,
                 "message": f"UFW rule added: {' '.join(cmd[1:])}",
-                "output": stdout.decode()
+                "output": stdout.decode(),
             }
 
         except Exception as e:
@@ -221,9 +221,12 @@ class FirewallManager:
         try:
             # UFW delete requires confirmation, use --force
             process = await asyncio.create_subprocess_exec(
-                "ufw", "--force", "delete", str(rule_number),
+                "ufw",
+                "--force",
+                "delete",
+                str(rule_number),
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             stdout, stderr = await process.communicate()
@@ -234,7 +237,7 @@ class FirewallManager:
             return {
                 "success": True,
                 "message": f"UFW rule {rule_number} deleted",
-                "output": stdout.decode()
+                "output": stdout.decode(),
             }
 
         except Exception as e:
@@ -247,9 +250,12 @@ class FirewallManager:
         try:
             # Count rules
             process = await asyncio.create_subprocess_exec(
-                "iptables", "-L", "-n", "--line-numbers",
+                "iptables",
+                "-L",
+                "-n",
+                "--line-numbers",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             stdout, stderr = await process.communicate()
@@ -258,14 +264,20 @@ class FirewallManager:
                 return {"success": False, "error": stderr.decode()}
 
             output = stdout.decode()
-            rule_count = len([l for l in output.split("\n") if l and not l.startswith("Chain") and not l.startswith("num")])
+            rule_count = len(
+                [
+                    l
+                    for l in output.split("\n")
+                    if l and not l.startswith("Chain") and not l.startswith("num")
+                ]
+            )
 
             return {
                 "success": True,
                 "firewall": "iptables",
                 "active": True,
                 "rule_count": rule_count,
-                "raw_output": output[:500]  # Truncate
+                "raw_output": output[:500],  # Truncate
             }
 
         except Exception as e:
@@ -275,9 +287,13 @@ class FirewallManager:
         """List iptables rules."""
         try:
             process = await asyncio.create_subprocess_exec(
-                "iptables", "-L", "-n", "--line-numbers", "-v",
+                "iptables",
+                "-L",
+                "-n",
+                "--line-numbers",
+                "-v",
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             stdout, stderr = await process.communicate()
@@ -302,18 +318,14 @@ class FirewallManager:
                 "success": True,
                 "firewall": "iptables",
                 "chains": chains,
-                "raw_output": output[:1000]  # Truncate
+                "raw_output": output[:1000],  # Truncate
             }
 
         except Exception as e:
             return {"success": False, "error": f"iptables list error: {str(e)}"}
 
     async def _add_iptables_rule(
-        self,
-        action: str,
-        port: Optional[int],
-        protocol: str,
-        from_ip: Optional[str]
+        self, action: str, port: Optional[int], protocol: str, from_ip: Optional[str]
     ) -> Dict:
         """Add iptables rule."""
         try:
@@ -334,9 +346,7 @@ class FirewallManager:
             cmd.extend(["-j", target])
 
             process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
 
             stdout, stderr = await process.communicate()
@@ -347,7 +357,7 @@ class FirewallManager:
             return {
                 "success": True,
                 "message": f"iptables rule added: {' '.join(cmd)}",
-                "warning": "iptables rules are not persistent. Use iptables-save to persist."
+                "warning": "iptables rules are not persistent. Use iptables-save to persist.",
             }
 
         except Exception as e:
@@ -357,9 +367,12 @@ class FirewallManager:
         """Delete iptables rule."""
         try:
             process = await asyncio.create_subprocess_exec(
-                "iptables", "-D", "INPUT", str(rule_number),
+                "iptables",
+                "-D",
+                "INPUT",
+                str(rule_number),
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                stderr=asyncio.subprocess.PIPE,
             )
 
             stdout, stderr = await process.communicate()
@@ -367,10 +380,7 @@ class FirewallManager:
             if process.returncode != 0:
                 return {"success": False, "error": stderr.decode()}
 
-            return {
-                "success": True,
-                "message": f"iptables rule {rule_number} deleted"
-            }
+            return {"success": True, "message": f"iptables rule {rule_number} deleted"}
 
         except Exception as e:
             return {"success": False, "error": f"iptables delete rule error: {str(e)}"}
@@ -380,5 +390,9 @@ class FirewallManager:
         return {
             "ufw_available": self.ufw_available,
             "iptables_available": self.iptables_available,
-            "preferred_firewall": "ufw" if self.ufw_available else "iptables" if self.iptables_available else None
+            "preferred_firewall": "ufw"
+            if self.ufw_available
+            else "iptables"
+            if self.iptables_available
+            else None,
         }

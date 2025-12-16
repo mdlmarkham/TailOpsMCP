@@ -4,7 +4,6 @@ import subprocess
 import asyncio
 from types import SimpleNamespace
 
-import pytest
 
 from src.mcp_server import mcp
 from src.auth.token_auth import TokenClaims
@@ -20,7 +19,17 @@ def _make_completed(stdout: str, returncode: int = 0):
 
 
 def write_inventory(stack_name: str):
-    inv = {"hosts": {}, "stacks": {stack_name: {"stack_name": stack_name, "host": "node-1", "path": "/srv/webapp", "services": ["web"]}}}
+    inv = {
+        "hosts": {},
+        "stacks": {
+            stack_name: {
+                "stack_name": stack_name,
+                "host": "node-1",
+                "path": "/srv/webapp",
+                "services": ["web"],
+            }
+        },
+    }
     with open("inventory.json", "w", encoding="utf-8") as f:
         json.dump(inv, f)
 
@@ -37,17 +46,29 @@ def test_mcp_wrapper_get_stack_network_info_cli(monkeypatch):
     write_inventory(stack_name)
 
     ps_line = json.dumps({"Names": f"{stack_name}_web_1", "ID": "abcd1234"}) + "\n"
-    inspect_obj = [{
-        "Id": "abcd1234",
-        "Name": f"/{stack_name}_web_1",
-        "Config": {"Image": "web:1.2.3", "Labels": {"com.docker.compose.service": "web"}},
-        "HostConfig": {"NetworkMode": "bridge"},
-        "NetworkSettings": {"Ports": {"80/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8080"}]}},
-        "Mounts": []
-    }]
+    inspect_obj = [
+        {
+            "Id": "abcd1234",
+            "Name": f"/{stack_name}_web_1",
+            "Config": {
+                "Image": "web:1.2.3",
+                "Labels": {"com.docker.compose.service": "web"},
+            },
+            "HostConfig": {"NetworkMode": "bridge"},
+            "NetworkSettings": {
+                "Ports": {"80/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8080"}]}
+            },
+            "Mounts": [],
+        }
+    ]
 
     def fake_run(args, capture_output=True, text=True, check=True):
-        if args[:3] == ["docker", "ps", "-a"] or args[:4] == ["docker", "ps", "-a", "--format"]:
+        if args[:3] == ["docker", "ps", "-a"] or args[:4] == [
+            "docker",
+            "ps",
+            "-a",
+            "--format",
+        ]:
             return _make_completed(ps_line)
         if args[0] == "docker" and args[1] == "inspect":
             return _make_completed(json.dumps(inspect_obj))

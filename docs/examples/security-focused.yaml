@@ -20,13 +20,13 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Production web server with strict security"
-    
+
     connection:
       host: "10.0.1.10"  # Production network
       username: "prod"
       key_path: "${SSH_KEY_PROD_WEB_01}"
       port: 22
-      
+
     capabilities:
       # Read-only operations only for production
       - "system:read"
@@ -36,7 +36,7 @@ targets:
       # Write operations require special approval
       - "container:control:restricted"
       - "file:write:restricted"
-      
+
     constraints:
       timeout: 60
       concurrency: 3
@@ -44,7 +44,7 @@ targets:
       require_approval: true
       approval_webhook: "${APPROVAL_WEBHOOK_PROD}"
       maintenance_window: "02:00-04:00"
-      
+
     metadata:
       environment: "production"
       security_level: "high"
@@ -58,20 +58,20 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Primary production database - highest security"
-    
+
     connection:
       host: "10.0.1.20"
       username: "prod-dba"
       key_path: "${SSH_KEY_PROD_DB_PRIMARY}"
       port: 22
-      
+
     capabilities:
       # Very restricted capabilities for production database
       - "system:read"
       - "container:read"
       - "database:read:restricted"
       - "database:backup:restricted"
-      
+
     constraints:
       timeout: 120
       concurrency: 1  # Single operation at a time
@@ -80,7 +80,7 @@ targets:
       approval_webhook: "${APPROVAL_WEBHOOK_PROD}"
       dual_approval: true  # Requires two approvals
       maintenance_window: "01:00-03:00"
-      
+
     metadata:
       environment: "production"
       security_level: "maximum"
@@ -94,13 +94,13 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Staging environment for testing"
-    
+
     connection:
       host: "10.0.2.10"  # Staging network
       username: "stage"
       key_path: "${SSH_KEY_STAGING_WEB_01}"
       port: 22
-      
+
     capabilities:
       # More permissive for staging
       - "system:read"
@@ -110,13 +110,13 @@ targets:
       - "file:read"
       - "file:write"
       - "network:read"
-      
+
     constraints:
       timeout: 45
       concurrency: 5
       audit_level: "medium"
       require_approval: false  # No approval required for staging
-      
+
     metadata:
       environment: "staging"
       security_level: "medium"
@@ -129,13 +129,13 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Development environment"
-    
+
     connection:
       host: "10.0.3.10"  # Development network
       username: "dev"
       key_path: "${SSH_KEY_DEV_WEB_01}"
       port: 22
-      
+
     capabilities:
       # Full access for development
       - "system:read"
@@ -148,13 +148,13 @@ targets:
       - "network:control"
       - "package:install"
       - "service:control"
-      
+
     constraints:
       timeout: 30
       concurrency: 10
       audit_level: "basic"
       require_approval: false  # No approval required for development
-      
+
     metadata:
       environment: "development"
       security_level: "low"
@@ -167,13 +167,13 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Central security monitoring and alerting"
-    
+
     connection:
       host: "10.0.1.100"
       username: "secops"
       key_path: "${SSH_KEY_SECURITY_MONITOR}"
       port: 22
-      
+
     capabilities:
       # Security-focused capabilities
       - "system:read"
@@ -183,13 +183,13 @@ targets:
       - "security:scan"
       - "monitoring:read"
       - "audit:read"
-      
+
     constraints:
       timeout: 30
       concurrency: 5
       audit_level: "high"
       require_approval: false  # Security operations are always allowed
-      
+
     metadata:
       environment: "production"
       security_level: "high"
@@ -205,7 +205,7 @@ security_policies:
       - no_dangerous_commands: true
       - require_encryption: true
       - limit_file_access: ["/etc", "/var/log", "/home/prod"]
-  
+
   - name: "development-permissions"
     target_pattern: "dev-.*"
     permissions:

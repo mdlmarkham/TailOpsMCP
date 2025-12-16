@@ -16,16 +16,16 @@ jobs:
     strategy:
       matrix:
         test-group: [orchestration, policy, inventory, basic]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
@@ -33,19 +33,24 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-            
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          pip install pytest-cov pytest-benchmark bandit safety
-          
+          pip install pytest-cov pytest-benchmark bandit safety radon
+
+      - name: Run quality automation scripts
+        run: |
+          python scripts/run_quality_checks.py --security --complexity --verbose
+
       - name: Run static security analysis
         run: |
+          python scripts/scan.py --quick --output security-quick-report.json
           bandit -r src/ -f json -o bandit-report.json || true
           safety check --json --output safety-report.json || true
-          
+
       - name: Run unit tests
         run: |
           pytest tests/ \
@@ -56,7 +61,7 @@ jobs:
             --cov-report=term-missing \
             --junitxml=unit-test-results.xml \
             -v
-            
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
@@ -64,7 +69,7 @@ jobs:
           flags: unit-tests
           name: codecov-umbrella
           fail_ci_if_error: false
-          
+
       - name: Upload test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -93,16 +98,16 @@ jobs:
           --health-retries 5
           ports:
             - 5432:5432
-            
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
@@ -110,21 +115,21 @@ jobs:
           key: ${{ runner.os }}-pip-integration-${{ hashFiles('**/requirements*.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-integration-
-            
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
           pip install pytest-cov psycopg2-binary
-          
+
       - name: Wait for PostgreSQL
         run: |
           until pg_isready -h localhost -p 5432 -U test; do
             echo "Waiting for PostgreSQL..."
             sleep 2
           done
-          
+
       - name: Run integration tests
         env:
           TEST_DATABASE_URL: postgresql://test:test@localhost:5432/tailops_test
@@ -138,7 +143,7 @@ jobs:
             --cov-report=html \
             --junitxml=integration-test-results.xml \
             -v
-            
+
       - name: Upload integration test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -154,39 +159,45 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Install security testing tools
         run: |
           python -m pip install --upgrade pip
-          pip install bandit safety semgrep
+          pip install bandit safety semgrep radon
           pip install -r requirements.txt
-          
+          pip install -r requirements-dev.txt
+
+      - name: Run comprehensive security scanning scripts
+        run: |
+          python scripts/scan.py --full --output comprehensive-security-report.json
+          python scripts/run_quality_checks.py --security --complexity --verbose
+
       - name: Run Bandit security scan
         run: |
           bandit -r src/ -f json -o bandit-security-report.json || true
           bandit -r src/ -f txt
-          
+
       - name: Run Safety vulnerability scan
         run: |
           safety check --json --output safety-vulnerability-report.json || true
           safety check
-          
+
       - name: Run Semgrep security scan
         run: |
           semgrep --config=auto --json --output=semgrep-report.json src/ || true
-          
-      - name: Run security tests
+
+      - name: Run comprehensive security tests
         run: |
           pytest tests/test_security.py \
             -m security \
             --junitxml=security-test-results.xml \
             -v
-            
+
       - name: Upload security test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -197,6 +208,8 @@ jobs:
             bandit-security-report.json
             safety-vulnerability-report.json
             semgrep-report.json
+            comprehensive-security-report.json
+            quality-reports/
 
   performance-tests:
     runs-on: ubuntu-latest
@@ -204,19 +217,19 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Install performance testing dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest-benchmark memory-profiler psutil
           pip install -r requirements-dev.txt
-          
+
       - name: Run performance tests
         run: |
           pytest tests/test_performance.py \
@@ -225,7 +238,7 @@ jobs:
             --benchmark-json=benchmark-results.json \
             --junitxml=performance-test-results.xml \
             -v
-            
+
       - name: Upload performance test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -241,29 +254,29 @@ jobs:
     strategy:
       matrix:
         test-group: [network, auth, data, recovery]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          
+
       - name: Run edge case tests
         run: |
           pytest tests/test_edge_cases.py \
             -m edge_case \
             --junitxml=edge-case-test-results.xml \
             -v
-            
+
       - name: Upload edge case test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -275,22 +288,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     needs: [unit-tests, integration-tests]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          
+
       - name: Run system integration tests
         env:
           TAILOPS_TEST_MODE: true
@@ -300,7 +313,7 @@ jobs:
             -m integration \
             --junitxml=system-integration-test-results.xml \
             -v
-            
+
       - name: Upload system integration test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -312,22 +325,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Install load testing dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest-benchmark locust
-          
+
       - name: Run load tests
         env:
           TAILOPS_LOAD_TEST_MODE: true
@@ -336,7 +349,7 @@ jobs:
             -m "load_testing" \
             --junitxml=load-test-results.xml \
             -v --tb=short
-            
+
       - name: Upload load test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -348,18 +361,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests, security-tests, edge-case-tests]
     if: always()
-    
+
     steps:
       - name: Download all test artifacts
         uses: actions/download-artifact@v3
-        
+
       - name: Combine coverage reports
         run: |
           pip install coverage
           coverage combine */coverage.xml
           coverage report --show-missing
           coverage html
-          
+
       - name: Upload combined coverage
         uses: actions/upload-artifact@v3
         with:
@@ -370,16 +383,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests, security-tests, edge-case-tests]
     if: always()
-    
+
     steps:
       - name: Download test artifacts
         uses: actions/download-artifact@v3
-        
+
       - name: Quality gate check
         run: |
           # Check test results
           echo "Checking test results..."
-          
+
           # Unit tests must pass
           if [ -f "unit-test-results-*/unit-test-results.xml" ]; then
             echo "Unit tests: PASSED"
@@ -387,7 +400,7 @@ jobs:
             echo "Unit tests: FAILED"
             exit 1
           fi
-          
+
           # Integration tests must pass
           if [ -f "integration-test-results/integration-test-results.xml" ]; then
             echo "Integration tests: PASSED"
@@ -395,7 +408,7 @@ jobs:
             echo "Integration tests: FAILED"
             exit 1
           fi
-          
+
           # Security tests must pass
           if [ -f "security-test-results/security-test-results.xml" ]; then
             echo "Security tests: PASSED"
@@ -403,9 +416,9 @@ jobs:
             echo "Security tests: FAILED"
             exit 1
           fi
-          
+
           echo "All quality gates passed!"
-          
+
       - name: Comment PR with test results
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
@@ -413,32 +426,32 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            
+
             let comment = '## 🧪 Test Results Summary\n\n';
-            
+
             // Add unit test results
             if (fs.existsSync('unit-test-results-*/unit-test-results.xml')) {
               comment += '✅ **Unit Tests**: Passed\n';
             } else {
               comment += '❌ **Unit Tests**: Failed\n';
             }
-            
+
             // Add integration test results
             if (fs.existsSync('integration-test-results/integration-test-results.xml')) {
               comment += '✅ **Integration Tests**: Passed\n';
             } else {
               comment += '❌ **Integration Tests**: Failed\n';
             }
-            
+
             // Add security test results
             if (fs.existsSync('security-test-results/security-test-results.xml')) {
               comment += '✅ **Security Tests**: Passed\n';
             } else {
               comment += '❌ **Security Tests**: Failed\n';
             }
-            
+
             comment += '\n📊 Detailed reports are available in the Actions artifacts.';
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -450,26 +463,26 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
     timeout-minutes: 300
-    
+
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12']
-        
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-          
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          
+
       - name: Run comprehensive test suite
         env:
           TAILOPS_NIGHTLY_MODE: true
@@ -480,7 +493,7 @@ jobs:
             --cov-report=html \
             --junitxml=nightly-test-results.xml \
             -v --tb=short
-            
+
       - name: Upload nightly test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -495,7 +508,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-quality-gate]
     if: always()
-    
+
     steps:
       - name: Notify test results
         run: |

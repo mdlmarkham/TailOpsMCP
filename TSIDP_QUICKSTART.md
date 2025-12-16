@@ -44,7 +44,7 @@ export SYSTEMMANAGER_AUTH_SERVER=https://tsidp.tailf9480.ts.net
 ## Benefits
 
 ✅ No manual token generation
-✅ Automatic token refresh  
+✅ Automatic token refresh
 ✅ Real user identity tracking
 ✅ Centralized access control via TSIDP
 ✅ Standard OAuth 2.1 flow
@@ -69,7 +69,7 @@ tail -f /opt/systemmanager/logs/mcp_server.log
 Look for:
 - "Using TSIDP OAuth 2.1 authentication"
 - "Dynamic Client Registration successful"
-- "Client ID: ..." 
+- "Client ID: ..."
 
 ### Reset OAuth Registration
 

@@ -212,13 +212,13 @@ from src.utils.observability_config_manager import get_observability_config
 async def main():
     # Load configuration
     config = get_observability_config()
-    
+
     # Initialize system integrations
     manager = await initialize_system_integrations()
-    
+
     # Start real-time event processing
     processor = await start_realtime_event_processing()
-    
+
     # Run integration cycle
     result = await manager.run_integration_cycle()
     print(f"Integration cycle result: {result}")
@@ -267,19 +267,19 @@ async def create_and_store_event():
         "healthy",
         {"cpu": "45%", "memory": "60%"}
     )
-    
+
     # Store the event
     store = get_event_store()
     event_id = await store.store_event(event)
     print(f"Stored event with ID: {event_id}")
-    
+
     # Query events
     from src.models.event_models import EventFilters
     filters = EventFilters(
         targets=["web-server-01"],
         event_types=[EventType.HEALTH_CHECK]
     )
-    
+
     events = await store.get_events(filters)
     print(f"Found {len(events)} events for web-server-01")
 ```
@@ -292,21 +292,21 @@ from src.services.event_analyzer import get_event_analyzer
 
 async def analyze_events():
     analyzer = get_event_analyzer()
-    
+
     # Get events for analysis
     store = get_event_store()
     events = await store.get_events()
-    
+
     # Detect trends
     trends = await analyzer.detect_trends(events)
     for trend in trends:
         print(f"Trend: {trend.name} - {trend.direction} (confidence: {trend.confidence:.2f})")
-    
+
     # Generate insights
     insights = await analyzer.generate_insights(events)
     for insight in insights:
         print(f"Insight: {insight.title} - {insight.description}")
-    
+
     # Predict issues
     predictions = await analyzer.predict_issues(events)
     for prediction in predictions:
@@ -321,7 +321,7 @@ from src.services.event_alerting import (
 
 async def setup_custom_alerts():
     alerting = EventAlerting()
-    
+
     # Create custom alert rule
     rule = AlertRule(
         name="high_cpu_usage",
@@ -333,10 +333,10 @@ async def setup_custom_alerts():
         threshold_count=3,
         threshold_time_window=300  # 5 minutes
     )
-    
+
     await alerting.add_alert_rule(rule)
     print("Custom alert rule added")
-    
+
     # Evaluate alerts
     events = await get_event_store().get_events()
     alerts = await alerting.evaluate_alert_rules(events)
@@ -349,14 +349,14 @@ from src.services.event_reporting import get_event_reporting, TimeRange
 
 async def generate_custom_report():
     reporting = get_event_reporting()
-    
+
     # Generate health report
     time_range = TimeRange.from_hours(24)
     health_report = await reporting.generate_health_report(time_range)
-    
+
     print(f"Health score: {health_report.fleet_health_score:.1f}%")
     print(f"Healthy systems: {health_report.healthy_systems}/{health_report.total_systems}")
-    
+
     # Export report
     await reporting.export_report(health_report, "html", "./reports/health_report.html")
     print("Health report exported to ./reports/health_report.html")
@@ -371,7 +371,7 @@ from src.utils.event_dashboard import start_event_dashboard
 async def start_dashboard():
     # Start the web dashboard
     dashboard = await start_event_dashboard(host="0.0.0.0", port=8080)
-    
+
     # Dashboard will be available at http://localhost:8080
     print("Dashboard started at http://localhost:8080")
 

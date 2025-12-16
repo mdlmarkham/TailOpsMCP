@@ -2,7 +2,7 @@
 
 import pytest
 import os
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from src.auth.middleware import SecurityMiddleware, secure_tool
 from src.auth.token_auth import TokenClaims
 from src.utils.errors import SystemManagerError, ErrorCategory
@@ -40,8 +40,12 @@ class TestGetClaimsFromContext:
         mock_request = Mock()
         mock_request.headers = {"authorization": "Bearer test_token"}
 
-        with patch('fastmcp.server.dependencies.get_http_request', return_value=mock_request):
-            with patch.object(middleware.token_verifier, 'verify', return_value=admin_claims):
+        with patch(
+            "fastmcp.server.dependencies.get_http_request", return_value=mock_request
+        ):
+            with patch.object(
+                middleware.token_verifier, "verify", return_value=admin_claims
+            ):
                 claims = middleware.get_claims_from_context()
 
         assert claims == admin_claims
@@ -49,7 +53,9 @@ class TestGetClaimsFromContext:
 
     def test_get_claims_from_kwargs_auth_token(self, middleware, admin_claims):
         """Test extracting token from kwargs auth_token parameter."""
-        with patch.object(middleware.token_verifier, 'verify', return_value=admin_claims):
+        with patch.object(
+            middleware.token_verifier, "verify", return_value=admin_claims
+        ):
             claims = middleware.get_claims_from_context(auth_token="token_from_kwargs")
 
         assert claims == admin_claims
@@ -59,7 +65,9 @@ class TestGetClaimsFromContext:
         """Test extracting token from kwargs headers dict."""
         headers = {"Authorization": "Bearer token_from_headers"}
 
-        with patch.object(middleware.token_verifier, 'verify', return_value=admin_claims):
+        with patch.object(
+            middleware.token_verifier, "verify", return_value=admin_claims
+        ):
             claims = middleware.get_claims_from_context(headers=headers)
 
         assert claims == admin_claims
@@ -71,7 +79,9 @@ class TestGetClaimsFromContext:
             middleware.get_claims_from_context()
 
         assert exc.value.category == ErrorCategory.UNAUTHORIZED
-        assert "Authentication required" in str(exc.value) or "No authentication token" in str(exc.value)
+        assert "Authentication required" in str(
+            exc.value
+        ) or "No authentication token" in str(exc.value)
 
     def test_get_claims_no_token_auth_not_required(self):
         """Test behavior when auth is not required but still blocks anonymous."""
@@ -86,7 +96,9 @@ class TestGetClaimsFromContext:
 
     def test_get_claims_invalid_token(self, middleware):
         """Test handling of invalid token."""
-        with patch.object(middleware.token_verifier, 'verify', side_effect=Exception("Invalid token")):
+        with patch.object(
+            middleware.token_verifier, "verify", side_effect=Exception("Invalid token")
+        ):
             with pytest.raises(SystemManagerError) as exc:
                 middleware.get_claims_from_context(auth_token="invalid_token")
 
@@ -95,8 +107,13 @@ class TestGetClaimsFromContext:
 
     def test_get_claims_http_request_fallback(self, middleware, admin_claims):
         """Test fallback to kwargs when HTTP request not available."""
-        with patch('fastmcp.server.dependencies.get_http_request', side_effect=Exception("No HTTP context")):
-            with patch.object(middleware.token_verifier, 'verify', return_value=admin_claims):
+        with patch(
+            "fastmcp.server.dependencies.get_http_request",
+            side_effect=Exception("No HTTP context"),
+        ):
+            with patch.object(
+                middleware.token_verifier, "verify", return_value=admin_claims
+            ):
                 claims = middleware.get_claims_from_context(auth_token="fallback_token")
 
         assert claims == admin_claims
@@ -106,8 +123,12 @@ class TestGetClaimsFromContext:
         mock_request = Mock()
         mock_request.headers = {"authorization": "bearer lowercase_token"}
 
-        with patch('fastmcp.server.dependencies.get_http_request', return_value=mock_request):
-            with patch.object(middleware.token_verifier, 'verify', return_value=admin_claims):
+        with patch(
+            "fastmcp.server.dependencies.get_http_request", return_value=mock_request
+        ):
+            with patch.object(
+                middleware.token_verifier, "verify", return_value=admin_claims
+            ):
                 claims = middleware.get_claims_from_context()
 
         middleware.token_verifier.verify.assert_called_once_with("lowercase_token")
@@ -121,12 +142,16 @@ class TestCheckAuthorization:
         # Should not raise
         middleware.check_authorization("get_system_status", admin_claims)
 
-    def test_check_authorization_readonly_on_read_tool(self, middleware, readonly_claims):
+    def test_check_authorization_readonly_on_read_tool(
+        self, middleware, readonly_claims
+    ):
         """Test readonly scope can access read tools."""
         # Should not raise
         middleware.check_authorization("get_system_status", readonly_claims)
 
-    def test_check_authorization_readonly_on_write_tool(self, middleware, readonly_claims):
+    def test_check_authorization_readonly_on_write_tool(
+        self, middleware, readonly_claims
+    ):
         """Test readonly scope cannot access write tools."""
         with pytest.raises(SystemManagerError) as exc:
             middleware.check_authorization("install_package", readonly_claims)
@@ -165,13 +190,17 @@ class TestCheckApproval:
     def test_check_approval_required_no_webhook(self, middleware_with_approval):
         """Test approval required but no webhook configured."""
         with pytest.raises(SystemManagerError) as exc:
-            middleware_with_approval.check_approval("install_package", {"package": "nginx"})
+            middleware_with_approval.check_approval(
+                "install_package", {"package": "nginx"}
+            )
 
         assert "requires approval" in str(exc.value).lower()
 
     def test_check_approval_with_webhook_configured(self, middleware_with_approval):
         """Test approval with webhook URL configured."""
-        os.environ["SYSTEMMANAGER_APPROVAL_WEBHOOK"] = "https://approval.example.com/webhook"
+        os.environ["SYSTEMMANAGER_APPROVAL_WEBHOOK"] = (
+            "https://approval.example.com/webhook"
+        )
 
         # Note: Actual webhook implementation would be tested separately
         # For now, middleware should recognize webhook is configured
@@ -179,7 +208,9 @@ class TestCheckApproval:
 
         # The current implementation will still raise because approval flow is not implemented
         with pytest.raises(SystemManagerError):
-            middleware_with_approval.check_approval("install_package", {"package": "nginx"})
+            middleware_with_approval.check_approval(
+                "install_package", {"package": "nginx"}
+            )
 
 
 class TestWrapTool:
@@ -187,17 +218,21 @@ class TestWrapTool:
 
     def test_wrap_tool_basic_functionality(self, middleware, admin_claims):
         """Test wrap_tool decorator wraps function correctly."""
+
         @middleware.wrap_tool("test_tool")
         async def test_function(**kwargs):
             return {"success": True}
 
-        with patch.object(middleware, 'get_claims_from_context', return_value=admin_claims):
-            with patch.object(middleware, 'check_authorization'):
-                with patch.object(middleware, 'check_approval', return_value=True):
+        with patch.object(
+            middleware, "get_claims_from_context", return_value=admin_claims
+        ):
+            with patch.object(middleware, "check_authorization"):
+                with patch.object(middleware, "check_approval", return_value=True):
                     result = test_function(auth_token="test_token")
 
         # Note: If test_function is async, we need to await it
         import asyncio
+
         if asyncio.iscoroutine(result):
             result = asyncio.run(result)
 
@@ -205,22 +240,26 @@ class TestWrapTool:
 
     def test_wrap_tool_audit_logging(self, middleware, admin_claims):
         """Test wrap_tool logs audit trail."""
+
         @middleware.wrap_tool("test_tool")
         async def test_function(**kwargs):
             return {"success": True}
 
-        with patch.object(middleware, 'get_claims_from_context', return_value=admin_claims):
-            with patch.object(middleware, 'check_authorization'):
-                with patch.object(middleware, 'check_approval', return_value=True):
-                    with patch.object(middleware.audit_logger, 'log') as mock_log:
+        with patch.object(
+            middleware, "get_claims_from_context", return_value=admin_claims
+        ):
+            with patch.object(middleware, "check_authorization"):
+                with patch.object(middleware, "check_approval", return_value=True):
+                    with patch.object(middleware.audit_logger, "log") as mock_log:
                         import asyncio
+
                         asyncio.run(test_function(auth_token="test_token"))
 
         # Verify audit log was called
         mock_log.assert_called()
         call_args = mock_log.call_args[1]
-        assert call_args['tool'] == 'test_tool'
-        assert call_args['subject'] == 'test-admin'
+        assert call_args["tool"] == "test_tool"
+        assert call_args["subject"] == "test-admin"
 
 
 class TestSecureToolDecorator:
@@ -228,17 +267,21 @@ class TestSecureToolDecorator:
 
     def test_secure_tool_decorator(self, admin_claims):
         """Test @secure_tool decorator applies security."""
+
         @secure_tool
         async def protected_function(**kwargs):
             return {"data": "protected"}
 
         middleware = SecurityMiddleware()
 
-        with patch.object(middleware, 'get_claims_from_context', return_value=admin_claims):
-            with patch.object(middleware, 'check_authorization'):
-                with patch.object(middleware, 'check_approval', return_value=True):
+        with patch.object(
+            middleware, "get_claims_from_context", return_value=admin_claims
+        ):
+            with patch.object(middleware, "check_authorization"):
+                with patch.object(middleware, "check_approval", return_value=True):
                     # The decorator should work
                     import asyncio
+
                     result = asyncio.run(protected_function(auth_token="test"))
 
         assert result["data"] == "protected"
@@ -250,6 +293,7 @@ class TestEndToEndAuthorization:
     @pytest.mark.asyncio
     async def test_full_authorization_flow_success(self, middleware, admin_claims):
         """Test complete authorization flow from token to execution."""
+
         @middleware.wrap_tool("get_system_status")
         async def get_status(**kwargs):
             return {"cpu": 50, "memory": 60}
@@ -257,9 +301,13 @@ class TestEndToEndAuthorization:
         mock_request = Mock()
         mock_request.headers = {"authorization": "Bearer valid_token"}
 
-        with patch('fastmcp.server.dependencies.get_http_request', return_value=mock_request):
-            with patch.object(middleware.token_verifier, 'verify', return_value=admin_claims):
-                with patch.object(middleware.audit_logger, 'log'):
+        with patch(
+            "fastmcp.server.dependencies.get_http_request", return_value=mock_request
+        ):
+            with patch.object(
+                middleware.token_verifier, "verify", return_value=admin_claims
+            ):
+                with patch.object(middleware.audit_logger, "log"):
                     result = await get_status()
 
         assert result["cpu"] == 50
@@ -267,18 +315,23 @@ class TestEndToEndAuthorization:
     @pytest.mark.asyncio
     async def test_full_authorization_flow_denied(self, middleware, readonly_claims):
         """Test authorization flow denies insufficient privileges."""
+
         @middleware.wrap_tool("install_package")
         async def install(**kwargs):
             return {"success": True}
 
-        with patch.object(middleware, 'get_claims_from_context', return_value=readonly_claims):
+        with patch.object(
+            middleware, "get_claims_from_context", return_value=readonly_claims
+        ):
             with pytest.raises(SystemManagerError) as exc:
                 await install()
 
         assert exc.value.category == ErrorCategory.FORBIDDEN
 
     @pytest.mark.asyncio
-    async def test_full_authorization_flow_with_approval(self, middleware_with_approval, admin_claims):
+    async def test_full_authorization_flow_with_approval(
+        self, middleware_with_approval, admin_claims
+    ):
         """Test authorization flow for operation requiring approval."""
         os.environ["SYSTEMMANAGER_APPROVAL_WEBHOOK"] = ""  # No webhook
 
@@ -286,7 +339,11 @@ class TestEndToEndAuthorization:
         async def install(**kwargs):
             return {"success": True}
 
-        with patch.object(middleware_with_approval, 'get_claims_from_context', return_value=admin_claims):
+        with patch.object(
+            middleware_with_approval,
+            "get_claims_from_context",
+            return_value=admin_claims,
+        ):
             with pytest.raises(SystemManagerError) as exc:
                 await install()
 
@@ -298,7 +355,11 @@ class TestErrorHandling:
 
     def test_token_verification_error_handling(self, middleware):
         """Test graceful handling of token verification errors."""
-        with patch.object(middleware.token_verifier, 'verify', side_effect=ValueError("Malformed token")):
+        with patch.object(
+            middleware.token_verifier,
+            "verify",
+            side_effect=ValueError("Malformed token"),
+        ):
             with pytest.raises(SystemManagerError) as exc:
                 middleware.get_claims_from_context(auth_token="bad_token")
 

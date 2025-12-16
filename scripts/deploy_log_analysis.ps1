@@ -43,7 +43,7 @@ if ($commit -eq "y") {
     if ([string]::IsNullOrWhiteSpace($message)) {
         $message = "Add intelligent log analysis with AI sampling"
     }
-    
+
     git add -A
     git commit -m "$message"
     git push origin master

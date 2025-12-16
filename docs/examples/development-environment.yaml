@@ -20,13 +20,13 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Primary development web server"
-    
+
     connection:
       host: "192.168.10.10"  # Development network
       username: "dev"
       key_path: "${SSH_KEY_DEV_WEB_01}"
       port: 22
-      
+
     capabilities:
       # Full development capabilities
       - "system:read"
@@ -43,13 +43,13 @@ targets:
       - "database:write"
       - "cache:read"
       - "cache:control"
-      
+
     constraints:
       timeout: 30
       concurrency: 15  # Higher concurrency for development
       audit_level: "basic"
       require_approval: false
-      
+
     metadata:
       environment: "development"
       security_level: "low"
@@ -63,13 +63,13 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Development database server"
-    
+
     connection:
       host: "192.168.10.20"
       username: "dev"
       key_path: "${SSH_KEY_DEV_DB_01}"
       port: 22
-      
+
     capabilities:
       # Full database capabilities for development
       - "system:read"
@@ -82,13 +82,13 @@ targets:
       - "database:write"
       - "database:backup"
       - "database:restore"
-      
+
     constraints:
       timeout: 45
       concurrency: 10
       audit_level: "basic"
       require_approval: false
-      
+
     metadata:
       environment: "development"
       security_level: "low"
@@ -102,13 +102,13 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Development Redis cache server"
-    
+
     connection:
       host: "192.168.10.30"
       username: "dev"
       key_path: "${SSH_KEY_DEV_CACHE_01}"
       port: 22
-      
+
     capabilities:
       # Full cache capabilities
       - "system:read"
@@ -120,13 +120,13 @@ targets:
       - "cache:read"
       - "cache:control"
       - "cache:flush"
-      
+
     constraints:
       timeout: 30
       concurrency: 10
       audit_level: "basic"
       require_approval: false
-      
+
     metadata:
       environment: "development"
       security_level: "low"
@@ -140,13 +140,13 @@ targets:
     type: "remote"
     executor: "ssh"
     description: "Development monitoring and logging"
-    
+
     connection:
       host: "192.168.10.40"
       username: "dev"
       key_path: "${SSH_KEY_DEV_MONITOR_01}"
       port: 22
-      
+
     capabilities:
       # Monitoring capabilities
       - "system:read"
@@ -155,13 +155,13 @@ targets:
       - "logs:read"
       - "monitoring:read"
       - "metrics:read"
-      
+
     constraints:
       timeout: 30
       concurrency: 5
       audit_level: "basic"
       require_approval: false
-      
+
     metadata:
       environment: "development"
       security_level: "low"
@@ -175,11 +175,11 @@ targets:
     type: "local"
     executor: "local"
     description: "Local development environment"
-    
+
     connection:
       # Local connection - no remote credentials needed
       host: "localhost"
-      
+
     capabilities:
       # Full local development capabilities
       - "system:read"
@@ -196,13 +196,13 @@ targets:
       - "database:write"
       - "cache:read"
       - "cache:control"
-      
+
     constraints:
       timeout: 30
       concurrency: 20  # Very high concurrency for local development
       audit_level: "basic"
       require_approval: false
-      
+
     metadata:
       environment: "development"
       security_level: "low"
@@ -220,7 +220,7 @@ development_policies:
       - allow_container_operations: true
       - allow_database_operations: true
       - allow_network_changes: true
-  
+
   - name: "testing-workflows"
     target_pattern: ".*"
     workflows:

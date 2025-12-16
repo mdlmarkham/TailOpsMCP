@@ -3,7 +3,6 @@ import os
 import subprocess
 from types import SimpleNamespace
 
-import pytest
 
 from src.tools.stack_tools import get_stack_network_info
 
@@ -17,7 +16,17 @@ def _make_completed(stdout: str, returncode: int = 0):
 
 
 def write_inventory(stack_name: str):
-    inv = {"hosts": {}, "stacks": {stack_name: {"stack_name": stack_name, "host": "node-1", "path": "/srv/webapp", "services": ["web"]}}}
+    inv = {
+        "hosts": {},
+        "stacks": {
+            stack_name: {
+                "stack_name": stack_name,
+                "host": "node-1",
+                "path": "/srv/webapp",
+                "services": ["web"],
+            }
+        },
+    }
     with open("inventory.json", "w", encoding="utf-8") as f:
         json.dump(inv, f)
 
@@ -38,18 +47,30 @@ def test_get_stack_network_info_cli_single_container(monkeypatch):
     ps_line = json.dumps({"Names": f"{stack_name}_web_1", "ID": "abcd1234"}) + "\n"
 
     # docker inspect output for the container
-    inspect_obj = [{
-        "Id": "abcd1234",
-        "Name": f"/{stack_name}_web_1",
-        "Config": {"Image": "web:1.2.3", "Labels": {"com.docker.compose.service": "web"}},
-        "HostConfig": {"NetworkMode": "bridge"},
-        "NetworkSettings": {"Ports": {"80/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8080"}]}},
-        "Mounts": []
-    }]
+    inspect_obj = [
+        {
+            "Id": "abcd1234",
+            "Name": f"/{stack_name}_web_1",
+            "Config": {
+                "Image": "web:1.2.3",
+                "Labels": {"com.docker.compose.service": "web"},
+            },
+            "HostConfig": {"NetworkMode": "bridge"},
+            "NetworkSettings": {
+                "Ports": {"80/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8080"}]}
+            },
+            "Mounts": [],
+        }
+    ]
 
     def fake_run(args, capture_output=True, text=True, check=True):
         cmd = args[0:3]
-        if args[:3] == ["docker", "ps", "-a"] or args[:4] == ["docker", "ps", "-a", "--format"]:
+        if args[:3] == ["docker", "ps", "-a"] or args[:4] == [
+            "docker",
+            "ps",
+            "-a",
+            "--format",
+        ]:
             return _make_completed(ps_line)
         if args[0] == "docker" and args[1] == "inspect":
             return _make_completed(json.dumps(inspect_obj))
@@ -59,7 +80,10 @@ def test_get_stack_network_info_cli_single_container(monkeypatch):
 
     # Call the coroutine
     import asyncio
-    info = asyncio.get_event_loop().run_until_complete(get_stack_network_info("node-1", stack_name))
+
+    info = asyncio.get_event_loop().run_until_complete(
+        get_stack_network_info("node-1", stack_name)
+    )
 
     assert info["stack_name"] == stack_name
     assert len(info["containers"]) == 1
@@ -82,26 +106,44 @@ def test_get_stack_network_info_cli_conflict(monkeypatch):
     line2 = json.dumps({"Names": f"{stack_name}_web_2", "ID": "cid2"})
     ps_out = line1 + "\n" + line2 + "\n"
 
-    inspect_obj1 = [{
-        "Id": "cid1",
-        "Name": f"/{stack_name}_web_1",
-        "Config": {"Image": "web:1.2.3", "Labels": {"com.docker.compose.service": "web"}},
-        "HostConfig": {"NetworkMode": "bridge"},
-        "NetworkSettings": {"Ports": {"80/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8080"}]}},
-        "Mounts": []
-    }]
+    inspect_obj1 = [
+        {
+            "Id": "cid1",
+            "Name": f"/{stack_name}_web_1",
+            "Config": {
+                "Image": "web:1.2.3",
+                "Labels": {"com.docker.compose.service": "web"},
+            },
+            "HostConfig": {"NetworkMode": "bridge"},
+            "NetworkSettings": {
+                "Ports": {"80/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8080"}]}
+            },
+            "Mounts": [],
+        }
+    ]
 
-    inspect_obj2 = [{
-        "Id": "cid2",
-        "Name": f"/{stack_name}_web_2",
-        "Config": {"Image": "web:1.2.3", "Labels": {"com.docker.compose.service": "web"}},
-        "HostConfig": {"NetworkMode": "bridge"},
-        "NetworkSettings": {"Ports": {"80/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8080"}]}},
-        "Mounts": []
-    }]
+    inspect_obj2 = [
+        {
+            "Id": "cid2",
+            "Name": f"/{stack_name}_web_2",
+            "Config": {
+                "Image": "web:1.2.3",
+                "Labels": {"com.docker.compose.service": "web"},
+            },
+            "HostConfig": {"NetworkMode": "bridge"},
+            "NetworkSettings": {
+                "Ports": {"80/tcp": [{"HostIp": "0.0.0.0", "HostPort": "8080"}]}
+            },
+            "Mounts": [],
+        }
+    ]
 
     def fake_run(args, capture_output=True, text=True, check=True):
-        if args[:4] == ["docker", "ps", "-a", "--format"] or args[:3] == ["docker", "ps", "-a"]:
+        if args[:4] == ["docker", "ps", "-a", "--format"] or args[:3] == [
+            "docker",
+            "ps",
+            "-a",
+        ]:
             return _make_completed(ps_out)
         if args[0] == "docker" and args[1] == "inspect":
             cid = args[2]
@@ -114,7 +156,10 @@ def test_get_stack_network_info_cli_conflict(monkeypatch):
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     import asyncio
-    info = asyncio.get_event_loop().run_until_complete(get_stack_network_info("node-1", stack_name))
+
+    info = asyncio.get_event_loop().run_until_complete(
+        get_stack_network_info("node-1", stack_name)
+    )
 
     assert info["stack_name"] == stack_name
     assert len(info["containers"]) == 2

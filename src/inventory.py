@@ -10,11 +10,12 @@ from typing import Dict, List, Optional, Any
 @dataclass
 class SystemIdentity:
     """Identity of this system/container."""
+
     hostname: str
     container_id: Optional[str] = None  # Proxmox VMID/CTID
     container_type: Optional[str] = None  # "lxc", "vm", "bare-metal"
     mcp_server_name: Optional[str] = None  # Override for multi-system setups
-    
+
     def get_display_name(self) -> str:
         """Get display name for MCP server."""
         if self.mcp_server_name:
@@ -27,6 +28,7 @@ class SystemIdentity:
 @dataclass
 class ApplicationMetadata:
     """Application running directly on LXC (not in Docker)."""
+
     name: str
     type: str  # "jellyfin", "pihole", "ollama", "postgresql", etc.
     version: Optional[str] = None
@@ -65,17 +67,19 @@ class Inventory:
 
     def __init__(self, path: Optional[str] = None):
         # Default to /var/lib/systemmanager for production, local dir for development
-        if os.path.exists('/var/lib/systemmanager'):
-            default_path = '/var/lib/systemmanager/inventory.json'
+        if os.path.exists("/var/lib/systemmanager"):
+            default_path = "/var/lib/systemmanager/inventory.json"
         else:
-            default_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "inventory.json")
+            default_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), "inventory.json"
+            )
         self.path = path or os.getenv("SYSTEMMANAGER_INVENTORY", default_path)
         self._data: Dict = {
             "system": None,
             "hosts": {},
             "stacks": {},
             "applications": {},
-            "targets": {}
+            "targets": {},
         }
         if os.path.exists(self.path):
             try:
@@ -87,11 +91,17 @@ class Inventory:
                         "hosts": loaded.get("hosts", {}),
                         "stacks": loaded.get("stacks", {}),
                         "applications": loaded.get("applications", {}),
-                        "targets": loaded.get("targets", {})
+                        "targets": loaded.get("targets", {}),
                     }
             except Exception:
                 # start fresh on error
-                self._data = {"system": None, "hosts": {}, "stacks": {}, "applications": {}, "targets": {}}
+                self._data = {
+                    "system": None,
+                    "hosts": {},
+                    "stacks": {},
+                    "applications": {},
+                    "targets": {},
+                }
 
     def save(self) -> None:
         os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)

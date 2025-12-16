@@ -28,17 +28,17 @@ def test_infrastructure():
             "docker": MockDockerExecutor,
             "http": MockHTTPExecutor,
             "local": MockLocalExecutor,
-            "proxmox": MockProxmoxExecutor
+            "proxmox": MockProxmoxExecutor,
         },
         "fixtures": TargetRegistryFixtures,
         "policy_gates": PolicyGateConfigs,
         "assertions": {
             "execution": ExecutionAssertions,
             "target": TargetAssertions,
-            "authorization": AuthorizationAssertions
+            "authorization": AuthorizationAssertions,
         },
         "generators": TestDataGenerators,
-        "performance": PerformanceMetrics
+        "performance": PerformanceMetrics,
     }
 
 
@@ -77,7 +77,7 @@ def mock_target_registry():
 # Test configuration for different environments
 class TestConfig:
     """Configuration for different test environments."""
-    
+
     @staticmethod
     def unit_tests():
         """Configuration for unit tests."""
@@ -85,9 +85,9 @@ class TestConfig:
             "use_mocks": True,
             "external_dependencies": False,
             "timeout": 30,
-            "parallel_execution": False
+            "parallel_execution": False,
         }
-    
+
     @staticmethod
     def integration_tests():
         """Configuration for integration tests."""
@@ -95,9 +95,9 @@ class TestConfig:
             "use_mocks": False,
             "external_dependencies": True,
             "timeout": 60,
-            "parallel_execution": True
+            "parallel_execution": True,
         }
-    
+
     @staticmethod
     def performance_tests():
         """Configuration for performance tests."""
@@ -105,7 +105,7 @@ class TestConfig:
             "use_mocks": True,
             "external_dependencies": False,
             "timeout": 300,
-            "parallel_execution": True
+            "parallel_execution": True,
         }
 
 
@@ -122,12 +122,12 @@ def setup_test_environment(config_type="unit"):
     config_map = {
         "unit": TestConfig.unit_tests,
         "integration": TestConfig.integration_tests,
-        "performance": TestConfig.performance_tests
+        "performance": TestConfig.performance_tests,
     }
-    
+
     if config_type not in config_map:
         raise ValueError(f"Unknown configuration type: {config_type}")
-    
+
     return config_map[config_type]()
 
 
@@ -145,20 +145,20 @@ def generate_security_test_scenarios():
             "name": "privilege_escalation",
             "description": "Test prevention of privilege escalation",
             "setup": "setup_privilege_test",
-            "test": "test_privilege_escalation"
+            "test": "test_privilege_escalation",
         },
         {
             "name": "parameter_injection",
             "description": "Test prevention of parameter injection",
             "setup": "setup_injection_test",
-            "test": "test_parameter_injection"
+            "test": "test_parameter_injection",
         },
         {
             "name": "path_traversal",
             "description": "Test prevention of path traversal",
             "setup": "setup_traversal_test",
-            "test": "test_path_traversal"
-        }
+            "test": "test_path_traversal",
+        },
     ]
 
 
@@ -169,18 +169,18 @@ def generate_performance_test_scenarios():
             "name": "authorization_performance",
             "description": "Test authorization decision performance",
             "operations": 1000,
-            "concurrency": 10
+            "concurrency": 10,
         },
         {
             "name": "execution_performance",
             "description": "Test command execution performance",
             "operations": 500,
-            "concurrency": 5
+            "concurrency": 5,
         },
         {
             "name": "target_retrieval_performance",
             "description": "Test target registry retrieval performance",
             "operations": 2000,
-            "concurrency": 1
-        }
+            "concurrency": 1,
+        },
     ]

@@ -35,14 +35,14 @@ fi
 check_shebang() {
     local file="$1"
     local first_line
-    
+
     if [[ ! -f "$file" ]]; then
         log_error "File not found: $file"
         return 1
     fi
-    
+
     first_line=$(head -n1 "$file")
-    
+
     # Check for proper shebang
     if [[ "$first_line" != "#!/usr/bin/env bash" ]] && [[ "$first_line" != "#!/bin/bash" ]]; then
         log_error "$file: Missing or invalid shebang. Expected '#!/usr/bin/env bash' or '#!/bin/bash'"
@@ -52,12 +52,12 @@ check_shebang() {
 
 check_error_handling() {
     local file="$1"
-    
+
     # Check for set -euo pipefail
     if ! grep -q "set -euo pipefail" "$file"; then
         log_warning "$file: Missing 'set -euo pipefail' for error handling"
     fi
-    
+
     # Check for proper error handling patterns
     if grep -q "command_not_found_handle\|return.*\?\|true\|:" "$file"; then
         log_warning "$file: Potential error handling issues detected"
@@ -66,18 +66,18 @@ check_error_handling() {
 
 check_input_validation() {
     local file="$1"
-    
+
     # Check for potential injection vulnerabilities
     if grep -q '\$(' "$file"; then
         log_warning "$file: Command substitution found - ensure proper quoting"
     fi
-    
+
     # Check for unsafe variable usage
     if grep -q 'eval\s' "$file"; then
         log_error "$file: 'eval' usage detected - potential security risk"
         EXIT_CODE=1
     fi
-    
+
     # Check for proper quoting
     if grep -E '\$[A-Z_][A-Z0-9_]*\s+=' "$file" | grep -v '"' | grep -v "'" >/dev/null; then
         log_warning "$file: Unquoted variable assignments detected"
@@ -86,17 +86,17 @@ check_input_validation() {
 
 check_network_security() {
     local file="$1"
-    
+
     # Check for curl without security options
     if grep -E "curl.*http://" "$file" | grep -v -- "--insecure\|--silent\|--fail\|--show-error" >/dev/null; then
         log_warning "$file: curl usage without security options (use --fail --silent --show-error)"
     fi
-    
+
     # Check for wget without security options
     if grep -E "wget.*http://" "$file" | grep -v -- "--no-check-certificate\|--quiet" >/dev/null; then
         log_warning "$file: wget usage without security options (use --quiet)"
     fi
-    
+
     # Check for potential SSRF vulnerabilities
     if grep -E "\$(curl\|curl\s+\$[A-Z_]" "$file" >/dev/null; then
         log_warning "$file: curl usage with variables - ensure input validation"
@@ -105,17 +105,17 @@ check_network_security() {
 
 check_file_operations() {
     local file="$1"
-    
+
     # Check for dangerous file operations
     if grep -q "rm -rf\|rm -f" "$file"; then
         log_warning "$file: Dangerous rm operations detected - ensure proper safety checks"
     fi
-    
+
     # Check for proper temp file handling
     if grep -q "\/tmp\/" "$file" && ! grep -q "trap.*EXIT" "$file"; then
         log_warning "$file: Temp file usage without cleanup trap"
     fi
-    
+
     # Check for proper file permissions
     if grep -q "chmod" "$file"; then
         log_info "$file: chmod operations found"
@@ -124,7 +124,7 @@ check_file_operations() {
 
 check_system_commands() {
     local file="$1"
-    
+
     # Check for system command usage
     local dangerous_commands=("pct\|qm\|pveam\|pvesh\|pvesm\|pve-firewall")
     for cmd in "${dangerous_commands[@]}"; do
@@ -136,11 +136,11 @@ check_system_commands() {
 
 check_git_operations() {
     local file="$1"
-    
+
     # Check for git clone operations
     if grep -q "git clone" "$file"; then
         log_info "$file: Git clone operations found"
-        
+
         # Check for pinned versions
         if grep -q "git clone.*@.*:" "$file"; then
             log_success "$file: Pinned git reference found"
@@ -152,16 +152,16 @@ check_git_operations() {
 
 check_container_security() {
     local file="$1"
-    
+
     # Check for container operations
     if grep -q "pct\|lxc" "$file"; then
         log_info "$file: Container operations found"
-        
+
         # Check for security features
         if grep -q "unprivileged.*1" "$file"; then
             log_success "$file: Unprivileged container configuration found"
         fi
-        
+
         # Check for device access
         if grep -q "cgroup2.devices.allow" "$file"; then
             log_success "$file: Device access controls found"
@@ -171,12 +171,12 @@ check_container_security() {
 
 check_logging() {
     local file="$1"
-    
+
     # Check for proper logging
     if ! grep -q "log_\(info\|success\|warning\|error\)" "$file" && [[ $(wc -l < "$file") -gt 20 ]]; then
         log_warning "$file: Missing structured logging functions"
     fi
-    
+
     # Check for proper logging patterns
     if grep -q "echo.*INFO\|echo.*ERROR\|echo.*WARNING" "$file"; then
         log_warning "$file: Basic echo logging detected - consider using structured logging"
@@ -185,7 +185,7 @@ check_logging() {
 
 check_dependencies() {
     local file="$1"
-    
+
     # Check for external dependencies
     local external_commands=("curl\|wget\|git\|apt-get\|yum\|dnf")
     for cmd in "${external_commands[@]}"; do
@@ -193,7 +193,7 @@ check_dependencies() {
             log_info "$file: External dependency found: $cmd"
         fi
     done
-    
+
     # Check for version pinning
     if grep -q "@.*:" "$file"; then
         log_success "$file: Version pinning found"
@@ -202,7 +202,7 @@ check_dependencies() {
 
 run_syntax_check() {
     local file="$1"
-    
+
     # Basic syntax check using bash -n
     if bash -n "$file" 2>/dev/null; then
         log_success "$file: Syntax check passed"
@@ -215,7 +215,7 @@ run_syntax_check() {
 
 run_shellcheck() {
     local file="$1"
-    
+
     # Try to run shellcheck if available
     if command -v shellcheck &>/dev/null; then
         if shellcheck "$file" 2>/dev/null; then
@@ -237,7 +237,7 @@ generate_report() {
     echo
     echo "Files analyzed: ${#FILES[@]}"
     echo "Report generated at: $(date)"
-    
+
     if [[ $EXIT_CODE -eq 0 ]]; then
         echo "Status: All checks passed ✅"
     else
@@ -251,20 +251,20 @@ main() {
     echo "Shell Script Linter and Security Validator"
     echo "=========================================="
     echo
-    
+
     if [[ ${#FILES[@]} -eq 0 ]]; then
         log_error "No shell scripts found to analyze"
         exit 1
     fi
-    
+
     log_info "Analyzing ${#FILES[@]} file(s)..."
     echo
-    
+
     for file in "${FILES[@]}"; do
         echo "─────────────────────────────────────────────────────────────"
         echo "Analyzing: $file"
         echo "─────────────────────────────────────────────────────────────"
-        
+
         # Run all checks
         check_shebang "$file"
         run_syntax_check "$file"
@@ -278,18 +278,18 @@ main() {
         check_logging "$file"
         check_dependencies "$file"
         run_shellcheck "$file"
-        
+
         echo
     done
-    
+
     generate_report
-    
+
     if [[ $EXIT_CODE -eq 0 ]]; then
         log_success "All script validation checks passed!"
     else
         log_error "Script validation found issues that need attention"
     fi
-    
+
     exit $EXIT_CODE
 }
 

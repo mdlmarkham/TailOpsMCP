@@ -35,7 +35,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute container list query
             result = await executor.execute(
                 command="list_containers",
@@ -47,7 +47,7 @@ def register_tools(mcp: FastMCP):
                 return format_response(result.output, format)
             else:
                 return format_error(result.error, "get_container_list")
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="get_container_list",
@@ -60,8 +60,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("start_container")
     async def start_container(
-        target: str = "local",
         container: str,
+        target: str = "local",
         dry_run: bool = False
     ) -> dict:
         """Start a Docker container.
@@ -76,7 +76,7 @@ def register_tools(mcp: FastMCP):
             from src.server.dependencies import deps
             policy_gate = deps.policy_gate
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
-            
+
             await policy_gate.authorize(
                 operation="start_container",
                 target=target,
@@ -97,7 +97,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute container start
             result = await executor.execute(
                 command="start_container",
@@ -128,7 +128,7 @@ def register_tools(mcp: FastMCP):
                     "target": target,
                     "error": result.error
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="start_container",
@@ -141,8 +141,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("stop_container")
     async def stop_container(
-        target: str = "local",
         container: str,
+        target: str = "local",
         dry_run: bool = False
     ) -> dict:
         """Stop a Docker container.
@@ -157,7 +157,7 @@ def register_tools(mcp: FastMCP):
             from src.server.dependencies import deps
             policy_gate = deps.policy_gate
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
-            
+
             await policy_gate.authorize(
                 operation="stop_container",
                 target=target,
@@ -178,7 +178,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute container stop
             result = await executor.execute(
                 command="stop_container",
@@ -209,7 +209,7 @@ def register_tools(mcp: FastMCP):
                     "target": target,
                     "error": result.error
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="stop_container",
@@ -222,8 +222,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("inspect_container")
     async def inspect_container(
-        target: str = "local",
         container: str,
+        target: str = "local",
         format: Literal["json", "toon"] = "toon"
     ) -> Union[dict, str]:
         """Inspect a Docker container for detailed information.
@@ -246,7 +246,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute container inspection
             result = await executor.execute(
                 command="inspect_container",
@@ -258,7 +258,7 @@ def register_tools(mcp: FastMCP):
                 return format_response(result.output, format)
             else:
                 return format_error(result.error, "inspect_container")
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="inspect_container",
@@ -271,8 +271,8 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("get_container_logs")
     async def get_container_logs(
-        target: str = "local",
         container: str,
+        target: str = "local",
         lines: int = 100
     ) -> dict:
         """Get logs from a Docker container.
@@ -295,7 +295,7 @@ def register_tools(mcp: FastMCP):
 
             # Get executor for target
             executor = ExecutorFactory.get_executor(target)
-            
+
             # Execute container logs query
             result = await executor.execute(
                 command="container_logs",
@@ -320,7 +320,7 @@ def register_tools(mcp: FastMCP):
                     "error": result.error,
                     "timestamp": datetime.now().isoformat()
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="get_container_logs",
@@ -351,9 +351,9 @@ def register_tools(mcp: FastMCP):
         """
         try:
             if action == "start":
-                return await start_container(target, name_or_id, dry_run)
+                return await start_container(target=target, container=name_or_id, dry_run=dry_run)
             elif action == "stop":
-                return await stop_container(target, name_or_id, dry_run)
+                return await stop_container(target=target, container=name_or_id, dry_run=dry_run)
             elif action == "restart":
                 # For restart, we'll stop then start
                 if dry_run:
@@ -365,12 +365,12 @@ def register_tools(mcp: FastMCP):
                         "target": target,
                         "message": "Operation would be executed in non-dry-run mode"
                     }
-                
-                stop_result = await stop_container(target, name_or_id, False)
+
+                stop_result = await stop_container(target=target, container=name_or_id, dry_run=False)
                 if not stop_result.get("success", False):
                     return stop_result
-                
-                start_result = await start_container(target, name_or_id, False)
+
+                start_result = await start_container(target=target, container=name_or_id, dry_run=False)
                 return {
                     "success": start_result.get("success", False),
                     "operation": "restart_container",
@@ -380,10 +380,10 @@ def register_tools(mcp: FastMCP):
                     "start_result": start_result
                 }
             elif action == "logs":
-                return await get_container_logs(target, name_or_id, lines)
+                return await get_container_logs(target=target, container=name_or_id, lines=lines)
             else:
                 return {"success": False, "error": f"Invalid action: {action}"}
-                
+
         except Exception as e:
             audit.log_operation(
                 operation="manage_container",

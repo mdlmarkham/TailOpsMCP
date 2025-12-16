@@ -13,7 +13,7 @@ without requiring agent installation on target systems.
 remote_agents:
   enabled: true
   default_security_level: "medium"
-  
+
   # Connection management
   connection_pool:
     max_connections: 50
@@ -21,7 +21,7 @@ remote_agents:
     idle_timeout: 300
     health_check_interval: 60
     max_connections_per_target: 10
-  
+
   # SSH/Tailscale configuration
   ssh_config:
     port: 22
@@ -31,7 +31,7 @@ remote_agents:
     max_auth_attempts: 3
     connection_retry_delay: 5
     keepalive_interval: 30
-  
+
   # Tailscale specific settings
   tailscale_config:
     enable_port_forwarding: true
@@ -39,7 +39,7 @@ remote_agents:
     tailscale_hostname: null  # Will be auto-discovered
     tailscale_namespace: "default"
     timeout: 30
-  
+
   # Retry and resilience configuration
   retry_policy:
     max_retries: 3
@@ -48,7 +48,7 @@ remote_agents:
     initial_delay: 1
     retry_on_connection_errors: true
     retry_on_timeout_errors: true
-  
+
   # Security controls
   security:
     # Rate limiting (operations per time period)
@@ -69,7 +69,7 @@ remote_agents:
         max_per_hour: 30
         max_per_minute: 5
         max_per_second: 1
-    
+
     # Security levels for different operations
     security_levels:
       observe_operations:
@@ -82,13 +82,13 @@ remote_agents:
         - "list_remote_directory"
         - "get_remote_system_status"
         level: "low"
-      
+
       control_operations:
         - "restart_remote_service"
         - "restart_remote_container"
         - "write_remote_file"
         level: "medium"
-      
+
       admin_operations:
         - "start_remote_service"
         - "stop_remote_service"
@@ -96,25 +96,25 @@ remote_agents:
         - "stop_remote_container"
         - "delete_remote_file"
         level: "high"
-    
+
     # Access control scopes
     access_scopes:
       observe_only:
         description: "Read-only operations"
         operations: ["observe_operations"]
-      
+
       limited_control:
         description: "Safe control operations"
         operations: ["observe_operations", "control_operations"]
-      
+
       full_control:
         description: "All control operations"
         operations: ["observe_operations", "control_operations"]
-      
+
       admin:
         description: "Administrative access"
         operations: ["observe_operations", "control_operations", "admin_operations"]
-    
+
     # Blocked operations and paths
     blocked_commands:
       - "rm -rf"
@@ -131,7 +131,7 @@ remote_agents:
       - "su -"
       - "exec"
       - "eval"
-    
+
     blocked_paths:
       - "/etc/shadow"
       - "/etc/passwd"
@@ -150,7 +150,7 @@ remote_agents:
       - "/dev/"
       - "/run/systemd/"
       - "/boot/"
-    
+
     allowed_file_extensions:
       - ".conf"
       - ".cfg"
@@ -174,7 +174,7 @@ remote_agents:
       - ".js"
       - ".ts"
       - ".md"
-    
+
     allowed_base_paths:
       - "/etc/systemd/system/"
       - "/etc/nginx/"
@@ -188,7 +188,7 @@ remote_agents:
       - "/opt/"
       - "/usr/local/bin/"
       - "/home/"
-  
+
   # Audit and logging configuration
   audit:
     enabled: true
@@ -200,7 +200,7 @@ remote_agents:
     include_results: false  # Set to true for detailed debugging
     include_performance_metrics: true
     sanitize_sensitive_data: true
-    
+
     # Audit event types to log
     audit_events:
       - "connection_established"
@@ -214,7 +214,7 @@ remote_agents:
       - "service_control"
       - "container_control"
       - "system_access"
-  
+
   # Performance optimization
   performance:
     # Connection pooling settings
@@ -223,27 +223,27 @@ remote_agents:
       max_idle_time: 300  # seconds
       min_connections: 2
       max_connections: 10
-    
+
     # Caching settings
     caching:
       enabled: true
       cache_ttl: 300  # seconds
       max_cache_size: 1000  # entries
       cache_read_only_operations: true
-    
+
     # Parallel execution
     parallel_execution:
       enabled: true
       max_concurrent_operations: 5
       timeout_per_operation: 30
-  
+
   # Health monitoring
   health_monitoring:
     enabled: true
     check_interval: 60  # seconds
     failure_threshold: 3
     recovery_threshold: 2
-    
+
     # Health check operations
     health_check_operations:
       - "connection_test"
@@ -251,7 +251,7 @@ remote_agents:
       - "service_access_test"
       - "docker_access_test"
       - "file_access_test"
-  
+
   # Target-specific configurations
   targets:
     # Example target configurations
@@ -274,7 +274,7 @@ remote_agents:
         custom:
           command_execution:
             max_per_hour: 200
-  
+
   # Fleet-wide operations
   fleet_operations:
     # Parallel execution settings
@@ -283,7 +283,7 @@ remote_agents:
       max_concurrent_targets: 10
       batch_size: 5
       timeout_per_target: 60
-    
+
     # Aggregation settings
     result_aggregation:
       enabled: true
@@ -301,14 +301,14 @@ connectors:
     timeout: 60
     format: "json"  # json, short, verbose
     follow_timeout: 30
-  
+
   # Service connector
   service:
     enabled: true
     default_timeout: 60
     systemctl_timeout: 30
     default_service_timeout: 120
-  
+
   # Docker connector
   docker:
     enabled: true
@@ -317,7 +317,7 @@ connectors:
     local_docker_port: 23760
     timeout: 30
     enable_port_forwarding: true
-  
+
   # File connector
   file:
     enabled: true
@@ -330,41 +330,41 @@ connectors:
 # MCP Tools configuration
 mcp_tools:
   enabled: true
-  
+
   # Tool-specific settings
   tools:
     get_journald_logs:
       enabled: true
       max_lines: 1000
       default_timeout: 60
-    
+
     restart_remote_service:
       enabled: true
       default_timeout: 60
       require_confirmation: false
-    
+
     get_remote_docker_containers:
       enabled: true
       include_stopped: false
       default_timeout: 30
-    
+
     read_remote_file:
       enabled: true
       max_file_size: 1048576  # 1MB
       require_confirmation_for_large_files: true
-    
+
     write_remote_file:
       enabled: true
       create_backup: true
       require_confirmation: true
       backup_before_write: true
-    
+
     analyze_service_logs_across_fleet:
       enabled: true
       max_targets: 50
       timeout: 300
       parallel_processing: true
-    
+
     check_fleet_service_health:
       enabled: true
       max_targets: 100
@@ -378,13 +378,13 @@ integration:
     enabled: true
     auto_register_capabilities: true
     capability_validation: true
-    
+
   # Inventory system integration
   inventory_system:
     enabled: true
     auto_discover_targets: true
     update_interval: 300  # seconds
-  
+
   # Observability integration
   observability:
     enabled: true
@@ -401,7 +401,7 @@ development:
     mock_ssh_connections: false
     mock_target_responses: false
     test_data_directory: "./test_data/"
-  
+
   # Debug settings
   debug:
     enabled: false
@@ -409,7 +409,7 @@ development:
     log_sql_queries: false
     log_api_calls: false
     profile_operations: false
-  
+
   # Development targets
   dev_targets:
     - "localhost"
@@ -427,7 +427,7 @@ environments:
       audit:
         log_level: "DEBUG"
         include_results: true
-  
+
   production:
     remote_agents:
       enabled: true
@@ -438,7 +438,7 @@ environments:
       audit:
         log_level: "INFO"
         include_results: false
-  
+
   testing:
     remote_agents:
       enabled: true

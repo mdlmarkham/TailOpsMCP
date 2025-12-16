@@ -106,17 +106,17 @@ security:
         permissions: ["*"]
         mfa_required: true
         session_timeout: 1800
-        
+
       operations:
         permissions: ["deploy", "monitor", "manage_fleet"]
         mfa_required: true
         session_timeout: 3600
-        
+
       developer:
         permissions: ["read_inventory", "deploy_dev"]
         mfa_required: false
         session_timeout: 7200
-        
+
       viewer:
         permissions: ["read_only"]
         mfa_required: false
@@ -169,7 +169,7 @@ security:
     encryption_enabled: true
     real_time_processing: true
     log_levels: ["info", "warning", "error", "critical"]
-    
+
   audit_storage:
     database: "sqlite:///security.db"
     encryption_key: "${AUDIT_ENCRYPTION_KEY}"
@@ -225,7 +225,7 @@ compliance:
     enabled: true
     criteria:
       - "security"
-      - "availability" 
+      - "availability"
       - "processing_integrity"
       - "confidentiality"
       - "privacy"
@@ -318,12 +318,12 @@ security:
       at_rest: "AES-256"
       in_transit: "TLS-1.3"
       key_management: "aws_kms"
-    
+
     access_controls:
       classification_based: true
       need_to_know: true
       data_minimization: true
-    
+
     privacy:
       gdpr_compliance: true
       data_retention: true
@@ -348,11 +348,11 @@ security:
         enabled: true
         threshold: 5
         time_window: 300  # 5 minutes
-        
+
       privilege_escalation:
         enabled: true
         monitoring_privileged: true
-        
+
       data_exfiltration:
         enabled: true
         volume_threshold: "100MB"
@@ -422,7 +422,7 @@ security:
         pagerduty:
           enabled: true
           service_key: "${PAGERDUTY_KEY}"
-      
+
       severity_mapping:
         critical: ["immediate", "email", "slack", "pagerduty"]
         high: ["immediate", "email", "slack"]
@@ -460,20 +460,20 @@ graph TD
     B -->|High| D[Standard Response]
     B -->|Medium| E[Standard Response]
     B -->|Low| F[Review Response]
-    
+
     C --> G[Security Team Alert]
     D --> H[Operations Team Alert]
     E --> I[Monitoring]
     F --> J[Log Review]
-    
+
     G --> K[Containment]
     H --> K
     I --> L[Investigation]
     J --> L
-    
+
     K --> M[Recovery]
     L --> N[Root Cause Analysis]
-    
+
     M --> O[Lessons Learned]
     N --> O
     O --> P[Process Improvement]
@@ -546,12 +546,12 @@ security:
       technical_lead: "+1-555-0102"
       communications_lead: "+1-555-0103"
       legal_counsel: "+1-555-0104"
-      
+
     escalation_matrix:
       level_1: "Technical Lead"
-      level_2: "Security Lead" 
+      level_2: "Security Lead"
       level_3: "Executive Sponsor"
-      
+
     communication_channels:
       internal: "Slack #security-incidents"
       external: "Email security@company.com"
@@ -620,17 +620,17 @@ network:
       vlan: 100
       access: "restricted"
       monitoring: "comprehensive"
-      
+
     staging:
       vlan: 200
       access: "controlled"
       monitoring: "standard"
-      
+
     development:
       vlan: 300
       access: "open"
       monitoring: "basic"
-      
+
     management:
       vlan: 400
       access: "admin_only"
@@ -667,7 +667,7 @@ security:
     retention_days: 2555
     encryption_enabled: true
     real_time_processing: true
-    
+
   # Identity Management
   identity_management:
     session_timeout: 3600
@@ -675,21 +675,21 @@ security:
     mfa_required_roles: ["admin", "operations"]
     oidc_enabled: true
     tailscale_integration: true
-    
+
   # Access Control
   access_control:
     default_deny: true
     contextual_permissions: true
     risk_based_access: true
     separation_of_duties: true
-    
+
   # Security Monitoring
   security_monitoring:
     threat_detection_enabled: true
     anomaly_detection: true
     real_time_alerts: true
     automated_response: false
-    
+
   # Compliance
   compliance:
     standards: ["SOC2", "ISO27001", "PCI-DSS"]

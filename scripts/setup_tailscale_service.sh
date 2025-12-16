@@ -58,7 +58,7 @@ if tailscale serve status --json 2>/dev/null | jq -e '.services."svc:systemmanag
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 0
     fi
-    
+
     echo "🧹 Clearing existing configuration..."
     tailscale serve clear svc:systemmanager-mcp
 fi
@@ -131,10 +131,10 @@ if [ "$SERVICE_HOST_STATUS" == "not configured" ]; then
 else
     echo "✅ Service host is active!"
     echo ""
-    
+
     # Try to detect tailnet name
     TAILNET_NAME=$(tailscale status --json | jq -r '.MagicDNSSuffix' | sed 's/\\.$//')
-    
+
     if [ -n "$TAILNET_NAME" ] && [ "$TAILNET_NAME" != "null" ]; then
         SERVICE_URL="http://systemmanager-mcp.${TAILNET_NAME}:8080/sse"
         echo "🌐 Service URL: $SERVICE_URL"

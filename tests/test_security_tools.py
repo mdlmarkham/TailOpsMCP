@@ -1,6 +1,7 @@
 """Tests for security scanning and hardening tools."""
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 from src.services.security_scanner import SecurityScanner
 from src.services.secrets_scanner import SecretsScanner
 from src.services.firewall_manager import FirewallManager
@@ -171,11 +172,14 @@ class TestCISChecker:
         assert result["status"] in ["PASS", "FAIL", "WARN", "SKIP"]
 
         # Test non-existent file
-        result = await checker._check_file_permissions("/nonexistent/file", "644", "1.1.2")
+        result = await checker._check_file_permissions(
+            "/nonexistent/file", "644", "1.1.2"
+        )
         assert result["status"] == "SKIP"
 
 
 # Integration tests (require actual tools)
+
 
 @pytest.mark.integration
 class TestSecurityIntegration:

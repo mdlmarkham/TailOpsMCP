@@ -104,19 +104,19 @@ from typing import Optional
 
 def get_system_status(format: str = "json") -> dict:
     """Get comprehensive system status.
-    
+
     Args:
         format: Output format ('json' or 'toon')
-        
+
     Returns:
         Dictionary containing system metrics
-        
+
     Raises:
         ValueError: If format is invalid
     """
     if format not in ("json", "toon"):
         raise ValueError(f"Invalid format: {format}")
-    
+
     return {"cpu": 45.2, "memory": 62.1}
 ```
 
@@ -135,7 +135,7 @@ def ping_host(
     format: str = "json"
 ) -> dict:
     """Ping a host and return latency statistics.
-    
+
     Args:
         host: Hostname or IP address
         count: Number of ping packets (default: 4)

@@ -1,9 +1,9 @@
 # Implementation Plan: TailOpsMCP Server Improvements
 
-**Date**: 2025-11-15  
-**Purpose**: Detailed implementation strategy for production-ready MCP server improvements  
-**Status**: Active Planning  
-**Branch**: master  
+**Date**: 2025-11-15
+**Purpose**: Detailed implementation strategy for production-ready MCP server improvements
+**Status**: Active Planning
+**Branch**: master
 **Plan Path**: specs/master/plan.md
 
 ## **Executive Summary**

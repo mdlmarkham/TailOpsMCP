@@ -12,9 +12,9 @@ from .docker_connector import DockerConnector
 from .file_connector import FileConnector
 
 __all__ = [
-    'RemoteAgentConnector',
-    'JournaldConnector',
-    'ServiceConnector',
-    'DockerConnector',
-    'FileConnector'
+    "RemoteAgentConnector",
+    "JournaldConnector",
+    "ServiceConnector",
+    "DockerConnector",
+    "FileConnector",
 ]

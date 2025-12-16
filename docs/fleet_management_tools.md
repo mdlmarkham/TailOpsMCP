@@ -206,7 +206,7 @@ operations:
   fleet_discover:
     tier: observe
     allowed_targets: ["gateway"]
-    
+
   update_packages:
     tier: control
     allowed_targets: ["*"]

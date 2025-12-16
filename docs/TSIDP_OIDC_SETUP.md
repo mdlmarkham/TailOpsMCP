@@ -36,7 +36,7 @@ cat > .env.oidc << EOF
 export SYSTEMMANAGER_AUTH_MODE=oidc
 export TSIDP_URL=https://tsidp.tailf9480.ts.net
 export TSIDP_CLIENT_ID=your-client-id-here
-export TSIDP_CLIENT_SECRET=your-client-secret-here  
+export TSIDP_CLIENT_SECRET=your-client-secret-here
 export SYSTEMMANAGER_BASE_URL=http://dev1.tailf9480.ts.net:8080
 EOF
 

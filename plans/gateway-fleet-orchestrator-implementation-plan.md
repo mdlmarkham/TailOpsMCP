@@ -14,34 +14,34 @@ graph TB
         G1[Gateway 1<br/>Proxmox Host A]
         G2[Gateway 2<br/>Proxmox Host B]
         G3[Gateway 3<br/>Proxmox Host C]
-        
+
         G1 --> CT1[CT 1A]
         G1 --> CT2[CT 2A]
         G1 --> VM1[VM 1A]
-        
+
         G2 --> CT3[CT 1B]
         G2 --> CT4[CT 2B]
         G2 --> VM2[VM 1B]
-        
+
         G3 --> CT5[CT 1C]
         G3 --> CT6[CT 2C]
         G3 --> VM3[VM 1C]
     end
-    
+
     subgraph "LLM Client"
         LLM[LLM Client]
     end
-    
+
     G1 --> LLM
     G2 --> LLM
     G3 --> LLM
-    
+
     subgraph "Local Mode"
         L1[Local Instance<br/>Single Host]
         L1 --> S1[Local Services]
         L1 --> S2[Local Containers]
     end
-    
+
     LLM --> L1
 ```
 
@@ -55,25 +55,25 @@ graph LR
         FS[Fleet State]
         TO[TOON Generator]
     end
-    
+
     subgraph "Existing Components"
         TR[Target Registry]
         PG[Policy Gate]
         EF[Executor Factory]
         MCP[MCP Server]
     end
-    
+
     subgraph "Proxmox Integration"
         PE[Proxmox Executor]
         PD[Proxmox Discovery]
     end
-    
+
     subgraph "Security Layer"
         AL[Allowlist Manager]
         AL[Audit Logger]
         SM[Security Monitor]
     end
-    
+
     GM --> TR
     GM --> PG
     GM --> EF
@@ -81,10 +81,10 @@ graph LR
     FD --> PE
     FS --> TR
     TO --> FS
-    
+
     MCP --> GM
     MCP --> TO
-    
+
     PG --> AL
     PG --> AL
     PG --> SM

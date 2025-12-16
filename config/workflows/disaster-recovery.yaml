@@ -5,27 +5,27 @@ workflows:
     description: "Recover {{ parameters.recovery_type }} environment from backup with {{ parameters.validation_level }} validation"
     category: "recovery"
     version: "1.0.0"
-    
+
     parameters:
       recovery_type:
         type: "string"
         required: true
         choices: ["full", "partial", "selective"]
         description: "Type of recovery to perform"
-      
+
       backup_timestamp:
         type: "string"
         required: true
         description: "Timestamp of backup to restore from (ISO format)"
         validation:
           pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z?$"
-      
+
       validation_level:
         type: "string"
         required: true
         choices: ["basic", "comprehensive", "minimal"]
         description: "Level of validation to perform"
-      
+
       target_environment:
         type: "string"
         required: true
@@ -33,37 +33,37 @@ workflows:
         validation:
           pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
           max_length: 50
-      
+
       preserve_current_state:
         type: "boolean"
         required: false
         default: true
         description: "Preserve current state before recovery"
-    
+
     approvals:
       - step: "prepare_recovery_environment"
         required_approvers: ["operations_manager", "security_admin"]
         description: "Recovery environment preparation requires dual approval"
         timeout_hours: 2
-    
+
     steps:
       - id: "validate_disaster_scenario"
         name: "Validate Disaster Scenario"
         type: "validation"
         timeout_minutes: 15
-      
+
       - id: "validate_backup_availability"
         name: "Validate Backup Availability"
         type: "validation"
         timeout_minutes: 20
         dependencies: ["validate_disaster_scenario"]
-      
+
       - id: "assess_recovery_scope"
         name: "Assess Recovery Scope"
         type: "discovery"
         timeout_minutes: 15
         dependencies: ["validate_backup_availability"]
-      
+
       - id: "prepare_recovery_environment"
         name: "Prepare Recovery Environment"
         type: "resource_allocation"
@@ -73,7 +73,7 @@ workflows:
         retry_policy:
           max_attempts: 2
           initial_delay_minutes: 2
-      
+
       - id: "preserve_current_state"
         name: "Preserve Current State"
         type: "snapshot"
@@ -81,19 +81,19 @@ workflows:
         dependencies: ["prepare_recovery_environment"]
         conditions:
           - "preserve_current_state"
-      
+
       - id: "stop_affected_containers"
         name: "Stop Affected Containers"
         type: "container_operations"
         timeout_minutes: 30
         dependencies: ["preserve_current_state"]
-      
+
       - id: "cleanup_corrupted_data"
         name: "Cleanup Corrupted Data"
         type: "container_operations"
         timeout_minutes: 20
         dependencies: ["stop_affected_containers"]
-      
+
       - id: "restore_infrastructure"
         name: "Restore Infrastructure"
         type: "restore"
@@ -102,7 +102,7 @@ workflows:
         retry_policy:
           max_attempts: 2
           initial_delay_minutes: 2
-      
+
       - id: "restore_containers"
         name: "Restore Containers"
         type: "restore"
@@ -111,7 +111,7 @@ workflows:
         retry_policy:
           max_attempts: 2
           initial_delay_minutes: 3
-      
+
       - id: "restore_data_volumes"
         name: "Restore Data Volumes"
         type: "restore"
@@ -120,90 +120,90 @@ workflows:
         retry_policy:
           max_attempts: 2
           initial_delay_minutes: 5
-      
+
       - id: "restore_configuration"
         name: "Restore Configuration"
         type: "restore"
         timeout_minutes: 30
         dependencies: ["restore_data_volumes"]
-      
+
       - id: "verify_restoration"
         name: "Verify Restoration"
         type: "validation"
         timeout_minutes: 45
         dependencies: ["restore_configuration"]
-      
+
       - id: "update_network_configuration"
         name: "Update Network Configuration"
         type: "network_configuration"
         timeout_minutes: 20
         dependencies: ["verify_restoration"]
-      
+
       - id: "update_dns_records"
         name: "Update DNS Records"
         type: "network_configuration"
         timeout_minutes: 15
         dependencies: ["update_network_configuration"]
-      
+
       - id: "run_health_checks"
         name: "Run Health Checks"
         type: "health_validation"
         timeout_minutes: 30
         dependencies: ["update_dns_records"]
-      
+
       - id: "run_functionality_tests"
         name: "Run Functionality Tests"
         type: "testing"
         timeout_minutes: 60
         dependencies: ["run_health_checks"]
-      
+
       - id: "update_monitoring"
         name: "Update Monitoring"
         type: "configuration"
         timeout_minutes: 20
         dependencies: ["run_functionality_tests"]
-      
+
       - id: "generate_recovery_report"
         name: "Generate Recovery Report"
         type: "configuration"
         timeout_minutes: 15
         dependencies: ["update_monitoring"]
-    
+
     resource_requirements:
       cpu_cores: 8
       memory_gb: 16
       storage_gb: 500
       network_bandwidth_mbps: 1000
-    
+
     estimated_duration_minutes: 480
-    
+
     tags:
       - "recovery"
       - "disaster"
       - "restoration"
       - "{{ parameters.recovery_type }}"
-    
+
     owner: "operations-team"
-    
+
     documentation: |
       This workflow performs {{ parameters.recovery_type }} disaster recovery with {{ parameters.validation_level }} validation.
-      
+
       Recovery Types:
       - Full: Complete environment restoration
       - Partial: Selective component recovery
       - Selective: Targeted service recovery
-      
+
       Validation Levels:
       - Basic: Essential health checks only
       - Comprehensive: Full functionality testing
       - Minimal: Critical path validation
-      
+
       Prerequisites:
       - Valid backup timestamp: {{ parameters.backup_timestamp }}
       - Target environment: {{ parameters.target_environment }}
       - Sufficient recovery resources
       - Network connectivity to backup storage
-      
+
       Safety Features:
       - Current state preservation before recovery
       - Step-by-step validation

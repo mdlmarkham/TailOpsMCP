@@ -12,13 +12,13 @@ audit = AuditLogger()
 
 class ToolIntegrationManager:
     """Manages integration between tools, Policy Gate, and execution layer."""
-    
+
     def __init__(self):
-        self.from src.server.dependencies import deps
-            policy_gate = deps.policy_gate
+        from src.server.dependencies import deps
+        policy_gate = deps.policy_gate
         self.executor_factory = ExecutorFactory()
         self.target_registry = TargetRegistry()
-    
+
     async def authorize_and_execute(
         self,
         operation: str,
@@ -30,7 +30,7 @@ class ToolIntegrationManager:
         dry_run: bool = False
     ) -> Dict[str, Any]:
         """Authorize and execute an operation with full integration.
-        
+
         Args:
             operation: Operation name for authorization
             target: Target system
@@ -39,7 +39,7 @@ class ToolIntegrationManager:
             command: Command to execute
             timeout: Execution timeout
             dry_run: If True, simulate without executing
-            
+
         Returns:
             Execution result dictionary
         """
@@ -51,10 +51,10 @@ class ToolIntegrationManager:
                     "success": False,
                     "error": f"Target not found: {target}"
                 }
-            
+
             # Use Policy Gate for authorization
             validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
-            
+
             await self.policy_gate.authorize(
                 operation=operation,
                 target=target,
@@ -75,7 +75,7 @@ class ToolIntegrationManager:
 
             # Get executor for target
             executor = self.executor_factory.get_executor(target)
-            
+
             # Execute operation
             result = await executor.execute(
                 command=command,
@@ -112,7 +112,7 @@ class ToolIntegrationManager:
                     "error": result.error,
                     "duration": result.duration
                 }
-                
+
         except Exception as e:
             audit.log_operation(
                 operation=operation,
@@ -127,20 +127,20 @@ class ToolIntegrationManager:
                 "parameters": parameters,
                 "error": str(e)
             }
-    
+
     def get_target_capabilities(self, target: str) -> Dict[str, Any]:
         """Get capabilities available for a specific target."""
         target_metadata = self.target_registry.get_target(target)
         if not target_metadata:
             return {"error": f"Target not found: {target}"}
-        
+
         # Return target capabilities based on executor type and configuration
         capabilities = {
             "target": target,
             "executor_type": target_metadata.executor_type,
             "capabilities": []
         }
-        
+
         # Add capabilities based on executor type
         if target_metadata.executor_type == "local":
             capabilities["capabilities"] = [
@@ -165,9 +165,9 @@ class ToolIntegrationManager:
             capabilities["capabilities"] = [
                 "get_system_status", "restart_service"
             ]
-        
+
         return capabilities
-    
+
     async def validate_operation(
         self,
         operation: str,
@@ -183,14 +183,14 @@ class ToolIntegrationManager:
                     "valid": False,
                     "error": f"Target not found: {target}"
                 }
-            
+
             # Validate operation with Policy Gate
             validation_result = await self.policy_gate.validate_operation(
                 operation=operation,
                 target=target,
                 parameters=parameters
             )
-            
+
             return {
                 "valid": validation_result.get("valid", False),
                 "warnings": validation_result.get("warnings", []),
@@ -198,7 +198,7 @@ class ToolIntegrationManager:
                 "target": target,
                 "operation": operation
             }
-            
+
         except Exception as e:
             return {
                 "valid": False,

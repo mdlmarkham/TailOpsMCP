@@ -20,3 +20,10 @@ class SystemManagerError(Exception):
 
     def to_dict(self):
         return {"error": self.message, "category": self.category.value}
+
+
+class SecurityError(SystemManagerError):
+    """Security-related exception for SystemManager."""
+
+    def __init__(self, message: str):
+        super().__init__(message, ErrorCategory.PERMISSION)

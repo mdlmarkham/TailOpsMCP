@@ -164,13 +164,13 @@ sequenceDiagram
 
     Client->>SystemManager: GET /.well-known/oauth-protected-resource
     SystemManager-->>Client: authorization_servers: [TSIDP URL]
-    
+
     Client->>TSIDP: Discover endpoints
     TSIDP-->>Client: OAuth metadata
-    
+
     Client->>TSIDP: Authenticate user
     TSIDP-->>Client: Access token
-    
+
     Client->>SystemManager: MCP request + Bearer token
     SystemManager->>TSIDP: Introspect token (RFC 7662)
     TSIDP-->>SystemManager: Token valid, user info
@@ -247,7 +247,7 @@ SYSTEMMANAGER_LOG_LEVEL=DEBUG ./venv/bin/python -m src.mcp_server
    # Old
    export SYSTEMMANAGER_AUTH_MODE=token
    export SYSTEMMANAGER_SHARED_SECRET=dev-secret-key
-   
+
    # New
    export SYSTEMMANAGER_AUTH_MODE=oauth
    export SYSTEMMANAGER_AUTH_SERVER=https://idp.yourtailnet.ts.net

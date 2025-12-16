@@ -1,6 +1,6 @@
 # Quickstart: TailOpsMCP Server Improvements
 
-**Date**: 2025-11-15  
+**Date**: 2025-11-15
 **Purpose**: Quick implementation guide for production-ready MCP server improvements
 
 ## **Prerequisites**
@@ -81,7 +81,7 @@ async def get_system_status() -> SystemStatus:
     """Get current system health metrics."""
     cpu_percent = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
-    
+
     return SystemStatus(
         cpu_percent=cpu_percent,
         memory_usage={
@@ -136,23 +136,23 @@ from mcp.server.fastmcp import Context
 @mcp.tool()
 async def get_detailed_system_metrics(ctx: Context) -> Dict:
     """Get comprehensive system metrics with progress reporting."""
-    
+
     await ctx.info("Starting system metrics collection")
-    
+
     # Report progress for long operations
     await ctx.report_progress(0.2, 1.0, "Collecting CPU metrics")
     cpu_times = psutil.cpu_times()
     cpu_percent = psutil.cpu_percent(interval=1, percpu=True)
-    
+
     await ctx.report_progress(0.5, 1.0, "Collecting memory metrics")
     memory = psutil.virtual_memory()
     swap = psutil.swap_memory()
-    
+
     await ctx.report_progress(0.8, 1.0, "Collecting disk metrics")
     disk_io = psutil.disk_io_counters()
-    
+
     await ctx.info("System metrics collection complete")
-    
+
     return {
         "cpu": {
             "percent": cpu_percent,
@@ -178,7 +178,7 @@ from docker.errors import DockerException
 class DockerManager:
     def __init__(self):
         self.client = None
-    
+
     async def ensure_connected(self):
         if not self.client:
             try:
@@ -191,11 +191,11 @@ async def get_container_stats(container_id: str) -> Dict:
     """Get detailed container statistics."""
     manager = DockerManager()
     await manager.ensure_connected()
-    
+
     try:
         container = manager.client.containers.get(container_id)
         stats = container.stats(stream=False)
-        
+
         return {
             "container_id": container_id,
             "name": container.name,
@@ -222,7 +222,7 @@ async def test_get_system_status():
     """Test system status retrieval."""
     monitor = SystemMonitor()
     status = await monitor.get_status()
-    
+
     assert status.cpu_percent >= 0
     assert status.cpu_percent <= 100
     assert status.uptime > 0
@@ -243,11 +243,11 @@ async def test_mcp_protocol_compliance():
     async with stdio_client(("python", "-m", "src.mcp_server")) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            
+
             # Test tool listing
             tools = await session.list_tools()
             assert len(tools.tools) > 0
-            
+
             # Test tool execution
             result = await session.call_tool("get_system_status", {})
             assert "cpu_percent" in result.content[0].text

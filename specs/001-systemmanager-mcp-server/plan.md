@@ -9,14 +9,14 @@ Build a secure MCP server that provides remote AI agents with system monitoring,
 
 ## Technical Context
 
-**Language/Version**: Python 3.11+ (FastMCP framework for rapid MCP server development)  
-**Primary Dependencies**: FastMCP, Docker SDK for Python, psutil, aiohttp, cryptography  
-**Storage**: File-based configuration, no persistent database required  
-**Testing**: pytest, contract tests for MCP protocol compliance  
-**Target Platform**: Linux servers (Ubuntu/Debian LTS, ProxMox LXC containers)  
-**Project Type**: Single project (MCP server application)  
-**Performance Goals**: Handle 10+ concurrent MCP connections, sub-2s response for system status  
-**Constraints**: <100MB memory usage, secure authentication, token-efficient responses  
+**Language/Version**: Python 3.11+ (FastMCP framework for rapid MCP server development)
+**Primary Dependencies**: FastMCP, Docker SDK for Python, psutil, aiohttp, cryptography
+**Storage**: File-based configuration, no persistent database required
+**Testing**: pytest, contract tests for MCP protocol compliance
+**Target Platform**: Linux servers (Ubuntu/Debian LTS, ProxMox LXC containers)
+**Project Type**: Single project (MCP server application)
+**Performance Goals**: Handle 10+ concurrent MCP connections, sub-2s response for system status
+**Constraints**: <100MB memory usage, secure authentication, token-efficient responses
 **Scale/Scope**: Single server deployment, extensible for future tool additions
 
 ## Constitution Check

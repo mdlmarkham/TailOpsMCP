@@ -2,10 +2,8 @@
 
 import sys
 import asyncio
-import tempfile
 import uuid
 from pathlib import Path
-from typing import Dict, List, Any, Optional
 
 # Add the project root to Python path to enable 'src' imports
 project_root = Path(__file__).parent.parent
@@ -14,7 +12,7 @@ sys.path.insert(0, str(project_root))
 import pytest
 import os
 import json
-from unittest.mock import Mock, MagicMock, AsyncMock, patch
+from unittest.mock import Mock, AsyncMock
 from datetime import datetime, timedelta
 from src.auth.token_auth import TokenClaims
 
@@ -23,25 +21,18 @@ from src.auth.token_auth import TokenClaims
 # Authentication and Authorization Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def admin_claims():
     """Token claims with admin privileges for testing."""
-    return TokenClaims(
-        agent="test-admin",
-        scopes=["admin"],
-        host_tags=[],
-        expiry=None
-    )
+    return TokenClaims(agent="test-admin", scopes=["admin"], host_tags=[], expiry=None)
 
 
 @pytest.fixture
 def readonly_claims():
     """Token claims with readonly privileges for testing."""
     return TokenClaims(
-        agent="test-readonly",
-        scopes=["readonly"],
-        host_tags=[],
-        expiry=None
+        agent="test-readonly", scopes=["readonly"], host_tags=[], expiry=None
     )
 
 
@@ -52,7 +43,7 @@ def operator_claims():
         agent="test-operator",
         scopes=["fleet.read", "fleet.control"],
         host_tags=[],
-        expiry=None
+        expiry=None,
     )
 
 
@@ -63,13 +54,14 @@ def security_claims():
         agent="test-security",
         scopes=["security.audit", "security.monitor"],
         host_tags=[],
-        expiry=None
+        expiry=None,
     )
 
 
 # =============================================================================
 # Mock Service and Component Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def mock_docker_client():
@@ -88,24 +80,16 @@ def mock_docker_client():
         "Created": "2024-01-01T00:00:00Z",
         "State": {
             "StartedAt": "2024-01-01T00:00:00Z",
-            "FinishedAt": "0001-01-01T00:00:00Z"
+            "FinishedAt": "0001-01-01T00:00:00Z",
         },
         "HostConfig": {
             "PortBindings": {"80/tcp": [{"HostPort": "8080"}]},
             "Binds": ["/data:/app/data"],
             "NetworkMode": "bridge",
-            "RestartPolicy": {"Name": "unless-stopped"}
+            "RestartPolicy": {"Name": "unless-stopped"},
         },
-        "Config": {
-            "Image": "nginx:latest",
-            "Env": ["PATH=/usr/bin"],
-            "Labels": {}
-        },
-        "NetworkSettings": {
-            "Networks": {
-                "bridge": {"IPAddress": "172.17.0.2"}
-            }
-        }
+        "Config": {"Image": "nginx:latest", "Env": ["PATH=/usr/bin"], "Labels": {}},
+        "NetworkSettings": {"Networks": {"bridge": {"IPAddress": "172.17.0.2"}}},
     }
     mock_container.logs.return_value = b"Log line 1\nLog line 2\n"
     mock_container.start = Mock()
@@ -117,10 +101,7 @@ def mock_docker_client():
     mock_image = Mock()
     mock_image.id = "img123456789"
     mock_image.tags = ["nginx:latest"]
-    mock_image.attrs = {
-        "Size": 142000000,
-        "Created": "2024-01-01T00:00:00Z"
-    }
+    mock_image.attrs = {"Size": 142000000, "Created": "2024-01-01T00:00:00Z"}
 
     # Configure client mocks
     client.containers.list.return_value = [mock_container]
@@ -153,8 +134,8 @@ def mock_tsidp_server(requests_mock):
             "authorization_endpoint": "https://tsidp.example.ts.net/authorize",
             "token_endpoint": "https://tsidp.example.ts.net/oauth/token",
             "introspection_endpoint": "https://tsidp.example.ts.net/api/v2/oauth/introspect",
-            "issuer": "https://tsidp.example.ts.net"
-        }
+            "issuer": "https://tsidp.example.ts.net",
+        },
     )
 
     # Mock token endpoint
@@ -164,8 +145,8 @@ def mock_tsidp_server(requests_mock):
             "access_token": "test_access_token_12345",
             "token_type": "Bearer",
             "expires_in": 3600,
-            "refresh_token": "test_refresh_token_67890"
-        }
+            "refresh_token": "test_refresh_token_67890",
+        },
     )
 
     # Mock introspection endpoint
@@ -178,8 +159,8 @@ def mock_tsidp_server(requests_mock):
             "username": "test-user",
             "token_type": "Bearer",
             "exp": int((datetime.utcnow() + timedelta(hours=1)).timestamp()),
-            "aud": ["http://localhost:8080"]
-        }
+            "aud": ["http://localhost:8080"],
+        },
     )
 
     return requests_mock
@@ -206,6 +187,7 @@ def mock_mcp_client():
 # Test Data and Configuration Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def temp_test_dir(tmp_path):
     """Create a temporary directory for tests."""
@@ -219,23 +201,14 @@ def temp_config_file(temp_test_dir):
     """Create a temporary configuration file for tests."""
     config_file = temp_test_dir / "test_config.json"
     config_data = {
-        "database": {
-            "url": "sqlite:///test.db",
-            "pool_size": 5
-        },
-        "security": {
-            "require_authentication": True,
-            "token_expiry": 3600
-        },
-        "logging": {
-            "level": "DEBUG",
-            "format": "json"
-        }
+        "database": {"url": "sqlite:///test.db", "pool_size": 5},
+        "security": {"require_authentication": True, "token_expiry": 3600},
+        "logging": {"level": "DEBUG", "format": "json"},
     }
-    
-    with open(config_file, 'w') as f:
+
+    with open(config_file, "w") as f:
         json.dump(config_data, f)
-    
+
     return config_file
 
 
@@ -243,11 +216,7 @@ def temp_config_file(temp_test_dir):
 def mock_subprocess():
     """Mock subprocess for command execution tests."""
     mock = Mock()
-    mock.run = Mock(return_value=Mock(
-        returncode=0,
-        stdout="Success",
-        stderr=""
-    ))
+    mock.run = Mock(return_value=Mock(returncode=0, stdout="Success", stderr=""))
     return mock
 
 
@@ -265,6 +234,7 @@ def mock_docker_compose():
 # Inventory and Fleet Management Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def sample_inventory_data():
     """Sample inventory data for testing."""
@@ -273,7 +243,7 @@ def sample_inventory_data():
             "hostname": "test-host",
             "container_id": "101",
             "container_type": "lxc",
-            "mcp_server_name": "test-host-101"
+            "mcp_server_name": "test-host-101",
         },
         "applications": [
             {
@@ -282,10 +252,10 @@ def sample_inventory_data():
                 "version": "1.21.0",
                 "port": 80,
                 "service_name": "nginx",
-                "config_path": "/etc/nginx"
+                "config_path": "/etc/nginx",
             }
         ],
-        "stacks": []
+        "stacks": [],
     }
 
 
@@ -306,15 +276,12 @@ def enhanced_inventory_data():
                     "type": "management",
                     "status": "running",
                     "port": 8080,
-                    "version": "1.0.0"
+                    "version": "1.0.0",
                 }
             ],
             "stacks": [],
             "last_seen": datetime.utcnow().isoformat(),
-            "metadata": {
-                "os": "Ubuntu 20.04",
-                "architecture": "x86_64"
-            }
+            "metadata": {"os": "Ubuntu 20.04", "architecture": "x86_64"},
         },
         "proxmox_hosts": [
             {
@@ -331,7 +298,7 @@ def enhanced_inventory_data():
                         "type": "virtualization",
                         "status": "running",
                         "port": 8006,
-                        "version": "7.4-1"
+                        "version": "7.4-1",
                     }
                 ],
                 "stacks": [
@@ -340,15 +307,11 @@ def enhanced_inventory_data():
                         "name": "web-stack",
                         "type": "web",
                         "services": ["nginx", "app", "database"],
-                        "status": "running"
+                        "status": "running",
                     }
                 ],
                 "last_seen": datetime.utcnow().isoformat(),
-                "metadata": {
-                    "cpu_cores": 16,
-                    "memory_gb": 64,
-                    "storage_gb": 1000
-                }
+                "metadata": {"cpu_cores": 16, "memory_gb": 64, "storage_gb": 1000},
             }
         ],
         "containers": [
@@ -366,7 +329,7 @@ def enhanced_inventory_data():
                         "type": "web-server",
                         "status": "running",
                         "port": 80,
-                        "version": "1.18.0"
+                        "version": "1.18.0",
                     }
                 ],
                 "stacks": [],
@@ -374,16 +337,17 @@ def enhanced_inventory_data():
                 "metadata": {
                     "image": "nginx:1.18",
                     "cpu_limit": "2",
-                    "memory_limit": "1GB"
-                }
+                    "memory_limit": "1GB",
+                },
             }
-        ]
+        ],
     }
 
 
 # =============================================================================
 # Workflow and Policy Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def sample_workflow_blueprint():
@@ -399,20 +363,20 @@ def sample_workflow_blueprint():
                 "name": "Initialize",
                 "type": "action",
                 "action": "initialize",
-                "parameters": {}
+                "parameters": {},
             },
             {
                 "id": "step2",
                 "name": "Execute",
                 "type": "action",
                 "action": "execute",
-                "parameters": {}
-            }
+                "parameters": {},
+            },
         ],
         "triggers": [],
         "approvals_required": [],
         "timeout": 3600,
-        "created_by": "test"
+        "created_by": "test",
     }
 
 
@@ -427,34 +391,32 @@ def sample_policy_config():
             "fleet_discover": {
                 "tier": "observe",
                 "description": "Run fleet discovery",
-                "allowed_targets": ["gateway"]
+                "allowed_targets": ["gateway"],
             },
             "fleet_inventory_get": {
                 "tier": "observe",
                 "description": "Retrieve fleet inventory",
-                "allowed_targets": ["gateway"]
+                "allowed_targets": ["gateway"],
             },
             "plan_update_packages": {
                 "tier": "control",
                 "description": "Plan package update",
                 "allowed_targets": ["*"],
-                "parameters": {
-                    "update_only": [True, False],
-                    "upgrade": [True, False]
-                }
-            }
+                "parameters": {"update_only": [True, False], "upgrade": [True, False]},
+            },
         },
         "security_constraints": {
             "deny_by_default": True,
             "require_approval": ["control", "execute"],
-            "audit_all_operations": True
-        }
+            "audit_all_operations": True,
+        },
     }
 
 
 # =============================================================================
 # Event and Observability Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def sample_events():
@@ -467,7 +429,7 @@ def sample_events():
             "severity": "info",
             "source": "test-system",
             "message": "Test event 1",
-            "metadata": {}
+            "metadata": {},
         },
         {
             "event_id": str(uuid.uuid4()),
@@ -476,7 +438,7 @@ def sample_events():
             "severity": "warning",
             "source": "security-monitor",
             "message": "Test event 2",
-            "metadata": {}
+            "metadata": {},
         },
         {
             "event_id": str(uuid.uuid4()),
@@ -485,14 +447,15 @@ def sample_events():
             "severity": "critical",
             "source": "performance-monitor",
             "message": "Test event 3",
-            "metadata": {}
-        }
+            "metadata": {},
+        },
     ]
 
 
 # =============================================================================
 # Performance and Load Testing Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def performance_test_config():
@@ -503,7 +466,7 @@ def performance_test_config():
         "response_time_threshold": 5.0,  # seconds
         "throughput_threshold": 10,  # ops per second
         "memory_limit_mb": 2048,
-        "cpu_limit_percent": 80
+        "cpu_limit_percent": 80,
     }
 
 
@@ -514,24 +477,25 @@ def load_test_scenarios():
         "inventory_load": {
             "target_counts": [100, 500, 1000, 5000],
             "operations": ["discovery", "query", "update", "delete"],
-            "concurrent_users": [1, 5, 10, 25, 50]
+            "concurrent_users": [1, 5, 10, 25, 50],
         },
         "workflow_load": {
             "workflow_counts": [10, 50, 100, 500],
             "workflow_types": ["provisioning", "backup", "deployment"],
-            "concurrent_executions": [1, 5, 10, 25]
+            "concurrent_executions": [1, 5, 10, 25],
         },
         "event_load": {
             "event_counts": [100, 500, 1000, 5000],
             "event_types": ["alert", "log", "metric", "audit"],
-            "processing_modes": ["sync", "async", "batch"]
-        }
+            "processing_modes": ["sync", "async", "batch"],
+        },
     }
 
 
 # =============================================================================
 # Security Testing Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def security_test_data():
@@ -541,26 +505,27 @@ def security_test_data():
             "invalid_token_format",
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.payload",
             "Bearer null",
-            "Bearer .."
+            "Bearer ..",
         ],
         "injection_patterns": [
             "' OR '1'='1",
             "'; DROP TABLE users; --",
             "1' UNION SELECT * FROM users --",
             "<script>alert('xss')</script>",
-            "../../../etc/passwd"
+            "../../../etc/passwd",
         ],
         "privilege_escalation": [
             {"user_role": "user", "requested_role": "admin"},
             {"user_role": "guest", "requested_role": "super_admin"},
-            {"user_role": None, "requested_role": "admin"}
-        ]
+            {"user_role": None, "requested_role": "admin"},
+        ],
     }
 
 
 # =============================================================================
 # Environment and Setup Fixtures
 # =============================================================================
+
 
 @pytest.fixture(autouse=True)
 def reset_env_vars():
@@ -569,12 +534,14 @@ def reset_env_vars():
     original_env = os.environ.copy()
 
     # Set test environment variables
-    os.environ.update({
-        "TAILOPS_TEST_MODE": "true",
-        "TAILOPS_TEST_DATABASE": ":memory:",
-        "TAILOPS_TEST_LOG_LEVEL": "DEBUG",
-        "TAILOPS_MOCK_EXTERNAL_SERVICES": "true"
-    })
+    os.environ.update(
+        {
+            "TAILOPS_TEST_MODE": "true",
+            "TAILOPS_TEST_DATABASE": ":memory:",
+            "TAILOPS_TEST_LOG_LEVEL": "DEBUG",
+            "TAILOPS_MOCK_EXTERNAL_SERVICES": "true",
+        }
+    )
 
     yield
 
@@ -607,9 +574,11 @@ def event_loop():
 # Mock Service Factory Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def mock_service_factory():
     """Factory for creating mock services."""
+
     class MockServiceFactory:
         @staticmethod
         def create_inventory_service():
@@ -618,35 +587,35 @@ def mock_service_factory():
             service.get_inventory = AsyncMock(return_value={})
             service.detect_changes = AsyncMock(return_value={})
             return service
-        
+
         @staticmethod
         def create_policy_engine():
             engine = Mock()
             engine.evaluate_policy = AsyncMock(return_value={"allowed": True})
             engine.enforce_policy = AsyncMock(return_value=True)
             return engine
-        
+
         @staticmethod
         def create_workflow_engine():
             engine = Mock()
             engine.execute_workflow = AsyncMock(return_value="execution-123")
             engine.get_execution_status = AsyncMock(return_value={"status": "running"})
             return engine
-        
+
         @staticmethod
         def create_event_processor():
             processor = Mock()
             processor.process_event = AsyncMock(return_value=True)
             processor.get_event_stats = AsyncMock(return_value={})
             return processor
-        
+
         @staticmethod
         def create_access_control():
             access_control = Mock()
             access_control.check_permission = AsyncMock(return_value=True)
             access_control.get_user_permissions = AsyncMock(return_value=[])
             return access_control
-    
+
     return MockServiceFactory()
 
 
@@ -654,16 +623,17 @@ def mock_service_factory():
 # Cleanup and Validation Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def test_cleanup():
     """Cleanup fixture for test resources."""
     resources = []
-    
+
     def add_resource(resource, cleanup_func):
         resources.append((resource, cleanup_func))
-    
+
     yield add_resource
-    
+
     # Cleanup all resources
     for resource, cleanup_func in resources:
         try:
@@ -675,16 +645,20 @@ def test_cleanup():
 @pytest.fixture
 def validate_test_environment():
     """Validate test environment setup."""
+
     def _validate():
         # Validate required environment variables
         required_vars = ["TAILOPS_TEST_MODE"]
         for var in required_vars:
-            assert os.getenv(var) is not None, f"Required environment variable {var} not set"
-        
+            assert os.getenv(var) is not None, (
+                f"Required environment variable {var} not set"
+            )
+
         # Validate Python version
         import sys
+
         assert sys.version_info >= (3, 8), "Python 3.8+ required"
-        
+
         return True
-    
+
     return _validate

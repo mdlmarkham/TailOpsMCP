@@ -7,7 +7,7 @@ server:
   host: "0.0.0.0"
   port: 8080
   transport: "http-sse"
-  
+
 security:
   # Authentication OPTIONAL in minimal config
   # Relies on Tailscale network isolation
@@ -18,7 +18,7 @@ security:
 logging:
   level: "INFO"
   file: "/var/log/systemmanager/mcp.log"
-  
+
 # Audit logging disabled for minimal config
 # audit:
 #   enabled: false
