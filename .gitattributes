@@ -1,0 +1,12 @@
+# Enforce LF for shell scripts to satisfy shellcheck on CI/Windows
+scripts/**/*.sh text eol=lf
+scripts/*.sh text eol=lf
+*.sh text eol=lf
+
+# Ensure other text files are normalized
+*.sh text
+*.py text
+*.md text
+*.yml text
+*.yaml text
+*.cfg text
