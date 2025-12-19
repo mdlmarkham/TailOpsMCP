@@ -2,6 +2,9 @@
 Test configuration and initialization for the enhanced test infrastructure.
 """
 
+# Allow deliberate sys.path manipulation for test imports
+# ruff: noqa: E402
+
 # Add the project root to Python path to enable imports
 import sys
 from pathlib import Path
@@ -12,27 +15,25 @@ sys.path.insert(0, str(project_root))
 
 import pytest  # Import pytest for fixtures
 
+from tests.fixtures.target_registry_fixtures import TargetRegistryFixtures
+
 # Import all test utilities and fixtures to make them available
 from tests.mock_executors import (
-    MockSSHExecutor,
     MockDockerExecutor,
     MockHTTPExecutor,
     MockLocalExecutor,
     MockProxmoxExecutor,
+    MockSSHExecutor,
 )
-from tests.fixtures.target_registry_fixtures import (
-    TargetRegistryFixtures,
-)
-from tests.mock_policy_gate import (
-    PolicyGateConfigs,
-)
+from tests.mock_policy_gate import PolicyGateConfigs
 from tests.test_utils import (
-    ExecutionAssertions,
-    TargetAssertions,
     AuthorizationAssertions,
-    TestDataGenerators,
+    ExecutionAssertions,
     PerformanceMetrics,
+    TargetAssertions,
+    TestDataGenerators,
 )
+
 # from tests.integration_test_framework import *  # Commented out due to missing dependencies
 
 

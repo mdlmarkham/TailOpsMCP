@@ -10,19 +10,19 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from src.models.event_models import (
-    SystemEvent,
-    EventType,
+    EventBuilder,
+    EventCategory,
     EventSeverity,
     EventSource,
-    EventCategory,
-    EventBuilder,
+    EventType,
     ResourceUsage,
+    SystemEvent,
     create_health_event,
-    create_security_event,
     create_operation_event,
+    create_security_event,
 )
-from src.services.event_store import get_event_store
 from src.services.event_processor import get_event_stream_processor
+from src.services.event_store import get_event_store
 from src.utils.logging_config import get_logger
 
 
@@ -542,14 +542,7 @@ class DiscoveryPipelineIntegration:
             )
             await self.event_store.store_event(error_event)
             return [error_event]
-        error_event = EventBuilder.error(
-            EventSource.DISCOVERY_PIPELINE,
-            "Discovery event generation failed",
-            str(e),
-            {"integration": "discovery_pipeline"},
-        )
-        await self.event_store.store_event(error_event)
-        return [error_event]
+        # Duplicate/out-of-scope error handler removed (handled in except block above)
 
 
 class ProxmoxIntegration:
