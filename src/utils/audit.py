@@ -17,7 +17,6 @@ ENHANCED: This file now contains all audit functionality including:
 """
 
 from __future__ import annotations
-
 import datetime
 import json
 import os
@@ -27,8 +26,8 @@ import logging
 from typing import Any, Dict, Optional, List
 from pathlib import Path
 from dataclasses import dataclass, asdict
-from datetime import datetime
 from enum import Enum
+
 
 logger = logging.getLogger(__name__)
 
@@ -581,9 +580,6 @@ def get_structured_audit_logger(
         StructuredAuditLogger instance
     """
     return StructuredAuditLogger(log_path, rotation_size, rotation_count)
-
-
-from enum import Enum
 
 
 # Add missing classes and instances for compatibility

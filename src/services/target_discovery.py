@@ -3,6 +3,7 @@ Dynamic discovery mechanisms for SSH and Docker targets.
 """
 
 import logging
+import os
 import socket
 from typing import List
 from ipaddress import ip_network

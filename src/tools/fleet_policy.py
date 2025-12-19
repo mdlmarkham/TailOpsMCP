@@ -155,13 +155,14 @@ default_roles:
 """
 
 
-def create_fleet_management_policy():
+def create_fleet_management_policy() -> Path:
     """Create the fleet management policy configuration file."""
     policy_path = Path("config/fleet_management_policy.yaml")
     policy_path.parent.mkdir(exist_ok=True)
 
     with open(policy_path, "w") as f:
         f.write(FLEET_MANAGEMENT_POLICY)
+    return policy_path
 
     return policy_path
 

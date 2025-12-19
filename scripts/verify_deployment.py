@@ -109,7 +109,7 @@ class DeploymentVerifier:
     def check_systemd_available(self) -> Tuple[bool, str]:
         """Check systemd is available (for systemd deployment)."""
         try:
-            result = subprocess.run(
+            subprocess.run(
                 ["systemctl", "--version"], capture_output=True, text=True, timeout=5
             )
             return True, "✓ systemd available"
@@ -189,7 +189,7 @@ class DeploymentVerifier:
         repo_path = Path(".git")
         if repo_path.exists():
             try:
-                result = subprocess.run(
+                subprocess.run(
                     ["git", "remote", "-v"], capture_output=True, text=True, timeout=5
                 )
                 return True, "✓ Repository cloned"

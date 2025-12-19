@@ -6,6 +6,7 @@ Implements deny-by-default security with explicit allowlists and structured audi
 """
 
 import os
+import re
 import yaml
 import logging
 from typing import Dict, List, Optional, Any, Set

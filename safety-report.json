@@ -1,17 +1,3 @@
-
-
-+===========================================================================================================================================================================================+
-
-
-DEPRECATED: this command (`check`) has been DEPRECATED, and will be unsupported beyond 01 June 2024.
-
-
-We highly encourage switching to the new `scan` command which is easier to use, more powerful, and can be set up to mimic the deprecated command if required.
-
-
-+===========================================================================================================================================================================================+
-
-
 {
     "report_meta": {
         "scan_target": "environment",
@@ -2373,17 +2359,3 @@ We highly encourage switching to the new `scan` command which is easier to use, 
         "remediations_skipped": {}
     }
 }
-
-
-+===========================================================================================================================================================================================+
-
-
-DEPRECATED: this command (`check`) has been DEPRECATED, and will be unsupported beyond 01 June 2024.
-
-
-We highly encourage switching to the new `scan` command which is easier to use, more powerful, and can be set up to mimic the deprecated command if required.
-
-
-+===========================================================================================================================================================================================+
-
-

@@ -28,6 +28,7 @@ from src.models.security_models import (
     IdentityContext,
     RiskLevel,
     AlertSeverity,
+    SensitivityLevel,
 )
 from src.services.security_audit_logger import SecurityAuditLogger
 
@@ -957,7 +958,8 @@ class GovernanceEngine:
             if "admin" in operation.operation_type.lower():
                 if (
                     not operation.approval_context
-                    or operation.approval_context.approver_id not in identity.roles
+                    or operation.approval_context.approver_id
+                    not in operation.identity_context.roles
                 ):
                     validation.valid = False
                     validation.violation_reason = (

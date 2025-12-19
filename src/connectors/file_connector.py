@@ -649,7 +649,9 @@ class FileConnector(RemoteAgentConnector):
             True if permission is available
         """
         try:
-            test_path = "/tmp/systemmanager_test"
+            import tempfile
+
+            test_path = tempfile.mkdtemp() + "/systemmanager_test"
 
             if operation == "read":
                 cmd = f"test -r {test_path} && echo 'yes' || echo 'no'"

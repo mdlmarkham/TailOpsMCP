@@ -6,6 +6,7 @@ Similar to Portainer/Komodo stacks - deploy from GitHub repos
 import os
 import subprocess
 import logging
+import re
 from typing import Dict, Optional
 from pathlib import Path
 from urllib.parse import urlparse

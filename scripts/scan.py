@@ -40,15 +40,20 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 try:
     import yaml
 except ImportError:
-    yaml = None
+    yaml = None  # type: ignore
 
-from security.scanner import SecurityScanner, SecurityScanConfig, ScanResult, ScanType
+from src.security.scanner import (
+    SecurityScanner,
+    SecurityScanConfig,
+    ScanResult,
+    ScanType,
+)
 
 
 class SecurityScanCLI:
     """Command-line interface for security scanning."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.scanner = SecurityScanner()
         self.config = SecurityScanConfig()
 
@@ -143,14 +148,14 @@ class SecurityScanCLI:
                 "compliance_issues": result.compliance_issues,
                 "policy_violations": result.policy_violations,
             }
-            report["scan_results"].append(scan_data)
+            report["scan_results"].append(scan_data)  # type: ignore
 
         # Add recommendations
         report["recommendations"] = self._generate_recommendations(results)
 
         return report
 
-    def _serialize_vulnerability(self, vuln) -> Dict[str, Any]:
+    def _serialize_vulnerability(self, vuln: Any) -> Dict[str, Any]:
         """Serialize vulnerability object to dictionary."""
         if hasattr(vuln, "__dict__"):
             return {
@@ -251,7 +256,7 @@ class SecurityScanCLI:
 
     def _save_report(
         self, report: Dict[str, Any], output_file: str, output_format: str
-    ):
+    ) -> None:
         """Save report to file in specified format."""
         output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -270,7 +275,9 @@ class SecurityScanCLI:
             with open(output_path, "w") as f:
                 json.dump(report, f, indent=2, default=str)
 
-    def _display_summary(self, results: List[ScanResult], verbose: bool = False):
+    def _display_summary(
+        self, results: List[ScanResult], verbose: bool = False
+    ) -> None:
         """Display scan summary."""
         if not verbose:
             print("\n📊 Security Scan Summary")
@@ -318,7 +325,7 @@ class SecurityScanCLI:
 
         return 0  # No issues found
 
-    def interactive_scan(self):
+    def interactive_scan(self) -> int:
         """Run interactive security scan."""
         print("🔍 TailOpsMCP Interactive Security Scanner")
         print("=" * 50)
@@ -373,7 +380,7 @@ class SecurityScanCLI:
         )
 
 
-def main():
+def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(
         description="TailOpsMCP Security Scanner - Comprehensive security assessment tool",

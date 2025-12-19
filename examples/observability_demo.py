@@ -68,7 +68,7 @@ class ObservabilityExample:
         time.sleep(0.1)
 
         # Stop timing and record duration
-        duration = metrics_collector.stop_timer("data_processing")
+        metrics_collector.stop_timer("data_processing")
 
         # Record additional metrics
         metrics_collector.increment_counter("processed_records", 100)
@@ -83,7 +83,7 @@ class ObservabilityExample:
         """Example of health checking."""
 
         # Run all health checks
-        health_results = health_checker.run_all_checks()
+        health_checker.run_all_checks()
 
         # Get status report
         status_report = health_checker.get_status_report()

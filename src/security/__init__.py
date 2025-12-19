@@ -36,6 +36,11 @@ PACKAGE STRUCTURE:
 
 from __future__ import annotations
 
+import logging
+import json
+from datetime import datetime
+from typing import List, Optional, Dict, Any
+
 # Core imports from scanner
 from .scanner import (
     SecurityScanner,
@@ -432,12 +437,7 @@ def _generate_security_recommendations(
 
 
 # Initialize package logging
-import logging
-import json
-from datetime import datetime
-from typing import List, Optional, Dict, Any
-from pathlib import Path
-
+# Initialize package logging
 logger = logging.getLogger(__name__)
 logger.info(f"Security package initialized - {__version__}")
 

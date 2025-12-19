@@ -439,7 +439,6 @@ def test_operation_scenarios():
     )
 
     engine = PolicyEngine(config)
-    validator = CapabilityValidator()
 
     scenarios = [
         (

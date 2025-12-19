@@ -28,7 +28,6 @@ from collections import defaultdict, deque
 
 from .audit import AuditLogger, AuditEvent
 from .access_control import AccessControlEngine
-from ..models.security_models import SecurityAlert, SecurityMetric
 
 logger = logging.getLogger(__name__)
 

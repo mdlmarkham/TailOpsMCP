@@ -8,7 +8,7 @@ agent installation on target systems. Supports SSH/Tailscale connections.
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any
 from datetime import datetime
 from contextlib import asynccontextmanager
 
@@ -16,7 +16,6 @@ from src.models.target_registry import TargetConnection
 from src.models.connection_types import (
     SSHConnection,
     CommandResult,
-    ForwardResult,
     UploadResult,
     DownloadResult,
     HealthStatus,
@@ -127,79 +126,6 @@ class FileStats:
     created: datetime
     modified: datetime
     accessed: datetime
-
-
-@dataclass
-class CommandResult:
-    """Command execution result."""
-
-    command: str
-    exit_code: int
-    stdout: str
-    stderr: str
-    execution_time: float
-    timestamp: datetime
-
-
-@dataclass
-class ForwardResult:
-    """Port forwarding result."""
-
-    local_port: int
-    remote_host: str
-    remote_port: int
-    status: str
-    connection_id: str
-
-
-@dataclass
-class UploadResult:
-    """File upload result."""
-
-    local_path: str
-    remote_path: str
-    size: int
-    status: str
-    checksum: str
-
-
-@dataclass
-class DownloadResult:
-    """File download result."""
-
-    remote_path: str
-    local_path: str
-    size: int
-    status: str
-    checksum: str
-
-
-@dataclass
-class OperationResult:
-    """Generic operation result."""
-
-    operation: str
-    target: str
-    success: bool
-    result: Any = None
-    error: Optional[str] = None
-    execution_time: float = 0.0
-    timestamp: datetime = None
-
-    def __post_init__(self):
-        if self.timestamp is None:
-            self.timestamp = datetime.utcnow()
-
-
-@dataclass
-class HealthStatus:
-    """Connection health status."""
-
-    target: str
-    healthy: bool
-    response_time: float
-    last_check: datetime
-    issues: List[str] = None
 
 
 class RemoteAgentConnector(ABC):

@@ -18,15 +18,11 @@ try:
         EnhancedFleetInventory,
         EnhancedTarget,
         EnhancedService,
-        EnhancedStack,
         NodeRole,
         ResourceStatus,
-        SecurityStatus,
-        ResourceUsage,
-        SecurityPosture,
     )
+    from models.fleet_inventory import ResourceUsage
     from models.inventory_snapshot import (
-        InventorySnapshot,
         SnapshotManager,
         SnapshotType,
         ChangeType,

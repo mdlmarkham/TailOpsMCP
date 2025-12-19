@@ -467,9 +467,9 @@ class TestTOONQualityAssurance:
         report = validate_toon_document(doc)
         assert isinstance(report, QualityReport)
 
-        # Test quality check
-        is_acceptable = check_document_quality(doc, QualityLevel.ACCEPTABLE)
-        assert isinstance(is_acceptable, bool)
+        # Test quality check (removed - function not available in consolidated TOON)
+        # is_acceptable = check_document_quality(doc, QualityLevel.ACCEPTABLE)
+        # assert isinstance(is_acceptable, bool)
 
 
 class TestTOONSystemIntegration:
@@ -580,7 +580,8 @@ class TestTOONConfiguration:
         assert config.environment == "production"
         assert config.debug_mode is False
         assert isinstance(config.serialization, TOONSerializationConfig)
-        assert isinstance(config.templates, TOONTemplatesConfig)
+        # Removed - TOONTemplatesConfig not available in consolidated TOON config
+        # assert isinstance(config.templates, TOONTemplatesConfig)
 
     def test_config_updates(self):
         """Test configuration updates."""

@@ -29,7 +29,7 @@ from src.utils.logging_config import get_logger
 class FleetInventoryIntegration:
     """Integration with fleet inventory system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("fleet_inventory_integration")
         self.event_store = get_event_store()
 
@@ -75,47 +75,51 @@ class FleetInventoryIntegration:
                         # CPU threshold check
                         cpu_percent = resources.get("cpu_percent", 0)
                         if cpu_percent > 80:
-                            cpu_event = EventBuilder()
-                            cpu_event.event_type = EventType.RESOURCE_THRESHOLD
-                            cpu_event.severity = EventSeverity.WARNING
-                            cpu_event.source = EventSource.FLEET_INVENTORY
-                            cpu_event.target = target_name
-                            cpu_event.category = EventCategory.PERFORMANCE
-                            cpu_event.title = f"High CPU usage on {target_name}"
-                            cpu_event.description = f"CPU usage at {cpu_percent:.1f}%"
-                            cpu_event.resource_usage = ResourceUsage(
-                                cpu_percent=cpu_percent
+                            cpu_event = (
+                                EventBuilder()
+                                .event_type(EventType.RESOURCE_THRESHOLD)
+                                .severity(EventSeverity.WARNING)
+                                .source(EventSource.FLEET_INVENTORY)
+                                .target(target_name)
+                                .category(EventCategory.PERFORMANCE)
+                                .title(f"High CPU usage on {target_name}")
+                                .description(f"CPU usage at {cpu_percent:.1f}%")
+                                .resource_usage(ResourceUsage(cpu_percent=cpu_percent))
+                                .details(
+                                    {
+                                        "resource_type": "cpu",
+                                        "usage_percent": cpu_percent,
+                                        "threshold": 80.0,
+                                    }
+                                )
+                                .add_tag("resource_threshold")
                             )
-                            cpu_event.details = {
-                                "resource_type": "cpu",
-                                "usage_percent": cpu_percent,
-                                "threshold": 80.0,
-                            }
-                            cpu_event.add_tag("resource_threshold")
                             events.append(cpu_event.build())
 
                         # Memory threshold check
                         memory_percent = resources.get("memory_percent", 0)
                         if memory_percent > 80:
-                            memory_event = EventBuilder()
-                            memory_event.event_type = EventType.RESOURCE_THRESHOLD
-                            memory_event.severity = EventSeverity.WARNING
-                            memory_event.source = EventSource.FLEET_INVENTORY
-                            memory_event.target = target_name
-                            memory_event.category = EventCategory.PERFORMANCE
-                            memory_event.title = f"High memory usage on {target_name}"
-                            memory_event.description = (
-                                f"Memory usage at {memory_percent:.1f}%"
+                            memory_event = (
+                                EventBuilder()
+                                .event_type(EventType.RESOURCE_THRESHOLD)
+                                .severity(EventSeverity.WARNING)
+                                .source(EventSource.FLEET_INVENTORY)
+                                .target(target_name)
+                                .category(EventCategory.PERFORMANCE)
+                                .title(f"High memory usage on {target_name}")
+                                .description(f"Memory usage at {memory_percent:.1f}%")
+                                .resource_usage(
+                                    ResourceUsage(memory_percent=memory_percent)
+                                )
+                                .details(
+                                    {
+                                        "resource_type": "memory",
+                                        "usage_percent": memory_percent,
+                                        "threshold": 80.0,
+                                    }
+                                )
+                                .add_tag("resource_threshold")
                             )
-                            memory_event.resource_usage = ResourceUsage(
-                                memory_percent=memory_percent
-                            )
-                            memory_event.details = {
-                                "resource_type": "memory",
-                                "usage_percent": memory_percent,
-                                "threshold": 80.0,
-                            }
-                            memory_event.add_tag("resource_threshold")
                             events.append(memory_event.build())
 
             # Store events
@@ -146,19 +150,23 @@ class FleetInventoryIntegration:
         try:
             # This would integrate with the fleet inventory change detection
             # For now, create a placeholder event
-            event = EventBuilder()
-            event.event_type = EventType.FLEET_UPDATED
-            event.severity = EventSeverity.INFO
-            event.source = EventSource.FLEET_INVENTORY
-            event.category = EventCategory.FLEET_MANAGEMENT
-            event.title = "Fleet inventory updated"
-            event.description = (
-                "Fleet inventory has been updated with new target information"
+            event = (
+                EventBuilder()
+                .event_type(EventType.FLEET_UPDATED)
+                .severity(EventSeverity.INFO)
+                .source(EventSource.FLEET_INVENTORY)
+                .category(EventCategory.FLEET_MANAGEMENT)
+                .title("Fleet inventory updated")
+                .description(
+                    "Fleet inventory has been updated with new target information"
+                )
+                .details(
+                    {
+                        "update_type": "inventory_sync",
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                )
             )
-            event.details = {
-                "update_type": "inventory_sync",
-                "timestamp": datetime.utcnow().isoformat(),
-            }
             events.append(event.build())
 
             await self.event_store.store_events(events)
@@ -172,7 +180,7 @@ class FleetInventoryIntegration:
 class PolicyEngineIntegration:
     """Integration with policy engine."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("policy_engine_integration")
         self.event_store = get_event_store()
 
@@ -235,28 +243,32 @@ class PolicyEngineIntegration:
 
         try:
             # Get audit results (placeholder implementation)
-            audit_results = []  # This would come from actual audit system
+            audit_results: List[Any] = []  # This would come from actual audit system
 
             for result in audit_results:
                 if not result.compliant:
                     # Create compliance violation event
-                    event = EventBuilder()
-                    event.event_type = EventType.POLICY_VIOLATION
-                    event.severity = EventSeverity.WARNING
-                    event.source = EventSource.POLICY_ENGINE
-                    event.category = EventCategory.COMPLIANCE
-                    event.title = f"Compliance violation: {result.policy_name}"
-                    event.description = (
-                        f"System is not compliant with policy: {result.reason}"
+                    event = (
+                        EventBuilder()
+                        .event_type(EventType.POLICY_VIOLATION)
+                        .severity(EventSeverity.WARNING)
+                        .source(EventSource.POLICY_ENGINE)
+                        .category(EventCategory.COMPLIANCE)
+                        .title(f"Compliance violation: {result.policy_name}")
+                        .description(
+                            f"System is not compliant with policy: {result.reason}"
+                        )
+                        .details(
+                            {
+                                "policy_name": result.policy_name,
+                                "compliance_status": result.compliant,
+                                "violations": result.violations,
+                                "audit_timestamp": result.audit_timestamp.isoformat(),
+                            }
+                        )
+                        .add_tag("compliance")
+                        .add_tag("audit")
                     )
-                    event.details = {
-                        "policy_name": result.policy_name,
-                        "compliance_status": result.compliant,
-                        "violations": result.violations,
-                        "audit_timestamp": result.audit_timestamp.isoformat(),
-                    }
-                    event.add_tag("compliance")
-                    event.add_tag("audit")
 
                     events.append(event.build())
 
@@ -273,7 +285,7 @@ class PolicyEngineIntegration:
 class SecurityAuditIntegration:
     """Integration with security audit system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("security_audit_integration")
         self.event_store = get_event_store()
 
@@ -299,22 +311,26 @@ class SecurityAuditIntegration:
                 elif audit_event.level == LogLevel.CRITICAL:
                     severity = EventSeverity.CRITICAL
 
-                event = EventBuilder()
-                event.event_type = EventType.SECURITY_ALERT
-                event.severity = severity
-                event.source = EventSource.SECURITY_AUDIT
-                event.category = EventCategory.SECURITY
-                event.title = f"Security audit: {audit_event.operation}"
-                event.description = audit_event.message
-                event.metadata.correlation_id = audit_event.correlation_id
-                event.details = {
-                    "operation": audit_event.operation,
-                    "level": audit_event.level.value,
-                    "subject": audit_event.subject,
-                    "success": audit_event.success,
-                    "risk_level": audit_event.risk_level,
-                    "scopes": audit_event.scopes,
-                }
+                event = (
+                    EventBuilder()
+                    .event_type(EventType.SECURITY_ALERT)
+                    .severity(severity)
+                    .source(EventSource.SECURITY_AUDIT)
+                    .category(EventCategory.SECURITY)
+                    .title(f"Security audit: {audit_event.operation}")
+                    .description(audit_event.message)
+                    .correlation_id(audit_event.correlation_id)
+                    .details(
+                        {
+                            "operation": audit_event.operation,
+                            "level": audit_event.level.value,
+                            "subject": audit_event.subject,
+                            "success": audit_event.success,
+                            "risk_level": audit_event.risk_level,
+                            "scopes": audit_event.scopes,
+                        }
+                    )
+                )
 
                 if audit_event.risk_level and audit_event.risk_level.lower() in [
                     "high",
@@ -348,7 +364,7 @@ class SecurityAuditIntegration:
 class RemoteAgentIntegration:
     """Integration with remote agent system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("remote_agent_integration")
         self.event_store = get_event_store()
 
@@ -372,21 +388,25 @@ class RemoteAgentIntegration:
                         else EventSeverity.WARNING
                     )
 
-                    event = EventBuilder()
-                    event.event_type = EventType.SERVICE_STATUS
-                    event.severity = severity
-                    event.source = EventSource.REMOTE_AGENT
-                    event.target = status.target
-                    event.category = EventCategory.LIFECYCLE
-                    event.title = f"Service {status.service} is {status.state}"
-                    event.description = status.message
-                    event.details = {
-                        "service": status.service,
-                        "target": status.target,
-                        "state": status.state,
-                        "message": status.message,
-                        "details": status.details,
-                    }
+                    event = (
+                        EventBuilder()
+                        .event_type(EventType.SERVICE_STATUS)
+                        .severity(severity)
+                        .source(EventSource.REMOTE_AGENT)
+                        .target(status.target)
+                        .category(EventCategory.LIFECYCLE)
+                        .title(f"Service {status.service} is {status.state}")
+                        .description(status.message)
+                        .details(
+                            {
+                                "service": status.service,
+                                "target": status.target,
+                                "state": status.state,
+                                "message": status.message,
+                                "details": status.details,
+                            }
+                        )
+                    )
 
                     if status.state == "failed":
                         event.add_tag("service_failure")
@@ -449,7 +469,7 @@ class RemoteAgentIntegration:
 class DiscoveryPipelineIntegration:
     """Integration with discovery pipeline system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("discovery_pipeline_integration")
         self.event_store = get_event_store()
 
@@ -477,28 +497,34 @@ class DiscoveryPipelineIntegration:
                             "discovery_type": status.get("discovery_type"),
                             "timestamp": datetime.utcnow().isoformat(),
                         },
-                    )
-                    event.category = EventCategory.DISCOVERY
+                    ).category(EventCategory.DISCOVERY)
                     events.append(event.build())
 
             if status.get("targets_discovered", 0) > 0:
                 # Create discovery completed event
-                event = EventBuilder()
-                event.event_type = EventType.TARGET_DISCOVERED
-                event.severity = EventSeverity.INFO
-                event.source = EventSource.DISCOVERY_PIPELINE
-                event.category = EventCategory.DISCOVERY
-                event.title = f"Discovered {status['targets_discovered']} new targets"
-                event.description = f"Discovery pipeline found {status['targets_discovered']} new targets"
-                event.details = {
-                    "targets_discovered": status["targets_discovered"],
-                    "discovery_type": status.get("discovery_type"),
-                    "discovery_duration": status.get("duration"),
-                    "pipeline_id": status.get("pipeline_id"),
-                }
-                event.add_tag("discovery")
-                event.add_tag("new_targets")
-                events.append(event.build())
+                event = (
+                    EventBuilder()
+                    .event_type(EventType.TARGET_DISCOVERED)
+                    .severity(EventSeverity.INFO)
+                    .source(EventSource.DISCOVERY_PIPELINE)
+                    .category(EventCategory.DISCOVERY)
+                    .title(f"Discovered {status['targets_discovered']} new targets")
+                    .description(
+                        f"Discovery pipeline found {status['targets_discovered']} new targets"
+                    )
+                    .details(
+                        {
+                            "targets_discovered": status["targets_discovered"],
+                            "discovery_type": status.get("discovery_type"),
+                            "discovery_duration": status.get("duration"),
+                            "pipeline_id": status.get("pipeline_id"),
+                        }
+                    )
+                    .add_tag("discovery")
+                    .add_tag("new_targets")
+                ).build()
+
+                events.append(event)
 
             if events:
                 await self.event_store.store_events(events)
@@ -516,12 +542,20 @@ class DiscoveryPipelineIntegration:
             )
             await self.event_store.store_event(error_event)
             return [error_event]
+        error_event = EventBuilder.error(
+            EventSource.DISCOVERY_PIPELINE,
+            "Discovery event generation failed",
+            str(e),
+            {"integration": "discovery_pipeline"},
+        )
+        await self.event_store.store_event(error_event)
+        return [error_event]
 
 
 class ProxmoxIntegration:
     """Integration with Proxmox API."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("proxmox_integration")
         self.event_store = get_event_store()
 
@@ -546,23 +580,33 @@ class ProxmoxIntegration:
                         else EventSeverity.WARNING
                     )
 
-                    event = EventBuilder()
-                    event.event_type = EventType.SERVICE_STATUS
-                    event.severity = severity
-                    event.source = EventSource.PROXMOX_API
-                    event.target = container.get("name", container.get("vmid"))
-                    event.category = EventCategory.LIFECYCLE
-                    event.title = f"Container {container.get('name')} status: {container.get('status')}"
-                    event.description = f"Container {container.get('name')} is {container.get('status')}"
-                    event.details = {
-                        "container_id": container.get("vmid"),
-                        "name": container.get("name"),
-                        "status": container.get("status"),
-                        "node": container.get("node"),
-                        "type": "lxc" if container.get("type") == "lxc" else "qemu",
-                    }
-                    event.add_tag("container")
-                    event.add_tag("proxmox")
+                    event = (
+                        EventBuilder()
+                        .event_type(EventType.SERVICE_STATUS)
+                        .severity(severity)
+                        .source(EventSource.PROXMOX_API)
+                        .target(container.get("name", container.get("vmid")))
+                        .category(EventCategory.LIFECYCLE)
+                        .title(
+                            f"Container {container.get('name')} status: {container.get('status')}"
+                        )
+                        .description(
+                            f"Container {container.get('name')} is {container.get('status')}"
+                        )
+                        .details(
+                            {
+                                "container_id": container.get("vmid"),
+                                "name": container.get("name"),
+                                "status": container.get("status"),
+                                "node": container.get("node"),
+                                "type": "lxc"
+                                if container.get("type") == "lxc"
+                                else "qemu",
+                            }
+                        )
+                        .add_tag("container")
+                        .add_tag("proxmox")
+                    )
 
                     events.append(event.build())
 
@@ -576,25 +620,29 @@ class ProxmoxIntegration:
                         else 0
                     )
                     if cpu_usage > 80:
-                        event = EventBuilder()
-                        event.event_type = EventType.RESOURCE_THRESHOLD
-                        event.severity = EventSeverity.WARNING
-                        event.source = EventSource.PROXMOX_API
-                        event.target = node["node"]
-                        event.category = EventCategory.PERFORMANCE
-                        event.title = f"High CPU usage on Proxmox node {node['node']}"
-                        event.description = (
-                            f"CPU usage at {cpu_usage:.1f}% on node {node['node']}"
+                        event = (
+                            EventBuilder()
+                            .event_type(EventType.RESOURCE_THRESHOLD)
+                            .severity(EventSeverity.WARNING)
+                            .source(EventSource.PROXMOX_API)
+                            .target(node["node"])
+                            .category(EventCategory.PERFORMANCE)
+                            .title(f"High CPU usage on Proxmox node {node['node']}")
+                            .description(
+                                f"CPU usage at {cpu_usage:.1f}% on node {node['node']}"
+                            )
+                            .resource_usage(ResourceUsage(cpu_percent=cpu_usage))
+                            .details(
+                                {
+                                    "node": node["node"],
+                                    "cpu_usage": cpu_usage,
+                                    "maxcpu": node["maxcpu"],
+                                    "current_cpu": node["cpu"],
+                                }
+                            )
+                            .add_tag("resource_threshold")
+                            .add_tag("proxmox")
                         )
-                        event.resource_usage = ResourceUsage(cpu_percent=cpu_usage)
-                        event.details = {
-                            "node": node["node"],
-                            "cpu_usage": cpu_usage,
-                            "maxcpu": node["maxcpu"],
-                            "current_cpu": node["cpu"],
-                        }
-                        event.add_tag("resource_threshold")
-                        event.add_tag("proxmox")
                         events.append(event.build())
 
             if events:
@@ -618,7 +666,7 @@ class ProxmoxIntegration:
 class SystemIntegrationManager:
     """Main integration manager for all TailOpsMCP components."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger("system_integration_manager")
         self.event_store = get_event_store()
 

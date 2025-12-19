@@ -45,7 +45,7 @@ class WorkflowScheduler:
         self._scheduler_task: Optional[asyncio.Task] = None
         self._check_interval = 60  # Check every minute
 
-    async def start_scheduler(self):
+    async def start_scheduler(self) -> None:
         """Start the workflow scheduler."""
         if self._running:
             return
@@ -54,7 +54,7 @@ class WorkflowScheduler:
         self._scheduler_task = asyncio.create_task(self._scheduler_loop())
         logger.info("Workflow scheduler started")
 
-    async def stop_scheduler(self):
+    async def stop_scheduler(self) -> None:
         """Stop the workflow scheduler."""
         self._running = False
 
@@ -78,7 +78,7 @@ class WorkflowScheduler:
         blueprint: WorkflowBlueprint,
         schedule_expression: str,
         timezone_str: str = "UTC",
-        parameters: Dict[str, Any] = None,
+        parameters: Optional[Dict[str, Any]] = None,
         created_by: str = "",
     ) -> str:
         """Schedule workflow for recurring execution."""
@@ -292,7 +292,7 @@ class WorkflowScheduler:
         upcoming.sort(key=lambda x: x["next_run"])
         return upcoming
 
-    async def _scheduler_loop(self):
+    async def _scheduler_loop(self) -> None:
         """Main scheduler loop."""
         while self._running:
             try:
@@ -304,7 +304,7 @@ class WorkflowScheduler:
                 logger.error(f"Scheduler loop error: {e}")
                 await asyncio.sleep(self._check_interval)
 
-    async def _check_and_trigger_schedules(self):
+    async def _check_and_trigger_schedules(self) -> None:
         """Check schedules and trigger executions if needed."""
         now = datetime.now(timezone.utc)
 
@@ -329,7 +329,9 @@ class WorkflowScheduler:
                         f"Failed to trigger scheduled execution {schedule_id}: {e}"
                     )
 
-    async def _trigger_scheduled_execution(self, scheduled_workflow: ScheduledWorkflow):
+    async def _trigger_scheduled_execution(
+        self, scheduled_workflow: ScheduledWorkflow
+    ) -> None:
         """Trigger scheduled workflow execution."""
         try:
             # Get blueprint (this would load from storage)
@@ -364,7 +366,9 @@ class WorkflowScheduler:
                     "schedule_id": scheduled_workflow.schedule_id,
                     "blueprint_name": scheduled_workflow.blueprint_name,
                     "execution_id": execution.execution_id,
-                    "next_run": scheduled_workflow.next_run.isoformat(),
+                    "next_run": scheduled_workflow.next_run.isoformat()
+                    if scheduled_workflow.next_run
+                    else "",
                 },
             )
 
@@ -383,7 +387,9 @@ class WorkflowScheduler:
                 },
             )
 
-    async def _schedule_workflow_execution(self, scheduled_workflow: ScheduledWorkflow):
+    async def _schedule_workflow_execution(
+        self, scheduled_workflow: ScheduledWorkflow
+    ) -> None:
         """Schedule individual workflow execution."""
         try:
             # Calculate time until next run
@@ -412,7 +418,9 @@ class WorkflowScheduler:
         # For now, return None as placeholder
         return None
 
-    async def _emit_scheduler_event(self, event_type: str, details: Dict[str, Any]):
+    async def _emit_scheduler_event(
+        self, event_type: str, details: Dict[str, Any]
+    ) -> None:
         """Emit scheduler event."""
         try:
             # Create system event
@@ -423,7 +431,7 @@ class WorkflowScheduler:
                 source=EventSource.WORKFLOW_ENGINE,
                 category=EventCategory.WORKFLOW,
                 timestamp=datetime.now(timezone.utc),
-                data={"event_type": event_type, "details": details},
+                details={"event_type": event_type, "details": details},
             )
 
             # This would integrate with the event collector

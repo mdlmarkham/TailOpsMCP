@@ -72,7 +72,7 @@ class CodeQualityFixer:
                 return True, "", ""
 
             result = subprocess.run(
-                command, capture_output=True, text=True, check=check
+                command, capture_output=True, text=True, check=check, shell=False
             )
             return True, result.stdout, result.stderr
         except subprocess.CalledProcessError as e:
@@ -503,9 +503,8 @@ Examples:
     fixer = CodeQualityFixer(dry_run=args.dry_run, verbose=args.verbose)
 
     # Create backup if not in dry run and not disabled
-    backup_path = None
     if not args.dry_run and not args.no_backup:
-        backup_path = fixer.create_backup()
+        fixer.create_backup()
 
     # Run fixes
     if run_all:

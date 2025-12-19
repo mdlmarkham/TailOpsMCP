@@ -269,7 +269,7 @@ class SecurityScanner:
                 logger.error(f"Error during {scan_type.value} scan: {e}")
                 # Create failed result
                 failed_result = ScanResult(
-                    scan_id=f"{scan_type.value}_{hashlib.md5(f'{target_path}_{start_time}'.encode()).hexdigest()[:8]}",
+                    scan_id=f"{scan_type.value}_{hashlib.md5(f'{target_path}_{start_time}'.encode(), usedforsecurity=False).hexdigest()[:8]}",
                     scan_type=scan_type,
                     target=target_path,
                     status=ScanStatus.FAILED,
@@ -294,7 +294,7 @@ class SecurityScanner:
         self, target_path: str, scan_type: ScanType, start_time: datetime
     ) -> ScanResult:
         """Perform specific type of scan."""
-        scan_id = f"{scan_type.value}_{hashlib.md5(f'{target_path}_{start_time}'.encode()).hexdigest()[:8]}"
+        scan_id = f"{scan_type.value}_{hashlib.md5(f'{target_path}_{start_time}'.encode(), usedforsecurity=False).hexdigest()[:8]}"
 
         result = ScanResult(
             scan_id=scan_id,

@@ -10,7 +10,7 @@ from typing import Dict
 class PackageManager:
     """Service for managing system packages (apt-based systems)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.package_manager = self._detect_package_manager()
 
     def _detect_package_manager(self) -> str:

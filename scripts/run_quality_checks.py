@@ -33,6 +33,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
+# Set console encoding to UTF-8 for Windows compatibility
+if sys.platform == "win32":
+    import io
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -54,13 +61,24 @@ class QualityCheckRunner:
             print(f"[{timestamp}] {level}: {message}")
 
     def run_command(
-        self, command: List[str], check: bool = True
+        self, command: List[str], check: bool = True, env: Dict[str, str] = None
     ) -> Tuple[bool, str, str]:
         """Run a command and return success, stdout, stderr."""
         try:
             self.log(f"Running: {' '.join(command)}")
+            # Set default environment with UTF-8 encoding for subprocess
+            default_env = os.environ.copy()
+            default_env["PYTHONIOENCODING"] = "utf-8"
+            if env:
+                default_env.update(env)
+
             result = subprocess.run(
-                command, capture_output=True, text=True, check=check
+                command,
+                capture_output=True,
+                text=True,
+                check=check,
+                shell=False,
+                env=default_env,
             )
             return True, result.stdout, result.stderr
         except subprocess.CalledProcessError as e:
@@ -608,7 +626,7 @@ Examples:
     runner = QualityCheckRunner(verbose=args.verbose, report_dir=args.report_dir)
 
     if run_all:
-        summary = runner.run_all_checks()
+        runner.run_all_checks()
     else:
         # Run specific checks
         if args.lint:
@@ -623,8 +641,6 @@ Examples:
             runner.run_complexity_analysis()
         if args.tests:
             runner.run_tests()
-
-        summary = {"results": runner.results}
 
     # Generate report
     if args.output or args.verbose:

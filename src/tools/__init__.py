@@ -1,7 +1,6 @@
 """Updated tool registry with capability-driven operations."""
 
 import logging
-from typing import List
 from fastmcp import FastMCP
 
 from src.tools.system_tools import register_tools as register_system_tools

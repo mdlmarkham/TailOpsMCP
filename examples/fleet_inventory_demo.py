@@ -182,7 +182,7 @@ def demonstrate_serialization() -> None:
     print(f"✓ TOON deserialized: {restored_inventory.total_nodes} nodes restored")
 
     # Convert to JSON
-    json_data = inventory.to_dict()
+    inventory.to_dict()
     print("✓ Inventory converted to JSON")
 
 

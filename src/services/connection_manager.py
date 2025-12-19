@@ -50,7 +50,7 @@ class ConnectionPool:
         self.last_used = datetime.utcnow()
         self.logger = logging.getLogger(f"{__name__}.ConnectionPool.{target_id}")
 
-    async def get_connection(self, timeout: int = 30) -> SSHConnectionImpl:
+    async def get_connection(self, timeout: int = 30) -> SSHConnection:
         """Get an available connection from pool.
 
         Args:
@@ -90,7 +90,7 @@ class ConnectionPool:
 
         raise ConnectionError(f"Timeout getting connection for {self.target_id}")
 
-    async def return_connection(self, connection: SSHConnectionImpl):
+    async def return_connection(self, connection: SSHConnection):
         """Return connection to pool.
 
         Args:

@@ -276,13 +276,6 @@ class DockerExecutor(Executor):
         except Exception:
             return False
 
-    def disconnect(self) -> None:
-        """Close Docker connection."""
-        if self.client:
-            self.client.close()
-            self.client = None
-            logger.info("Docker connection closed")
-
     def __enter__(self):
         """Context manager entry."""
         self.connect()

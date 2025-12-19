@@ -29,6 +29,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
+# Set console encoding to UTF-8 for Windows compatibility
+if sys.platform == "win32":
+    import io
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -80,11 +87,17 @@ class SimpleSecurityScanner:
     def scan_with_bandit(self, target_path: str) -> List[Dict[str, Any]]:
         """Run bandit security scanner."""
         try:
+            # Set environment with UTF-8 encoding for subprocess
+            env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
+
             result = subprocess.run(
                 ["bandit", "-r", target_path, "-f", "json"],
                 capture_output=True,
                 text=True,
                 timeout=60,
+                shell=False,
+                env=env,
             )
 
             if result.stdout.strip():

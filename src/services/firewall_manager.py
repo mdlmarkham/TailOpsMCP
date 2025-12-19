@@ -266,9 +266,11 @@ class FirewallManager:
             output = stdout.decode()
             rule_count = len(
                 [
-                    l
-                    for l in output.split("\n")
-                    if l and not l.startswith("Chain") and not l.startswith("num")
+                    line
+                    for line in output.split("\n")
+                    if line
+                    and not line.startswith("Chain")
+                    and not line.startswith("num")
                 ]
             )
 

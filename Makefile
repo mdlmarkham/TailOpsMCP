@@ -72,7 +72,7 @@ typecheck: ## Run mypy type checking on src/
 
 security: ## Run security scans (bandit and safety)
 	@echo "$(BLUE)Running security scans...$(RESET)"
-	@bandit -r $(SRC_DIR) -f json -o security-report.json || true
+	@$(PYTHON) scripts/run_bandit.py -r $(SRC_DIR) -f json -o security-report.json || true
 	@safety check --json --output safety-report.json || true
 	@echo "$(GREEN)Security scanning completed!$(RESET)"
 	@echo "$(YELLOW)Reports saved: security-report.json, safety-report.json$(RESET)"

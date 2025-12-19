@@ -15,6 +15,7 @@ import os
 from src.server.config import create_mcp_instance, get_auth_mode
 from src.server.dependencies import deps
 from src.tools import register_all_tools
+from src.utils.secure_logging import setup_secure_logging
 
 # Configure logging - use environment variable for log level
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -25,7 +26,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize secure logging configuration
-from src.utils.secure_logging import setup_secure_logging
 
 setup_secure_logging()
 

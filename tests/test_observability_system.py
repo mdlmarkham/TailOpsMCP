@@ -11,6 +11,7 @@ import os
 import tempfile
 import unittest
 from datetime import datetime, timedelta
+from typing import List
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -1072,7 +1073,7 @@ class TestEndToEndScenarios(unittest.TestCase):
         self.assertGreater(stats["batches_processed"], 0)
 
     @pytest.mark.asyncio
-    async def test_system_integration_workflow(self):
+    async def test_system_integration_workflow(self) -> None:
         """Test complete system integration workflow."""
         # Initialize integration manager
         integration_manager = SystemIntegrationManager()
@@ -1087,9 +1088,6 @@ class TestEndToEndScenarios(unittest.TestCase):
         self.assertIsInstance(integration_status, dict)
         self.assertIsInstance(cycle_result, dict)
         self.assertIn("success", cycle_result)
-
-
-from typing import List
 
 
 # Test utilities
@@ -1116,7 +1114,7 @@ def create_test_events(count: int = 10) -> List[SystemEvent]:
     return events
 
 
-def assert_event_equals(expected: SystemEvent, actual: SystemEvent):
+def assert_event_equals(expected: SystemEvent, actual: SystemEvent) -> None:
     """Assert that two events are equal."""
     assert expected.event_id == actual.event_id
     assert expected.event_type == actual.event_type
@@ -1132,7 +1130,7 @@ class TestPerformance(unittest.TestCase):
     """Performance tests for observability system."""
 
     @pytest.mark.asyncio
-    async def test_event_storage_performance(self):
+    async def test_event_storage_performance(self) -> None:
         """Test event storage performance with large datasets."""
         store = EventStore(":memory:")
 
@@ -1154,7 +1152,7 @@ class TestPerformance(unittest.TestCase):
         self.assertEqual(len(stored_events), 1000)
 
     @pytest.mark.asyncio
-    async def test_event_retrieval_performance(self):
+    async def test_event_retrieval_performance(self) -> None:
         """Test event retrieval performance."""
         store = EventStore(":memory:")
 
@@ -1183,7 +1181,7 @@ class TestPerformance(unittest.TestCase):
 
 
 # Main test runner
-def run_all_tests():
+def run_all_tests() -> None:
     """Run all tests."""
     # Configure test environment
     os.environ["TESTING"] = "true"

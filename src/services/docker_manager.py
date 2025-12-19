@@ -9,7 +9,7 @@ from typing import Dict
 class DockerManager:
     """Service for managing Docker containers."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = None
         try:
             self.client = docker.from_env()

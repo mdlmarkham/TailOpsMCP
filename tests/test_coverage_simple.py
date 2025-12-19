@@ -18,7 +18,7 @@ except ImportError:
     HAS_ERRORS = False
 
 try:
-    from src.utils.retry import retry_with_backoff
+    from src.utils.retry import retry_with_backoff  # noqa: F401
 
     HAS_RETRY = True
 except ImportError:

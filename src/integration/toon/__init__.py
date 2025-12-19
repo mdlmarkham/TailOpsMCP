@@ -26,6 +26,9 @@ PACKAGE STRUCTURE:
 
 from __future__ import annotations
 
+import os
+import logging
+
 # Core imports from serializer
 from .serializer import (
     TOONSerializer,
@@ -185,11 +188,8 @@ def get_package_info() -> dict:
     }
 
 
-import os
-
 # Initialize package logging
-import logging
-
+# Initialize package logging
 logger = logging.getLogger(__name__)
 logger.info(f"TOON package initialized - {__version__}")
 

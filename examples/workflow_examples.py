@@ -15,6 +15,8 @@ from src.models.workflow_models import (
     ApprovalRequirement,
     RollbackAction,
     RollbackPlan,
+    WorkflowStep,
+    StepType,
 )
 from src.services.workflow_blueprints import (
     EnvironmentProvisioningWorkflow,

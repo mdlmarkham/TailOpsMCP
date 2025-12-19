@@ -33,7 +33,7 @@ def validate_security_models():
         )
 
         # Test SecurityOperation
-        operation = SecurityOperation(
+        SecurityOperation(
             operation_id="validation_test",
             timestamp=datetime.utcnow(),
             initiator_type=InitiatorType.HUMAN,
@@ -45,7 +45,7 @@ def validate_security_models():
         )
 
         # Test IdentityContext
-        identity = IdentityContext(
+        IdentityContext(
             user_id="validation_user",
             username="validation@company.com",
             email="validation@company.com",
@@ -60,7 +60,7 @@ def validate_security_models():
         )
 
         # Test SecurityAlert
-        alert = SecurityAlert(
+        SecurityAlert(
             alert_id="validation_alert",
             timestamp=datetime.utcnow(),
             severity=AlertSeverity.HIGH,
@@ -92,7 +92,7 @@ def validate_security_services():
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
             db_path = tmp.name
 
-        logger = SecurityAuditLogger(database_path=db_path)
+        SecurityAuditLogger(database_path=db_path)
         services_validated.append("SecurityAuditLogger")
         os.unlink(db_path)
 
@@ -107,7 +107,7 @@ def validate_security_services():
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
             db_path = tmp.name
 
-        manager = IdentityManager(database_path=db_path)
+        IdentityManager(database_path=db_path)
         services_validated.append("IdentityManager")
         os.unlink(db_path)
 
@@ -122,7 +122,7 @@ def validate_security_services():
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
             db_path = tmp.name
 
-        access_control = AdvancedAccessControl(database_path=db_path)
+        AdvancedAccessControl(database_path=db_path)
         services_validated.append("AdvancedAccessControl")
         os.unlink(db_path)
 
@@ -137,7 +137,7 @@ def validate_security_services():
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
             db_path = tmp.name
 
-        monitor = SecurityMonitor(database_path=db_path)
+        SecurityMonitor(database_path=db_path)
         services_validated.append("SecurityMonitor")
         os.unlink(db_path)
 
@@ -152,7 +152,7 @@ def validate_security_services():
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
             db_path = tmp.name
 
-        compliance = ComplianceFramework(database_path=db_path)
+        ComplianceFramework(database_path=db_path)
         services_validated.append("ComplianceFramework")
         os.unlink(db_path)
 
@@ -199,7 +199,7 @@ def validate_security_integrations():
         from src.services.security_policy_integration import SecurityPolicyIntegration
         from src.models.policy_models import PolicyContext
 
-        policy_context = PolicyContext(
+        PolicyContext(
             policy_id="test_policy",
             policy_name="Test Policy",
             conditions={},
@@ -207,7 +207,7 @@ def validate_security_integrations():
             resources=[],
         )
 
-        integration = SecurityPolicyIntegration()
+        SecurityPolicyIntegration()
         integrations_validated.append("Policy Integration")
 
     except Exception as e:
@@ -220,7 +220,7 @@ def validate_security_integrations():
             SecurityWorkflowIntegration,
         )
 
-        workflow_integration = SecurityWorkflowIntegration()
+        SecurityWorkflowIntegration()
         integrations_validated.append("Workflow Integration")
 
     except Exception as e:
@@ -231,7 +231,7 @@ def validate_security_integrations():
     try:
         from src.services.security_event_integration import SecurityEventIntegration
 
-        event_integration = SecurityEventIntegration()
+        SecurityEventIntegration()
         integrations_validated.append("Event Integration")
 
     except Exception as e:

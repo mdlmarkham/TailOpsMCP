@@ -1,17 +1,17 @@
 {
   "errors": [],
-  "generated_at": "2025-12-17T04:18:15Z",
+  "generated_at": "2025-12-19T03:47:28Z",
   "metrics": {
     "_totals": {
-      "CONFIDENCE.HIGH": 131,
+      "CONFIDENCE.HIGH": 129,
       "CONFIDENCE.LOW": 0,
-      "CONFIDENCE.MEDIUM": 19,
+      "CONFIDENCE.MEDIUM": 20,
       "CONFIDENCE.UNDEFINED": 0,
-      "SEVERITY.HIGH": 7,
-      "SEVERITY.LOW": 126,
-      "SEVERITY.MEDIUM": 17,
+      "SEVERITY.HIGH": 5,
+      "SEVERITY.LOW": 128,
+      "SEVERITY.MEDIUM": 16,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 55251,
+      "loc": 55563,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -174,13 +174,13 @@
     "src\\connectors\\file_connector.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
-      "CONFIDENCE.MEDIUM": 3,
+      "CONFIDENCE.MEDIUM": 2,
       "CONFIDENCE.UNDEFINED": 0,
       "SEVERITY.HIGH": 0,
       "SEVERITY.LOW": 0,
-      "SEVERITY.MEDIUM": 3,
+      "SEVERITY.MEDIUM": 2,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 675,
+      "loc": 676,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -206,7 +206,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 2,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 347,
+      "loc": 292,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -522,6 +522,19 @@
       "nosec": 0,
       "skipped_tests": 0
     },
+    "src\\models\\security_models.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 2,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 2,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 199,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
     "src\\models\\stack_models.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
@@ -596,7 +609,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 369,
+      "loc": 368,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -648,16 +661,16 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 817,
+      "loc": 816,
       "nosec": 0,
       "skipped_tests": 0
     },
     "src\\security\\scanner.py": {
-      "CONFIDENCE.HIGH": 2,
+      "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
       "CONFIDENCE.UNDEFINED": 0,
-      "SEVERITY.HIGH": 2,
+      "SEVERITY.HIGH": 0,
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
@@ -778,7 +791,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 841,
+      "loc": 843,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -791,7 +804,7 @@
       "SEVERITY.LOW": 8,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 254,
+      "loc": 255,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -869,7 +882,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 238,
+      "loc": 232,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1025,7 +1038,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 312,
+      "loc": 314,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1168,7 +1181,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 244,
+      "loc": 245,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1207,7 +1220,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 543,
+      "loc": 490,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1402,7 +1415,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 667,
+      "loc": 714,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1428,7 +1441,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 208,
+      "loc": 209,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1506,7 +1519,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 413,
+      "loc": 421,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1545,7 +1558,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 122,
+      "loc": 121,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1588,6 +1601,19 @@
       "nosec": 0,
       "skipped_tests": 0
     },
+    "src\\tools\\enhanced_inventory_tools.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 167,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
     "src\\tools\\event_management_tools.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
@@ -1623,7 +1649,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 196,
+      "loc": 197,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1740,7 +1766,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 331,
+      "loc": 332,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -1792,7 +1818,7 @@
       "SEVERITY.LOW": 5,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 473,
+      "loc": 471,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -2128,26 +2154,6 @@
       "test_name": "hardcoded_tmp_directory"
     },
     {
-      "code": "651         try:\n652             test_path = \"/tmp/systemmanager_test\"\n653 \n",
-      "col_offset": 24,
-      "end_col_offset": 49,
-      "filename": "src\\connectors\\file_connector.py",
-      "issue_confidence": "MEDIUM",
-      "issue_cwe": {
-        "id": 377,
-        "link": "https://cwe.mitre.org/data/definitions/377.html"
-      },
-      "issue_severity": "MEDIUM",
-      "issue_text": "Probable insecure usage of temp file/directory.",
-      "line_number": 652,
-      "line_range": [
-        652
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b108_hardcoded_tmp_directory.html",
-      "test_id": "B108",
-      "test_name": "hardcoded_tmp_directory"
-    },
-    {
       "code": "270                     await process.wait()\n271                 except Exception:\n272                     pass\n273 \n",
       "col_offset": 16,
       "end_col_offset": 24,
@@ -2169,7 +2175,7 @@
       "test_name": "try_except_pass"
     },
     {
-      "code": "452             \"/var/log/journal/\",\n453             \"/tmp/\",\n454             \"/var/tmp/\",\n455         ]\n456 \n457         return any(path.startswith(allowed) for allowed in allowed_paths)\n458 \n459     async def __aenter__(self):\n",
+      "code": "378             \"/var/log/journal/\",\n379             \"/tmp/\",\n380             \"/var/tmp/\",\n381         ]\n382 \n383         return any(path.startswith(allowed) for allowed in allowed_paths)\n384 \n385     async def __aenter__(self):\n",
       "col_offset": 12,
       "end_col_offset": 19,
       "filename": "src\\connectors\\remote_agent_connector.py",
@@ -2180,21 +2186,21 @@
       },
       "issue_severity": "MEDIUM",
       "issue_text": "Probable insecure usage of temp file/directory.",
-      "line_number": 453,
+      "line_number": 379,
       "line_range": [
-        450,
-        451,
-        452,
-        453,
-        454,
-        455
+        376,
+        377,
+        378,
+        379,
+        380,
+        381
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b108_hardcoded_tmp_directory.html",
       "test_id": "B108",
       "test_name": "hardcoded_tmp_directory"
     },
     {
-      "code": "453             \"/tmp/\",\n454             \"/var/tmp/\",\n455         ]\n456 \n457         return any(path.startswith(allowed) for allowed in allowed_paths)\n458 \n459     async def __aenter__(self):\n460         \"\"\"Async context manager entry.\"\"\"\n",
+      "code": "379             \"/tmp/\",\n380             \"/var/tmp/\",\n381         ]\n382 \n383         return any(path.startswith(allowed) for allowed in allowed_paths)\n384 \n385     async def __aenter__(self):\n386         \"\"\"Async context manager entry.\"\"\"\n",
       "col_offset": 12,
       "end_col_offset": 23,
       "filename": "src\\connectors\\remote_agent_connector.py",
@@ -2205,14 +2211,14 @@
       },
       "issue_severity": "MEDIUM",
       "issue_text": "Probable insecure usage of temp file/directory.",
-      "line_number": 454,
+      "line_number": 380,
       "line_range": [
-        450,
-        451,
-        452,
-        453,
-        454,
-        455
+        376,
+        377,
+        378,
+        379,
+        380,
+        381
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b108_hardcoded_tmp_directory.html",
       "test_id": "B108",
@@ -2260,6 +2266,46 @@
       "test_name": "hardcoded_bind_all_interfaces"
     },
     {
+      "code": "39     CONFIDENTIAL = \"confidential\"\n40     SECRET = \"secret\"\n41     TOP_SECRET = \"top_secret\"\n",
+      "col_offset": 13,
+      "end_col_offset": 21,
+      "filename": "src\\models\\security_models.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 259,
+        "link": "https://cwe.mitre.org/data/definitions/259.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'secret'",
+      "line_number": 40,
+      "line_range": [
+        40
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b105_hardcoded_password_string.html",
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string"
+    },
+    {
+      "code": "40     SECRET = \"secret\"\n41     TOP_SECRET = \"top_secret\"\n42 \n",
+      "col_offset": 17,
+      "end_col_offset": 29,
+      "filename": "src\\models\\security_models.py",
+      "issue_confidence": "MEDIUM",
+      "issue_cwe": {
+        "id": 259,
+        "link": "https://cwe.mitre.org/data/definitions/259.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Possible hardcoded password: 'top_secret'",
+      "line_number": 41,
+      "line_range": [
+        41
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b105_hardcoded_password_string.html",
+      "test_id": "B105",
+      "test_name": "hardcoded_password_string"
+    },
+    {
       "code": "87     SESSION = \"session\"\n88     TOKEN = \"token\"\n89     CERTIFICATE = \"certificate\"\n",
       "col_offset": 12,
       "end_col_offset": 19,
@@ -2294,46 +2340,6 @@
       "line_number": 701,
       "line_range": [
         701
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b324_hashlib.html",
-      "test_id": "B324",
-      "test_name": "hashlib"
-    },
-    {
-      "code": "271                 failed_result = ScanResult(\n272                     scan_id=f\"{scan_type.value}_{hashlib.md5(f'{target_path}_{start_time}'.encode()).hexdigest()[:8]}\",\n273                     scan_type=scan_type,\n",
-      "col_offset": 49,
-      "end_col_offset": 100,
-      "filename": "src\\security\\scanner.py",
-      "issue_confidence": "HIGH",
-      "issue_cwe": {
-        "id": 327,
-        "link": "https://cwe.mitre.org/data/definitions/327.html"
-      },
-      "issue_severity": "HIGH",
-      "issue_text": "Use of weak MD5 hash for security. Consider usedforsecurity=False",
-      "line_number": 272,
-      "line_range": [
-        272
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b324_hashlib.html",
-      "test_id": "B324",
-      "test_name": "hashlib"
-    },
-    {
-      "code": "296         \"\"\"Perform specific type of scan.\"\"\"\n297         scan_id = f\"{scan_type.value}_{hashlib.md5(f'{target_path}_{start_time}'.encode()).hexdigest()[:8]}\"\n298 \n",
-      "col_offset": 39,
-      "end_col_offset": 90,
-      "filename": "src\\security\\scanner.py",
-      "issue_confidence": "HIGH",
-      "issue_cwe": {
-        "id": 327,
-        "link": "https://cwe.mitre.org/data/definitions/327.html"
-      },
-      "issue_severity": "HIGH",
-      "issue_text": "Use of weak MD5 hash for security. Consider usedforsecurity=False",
-      "line_number": 297,
-      "line_range": [
-        297
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b324_hashlib.html",
       "test_id": "B324",
@@ -2598,7 +2604,7 @@
       "test_name": "blacklist"
     },
     {
-      "code": "184             # Run docker compose up\n185             result = subprocess.run(\n186                 [\"docker\", \"compose\", \"-f\", str(compose_path), \"up\", \"-d\"],\n187                 cwd=stack_path,\n188                 capture_output=True,\n189                 text=True,\n190                 timeout=300,\n191             )\n192 \n",
+      "code": "185             # Run docker compose up\n186             result = subprocess.run(\n187                 [\"docker\", \"compose\", \"-f\", str(compose_path), \"up\", \"-d\"],\n188                 cwd=stack_path,\n189                 capture_output=True,\n190                 text=True,\n191                 timeout=300,\n192             )\n193 \n",
       "col_offset": 21,
       "end_col_offset": 13,
       "filename": "src\\services\\compose_manager.py",
@@ -2609,22 +2615,22 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Starting a process with a partial executable path",
-      "line_number": 185,
+      "line_number": 186,
       "line_range": [
-        185,
         186,
         187,
         188,
         189,
         190,
-        191
+        191,
+        192
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b607_start_process_with_partial_path.html",
       "test_id": "B607",
       "test_name": "start_process_with_partial_path"
     },
     {
-      "code": "184             # Run docker compose up\n185             result = subprocess.run(\n186                 [\"docker\", \"compose\", \"-f\", str(compose_path), \"up\", \"-d\"],\n187                 cwd=stack_path,\n188                 capture_output=True,\n189                 text=True,\n190                 timeout=300,\n191             )\n192 \n",
+      "code": "185             # Run docker compose up\n186             result = subprocess.run(\n187                 [\"docker\", \"compose\", \"-f\", str(compose_path), \"up\", \"-d\"],\n188                 cwd=stack_path,\n189                 capture_output=True,\n190                 text=True,\n191                 timeout=300,\n192             )\n193 \n",
       "col_offset": 21,
       "end_col_offset": 13,
       "filename": "src\\services\\compose_manager.py",
@@ -2635,22 +2641,22 @@
       },
       "issue_severity": "LOW",
       "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 185,
+      "line_number": 186,
       "line_range": [
-        185,
         186,
         187,
         188,
         189,
         190,
-        191
+        191,
+        192
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
       "test_name": "subprocess_without_shell_equals_true"
     },
     {
-      "code": "224                 if compose_file.exists():\n225                     result = subprocess.run(\n226                         [\n227                             \"docker\",\n228                             \"compose\",\n229                             \"-f\",\n230                             str(compose_file),\n231                             \"ps\",\n232                             \"--format\",\n233                             \"json\",\n234                         ],\n235                         cwd=stack_dir,\n236                         capture_output=True,\n237                         text=True,\n238                         timeout=10,\n239                     )\n240 \n",
+      "code": "225                 if compose_file.exists():\n226                     result = subprocess.run(\n227                         [\n228                             \"docker\",\n229                             \"compose\",\n230                             \"-f\",\n231                             str(compose_file),\n232                             \"ps\",\n233                             \"--format\",\n234                             \"json\",\n235                         ],\n236                         cwd=stack_dir,\n237                         capture_output=True,\n238                         text=True,\n239                         timeout=10,\n240                     )\n241 \n",
       "col_offset": 29,
       "end_col_offset": 21,
       "filename": "src\\services\\compose_manager.py",
@@ -2661,9 +2667,8 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Starting a process with a partial executable path",
-      "line_number": 225,
+      "line_number": 226,
       "line_range": [
-        225,
         226,
         227,
         228,
@@ -2677,14 +2682,15 @@
         236,
         237,
         238,
-        239
+        239,
+        240
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b607_start_process_with_partial_path.html",
       "test_id": "B607",
       "test_name": "start_process_with_partial_path"
     },
     {
-      "code": "224                 if compose_file.exists():\n225                     result = subprocess.run(\n226                         [\n227                             \"docker\",\n228                             \"compose\",\n229                             \"-f\",\n230                             str(compose_file),\n231                             \"ps\",\n232                             \"--format\",\n233                             \"json\",\n234                         ],\n235                         cwd=stack_dir,\n236                         capture_output=True,\n237                         text=True,\n238                         timeout=10,\n239                     )\n240 \n",
+      "code": "225                 if compose_file.exists():\n226                     result = subprocess.run(\n227                         [\n228                             \"docker\",\n229                             \"compose\",\n230                             \"-f\",\n231                             str(compose_file),\n232                             \"ps\",\n233                             \"--format\",\n234                             \"json\",\n235                         ],\n236                         cwd=stack_dir,\n237                         capture_output=True,\n238                         text=True,\n239                         timeout=10,\n240                     )\n241 \n",
       "col_offset": 29,
       "end_col_offset": 21,
       "filename": "src\\services\\compose_manager.py",
@@ -2695,9 +2701,8 @@
       },
       "issue_severity": "LOW",
       "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 225,
+      "line_number": 226,
       "line_range": [
-        225,
         226,
         227,
         228,
@@ -2711,14 +2716,15 @@
         236,
         237,
         238,
-        239
+        239,
+        240
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
       "test_name": "subprocess_without_shell_equals_true"
     },
     {
-      "code": "278             compose_file = stack_path / \"docker-compose.yml\"\n279             result = subprocess.run(\n280                 [\n281                     \"docker\",\n282                     \"compose\",\n283                     \"-f\",\n284                     str(compose_file),\n285                     \"up\",\n286                     \"-d\",\n287                     \"--pull\",\n288                     \"always\",\n289                 ],\n290                 cwd=stack_path,\n291                 capture_output=True,\n292                 text=True,\n293                 timeout=300,\n294             )\n295 \n",
+      "code": "279             compose_file = stack_path / \"docker-compose.yml\"\n280             result = subprocess.run(\n281                 [\n282                     \"docker\",\n283                     \"compose\",\n284                     \"-f\",\n285                     str(compose_file),\n286                     \"up\",\n287                     \"-d\",\n288                     \"--pull\",\n289                     \"always\",\n290                 ],\n291                 cwd=stack_path,\n292                 capture_output=True,\n293                 text=True,\n294                 timeout=300,\n295             )\n296 \n",
       "col_offset": 21,
       "end_col_offset": 13,
       "filename": "src\\services\\compose_manager.py",
@@ -2729,9 +2735,8 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Starting a process with a partial executable path",
-      "line_number": 279,
+      "line_number": 280,
       "line_range": [
-        279,
         280,
         281,
         282,
@@ -2746,14 +2751,15 @@
         291,
         292,
         293,
-        294
+        294,
+        295
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b607_start_process_with_partial_path.html",
       "test_id": "B607",
       "test_name": "start_process_with_partial_path"
     },
     {
-      "code": "278             compose_file = stack_path / \"docker-compose.yml\"\n279             result = subprocess.run(\n280                 [\n281                     \"docker\",\n282                     \"compose\",\n283                     \"-f\",\n284                     str(compose_file),\n285                     \"up\",\n286                     \"-d\",\n287                     \"--pull\",\n288                     \"always\",\n289                 ],\n290                 cwd=stack_path,\n291                 capture_output=True,\n292                 text=True,\n293                 timeout=300,\n294             )\n295 \n",
+      "code": "279             compose_file = stack_path / \"docker-compose.yml\"\n280             result = subprocess.run(\n281                 [\n282                     \"docker\",\n283                     \"compose\",\n284                     \"-f\",\n285                     str(compose_file),\n286                     \"up\",\n287                     \"-d\",\n288                     \"--pull\",\n289                     \"always\",\n290                 ],\n291                 cwd=stack_path,\n292                 capture_output=True,\n293                 text=True,\n294                 timeout=300,\n295             )\n296 \n",
       "col_offset": 21,
       "end_col_offset": 13,
       "filename": "src\\services\\compose_manager.py",
@@ -2764,9 +2770,8 @@
       },
       "issue_severity": "LOW",
       "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 279,
+      "line_number": 280,
       "line_range": [
-        279,
         280,
         281,
         282,
@@ -2781,14 +2786,15 @@
         291,
         292,
         293,
-        294
+        294,
+        295
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
       "test_name": "subprocess_without_shell_equals_true"
     },
     {
-      "code": "319 \n320             result = subprocess.run(\n321                 cmd, cwd=stack_path, capture_output=True, text=True, timeout=60\n322             )\n323 \n",
+      "code": "320 \n321             result = subprocess.run(\n322                 cmd, cwd=stack_path, capture_output=True, text=True, timeout=60\n323             )\n324 \n",
       "col_offset": 21,
       "end_col_offset": 13,
       "filename": "src\\services\\compose_manager.py",
@@ -2799,11 +2805,11 @@
       },
       "issue_severity": "LOW",
       "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 320,
+      "line_number": 321,
       "line_range": [
-        320,
         321,
-        322
+        322,
+        323
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
@@ -2852,7 +2858,7 @@
       "test_name": "paramiko_calls"
     },
     {
-      "code": "169                         )\n170                 except:\n171                     pass\n172 \n",
+      "code": "169                         )\n170                 except Exception:\n171                     pass\n172 \n",
       "col_offset": 16,
       "end_col_offset": 24,
       "filename": "src\\services\\discovery_tools.py",
@@ -4776,7 +4782,7 @@
       "test_name": "try_except_pass"
     },
     {
-      "code": "703                             return snapshots\n704                     except:\n705                         continue\n706 \n",
+      "code": "703                             return snapshots\n704                     except Exception:\n705                         continue\n706 \n",
       "col_offset": 20,
       "end_col_offset": 32,
       "filename": "src\\services\\proxmox_discovery_enhanced.py",
@@ -5055,7 +5061,7 @@
       "test_name": "subprocess_without_shell_equals_true"
     },
     {
-      "code": "23 import os\n24 import subprocess\n25 import hashlib\n",
+      "code": "22 import os\n23 import subprocess\n24 import hashlib\n",
       "col_offset": 0,
       "end_col_offset": 17,
       "filename": "src\\utils\\audit.py",
@@ -5066,16 +5072,16 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Consider possible security implications associated with the subprocess module.",
-      "line_number": 24,
+      "line_number": 23,
       "line_range": [
-        24
+        23
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/blacklists/blacklist_imports.html#b404-import-subprocess",
       "test_id": "B404",
       "test_name": "blacklist"
     },
     {
-      "code": "105         try:\n106             subprocess.run(\n107                 [\"tailscale\", \"version\"], capture_output=True, timeout=2, check=False\n108             )\n109             return True\n",
+      "code": "104         try:\n105             subprocess.run(\n106                 [\"tailscale\", \"version\"], capture_output=True, timeout=2, check=False\n107             )\n108             return True\n",
       "col_offset": 12,
       "end_col_offset": 13,
       "filename": "src\\utils\\audit.py",
@@ -5086,18 +5092,18 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Starting a process with a partial executable path",
-      "line_number": 106,
+      "line_number": 105,
       "line_range": [
+        105,
         106,
-        107,
-        108
+        107
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b607_start_process_with_partial_path.html",
       "test_id": "B607",
       "test_name": "start_process_with_partial_path"
     },
     {
-      "code": "105         try:\n106             subprocess.run(\n107                 [\"tailscale\", \"version\"], capture_output=True, timeout=2, check=False\n108             )\n109             return True\n",
+      "code": "104         try:\n105             subprocess.run(\n106                 [\"tailscale\", \"version\"], capture_output=True, timeout=2, check=False\n107             )\n108             return True\n",
       "col_offset": 12,
       "end_col_offset": 13,
       "filename": "src\\utils\\audit.py",
@@ -5108,18 +5114,18 @@
       },
       "issue_severity": "LOW",
       "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 106,
+      "line_number": 105,
       "line_range": [
+        105,
         106,
-        107,
-        108
+        107
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
       "test_name": "subprocess_without_shell_equals_true"
     },
     {
-      "code": "123             # Get Tailscale status\n124             result = subprocess.run(\n125                 [\"tailscale\", \"status\", \"--json\"],\n126                 capture_output=True,\n127                 timeout=3,\n128                 text=True,\n129                 check=False,\n130             )\n131 \n",
+      "code": "122             # Get Tailscale status\n123             result = subprocess.run(\n124                 [\"tailscale\", \"status\", \"--json\"],\n125                 capture_output=True,\n126                 timeout=3,\n127                 text=True,\n128                 check=False,\n129             )\n130 \n",
       "col_offset": 21,
       "end_col_offset": 13,
       "filename": "src\\utils\\audit.py",
@@ -5130,22 +5136,22 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Starting a process with a partial executable path",
-      "line_number": 124,
+      "line_number": 123,
       "line_range": [
+        123,
         124,
         125,
         126,
         127,
         128,
-        129,
-        130
+        129
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b607_start_process_with_partial_path.html",
       "test_id": "B607",
       "test_name": "start_process_with_partial_path"
     },
     {
-      "code": "123             # Get Tailscale status\n124             result = subprocess.run(\n125                 [\"tailscale\", \"status\", \"--json\"],\n126                 capture_output=True,\n127                 timeout=3,\n128                 text=True,\n129                 check=False,\n130             )\n131 \n",
+      "code": "122             # Get Tailscale status\n123             result = subprocess.run(\n124                 [\"tailscale\", \"status\", \"--json\"],\n125                 capture_output=True,\n126                 timeout=3,\n127                 text=True,\n128                 check=False,\n129             )\n130 \n",
       "col_offset": 21,
       "end_col_offset": 13,
       "filename": "src\\utils\\audit.py",
@@ -5156,15 +5162,15 @@
       },
       "issue_severity": "LOW",
       "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 124,
+      "line_number": 123,
       "line_range": [
+        123,
         124,
         125,
         126,
         127,
         128,
-        129,
-        130
+        129
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.2/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",

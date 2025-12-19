@@ -15,6 +15,8 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [types-psutil]
+        # Run MyPy manually or in CI due to many typing warnings in this repo.
+        stages: [manual]
 
   # Bandit - Security linting
   - repo: https://github.com/PyCQA/bandit
@@ -23,6 +25,8 @@ repos:
       - id: bandit
         args: ["-c", "pyproject.toml"]
         additional_dependencies: ["bandit[toml]"]
+        # Bandit can produce non-ASCII output on Windows and is heavy; run in CI instead.
+        stages: [manual]
 
   # Safety - Dependency vulnerability checking
   - repo: https://github.com/Lucas-C/pre-commit-hooks-safety

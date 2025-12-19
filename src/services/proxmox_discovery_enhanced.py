@@ -701,7 +701,7 @@ class ProxmoxDiscoveryEnhanced:
                         snapshots = await client.list_snapshots(node.vmid)
                         if snapshots:
                             return snapshots
-                    except:
+                    except Exception:
                         continue
 
             # Fallback to CLI

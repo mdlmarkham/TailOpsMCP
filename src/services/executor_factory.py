@@ -10,7 +10,7 @@ from typing import Any, Dict
 class ExecutorFactory:
     """Factory for creating executors."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.executors = {}
 
     def create_executor(self, executor_type: str, **kwargs) -> Any:

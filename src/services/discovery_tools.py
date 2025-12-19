@@ -167,7 +167,7 @@ class DiscoveryTools:
                                 "status": "open",
                             }
                         )
-                except:
+                except Exception:
                     pass
 
             return {

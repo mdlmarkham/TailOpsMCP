@@ -2,19 +2,37 @@
 Test configuration and initialization for the enhanced test infrastructure.
 """
 
-import pytest  # Import pytest for fixtures
+# Add the project root to Python path to enable imports
 import sys
 from pathlib import Path
 
-# Add the project root to Python path to enable imports
+# Set up path before any other imports
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+import pytest  # Import pytest for fixtures
+
 # Import all test utilities and fixtures to make them available
-from tests.mock_executors import *
-from tests.fixtures.target_registry_fixtures import *
-from tests.mock_policy_gate import *
-from tests.test_utils import *
+from tests.mock_executors import (
+    MockSSHExecutor,
+    MockDockerExecutor,
+    MockHTTPExecutor,
+    MockLocalExecutor,
+    MockProxmoxExecutor,
+)
+from tests.fixtures.target_registry_fixtures import (
+    TargetRegistryFixtures,
+)
+from tests.mock_policy_gate import (
+    PolicyGateConfigs,
+)
+from tests.test_utils import (
+    ExecutionAssertions,
+    TargetAssertions,
+    AuthorizationAssertions,
+    TestDataGenerators,
+    PerformanceMetrics,
+)
 # from tests.integration_test_framework import *  # Commented out due to missing dependencies
 
 

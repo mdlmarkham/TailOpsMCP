@@ -1,20 +1,30 @@
 """Comprehensive pytest fixtures and configuration for TailOpsMCP testing."""
 
+# ruff: noqa: E402
+
+from pathlib import Path
 import sys
+
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))  # noqa: E402
+
 import asyncio
 import uuid
-from pathlib import Path
-
-# Add the project root to Python path to enable 'src' imports
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
-
-import pytest
 import os
 import json
+import pytest
 from unittest.mock import Mock, AsyncMock
 from datetime import datetime, timedelta
-from src.auth.token_auth import TokenClaims
+
+
+def _import_token_claims():
+    """Lazy import of TokenClaims to avoid E402 issues."""
+    from src.auth.token_auth import TokenClaims
+
+    return TokenClaims
+
+
+TokenClaims = _import_token_claims()
 
 
 # =============================================================================
