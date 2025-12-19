@@ -622,7 +622,6 @@ class PolicyEngine:
             )
 
             # Update configuration
-            old_config = self.current_config
             self.current_config = new_config
             self.policy_cache.clear()  # Clear cache on config change
 

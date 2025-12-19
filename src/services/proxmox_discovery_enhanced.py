@@ -693,7 +693,6 @@ class ProxmoxDiscoveryEnhanced:
 
         try:
             # Find appropriate client
-            api_client = None
             for client in self._api_clients.values():
                 if client.credentials.host in [
                     h.address for h in self._discovered_hosts.values()

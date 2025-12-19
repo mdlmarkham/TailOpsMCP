@@ -212,16 +212,16 @@ def execute_with_sandbox(operation: Callable, **kwargs) -> Any:
 
 def is_path_allowed(path: str, allowed_paths: List[str] = None) -> bool:
     """Check if a path is allowed for sandbox operations.
-    
+
     Args:
         path: Path to check
         allowed_paths: List of allowed paths (defaults to safe system paths)
-        
+
     Returns:
         True if path is allowed, False otherwise
     """
     import os
-    
+
     # Default safe paths
     if allowed_paths is None:
         allowed_paths = [
@@ -229,18 +229,21 @@ def is_path_allowed(path: str, allowed_paths: List[str] = None) -> bool:
             "/var/tmp",
             os.path.expanduser("~"),
         ]
-    
+
     try:
         # Normalize and resolve the path
         normalized_path = os.path.normpath(path)
         resolved_path = os.path.realpath(normalized_path)
-        
+
         # Check if path is within any allowed directory
         for allowed_path in allowed_paths:
             allowed_resolved = os.path.realpath(allowed_path)
-            if resolved_path.startswith(allowed_resolved + os.sep) or resolved_path == allowed_resolved:
+            if (
+                resolved_path.startswith(allowed_resolved + os.sep)
+                or resolved_path == allowed_resolved
+            ):
                 return True
-        
+
         return False
     except (OSError, ValueError):
         return False

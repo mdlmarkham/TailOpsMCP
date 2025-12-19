@@ -311,9 +311,9 @@ class TestTargetRegistryPerformance:
         retrieval_time = (end_time - start_time) / 1000
 
         # Assert reasonable retrieval time (less than 1ms per retrieval)
-        assert retrieval_time < 0.001, (
-            f"Retrieval time {retrieval_time}s exceeds threshold"
-        )
+        assert (
+            retrieval_time < 0.001
+        ), f"Retrieval time {retrieval_time}s exceeds threshold"
 
 
 # Test fixtures for parameterized testing

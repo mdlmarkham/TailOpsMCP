@@ -106,7 +106,7 @@ class PolicyAsCodeIntegration:
         )
 
         if policy_errors:
-            duration_ms = (time.time() - start_time) * 1000
+            (time.time() - start_time) * 1000
             self.audit_logger.log_policy_decision(
                 actor=actor,
                 target=target_id,
@@ -139,7 +139,7 @@ class PolicyAsCodeIntegration:
         )
         policy_rule_name = matching_rule.name if matching_rule else "unknown"
 
-        duration_ms = (time.time() - start_time) * 1000
+        (time.time() - start_time) * 1000
 
         # Log policy decision
         self.audit_logger.log_policy_decision(

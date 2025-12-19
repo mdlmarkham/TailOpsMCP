@@ -38,21 +38,21 @@ dev = [
     # Testing
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
-    
+
     # Code formatting and linting
     "black>=23.0.0",
     "isort>=5.12.0",
     "ruff>=0.6.0",
     "flake8>=6.0.0",
-    
+
     # Type checking
     "mypy>=1.7.0",
     "types-psutil>=5.9.0",
-    
+
     # Security scanning
     "bandit[toml]>=1.7.10",
     "safety>=3.0.0",
-    
+
     # Pre-commit hooks
     "pre-commit>=3.5.0",
 ]
@@ -1105,7 +1105,7 @@ Bash script that sets up the complete development environment automatically.
 #### **What It Creates**
 - **Virtual Environment**: `venv/` directory with all dependencies
 - **Development Config**: `.dev_config` file with settings
-- **Helper Scripts**: 
+- **Helper Scripts**:
   - `activate_dev.sh` - Easy environment activation
   - `quick_test.sh` - Environment verification script
 - **Completion Flag**: `.dev_setup_complete` to track setup status
@@ -1164,15 +1164,15 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.11', '3.12']
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    
+
     - name: Cache pip dependencies
       uses: actions/cache@v3
       with:
@@ -1180,42 +1180,42 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements-dev.txt
         pip install -e .
-    
+
     - name: Run ruff linting
       run: ruff check src tests
-    
+
     - name: Check code formatting
       run: ruff format --check src tests
-    
+
     - name: Run type checking
       run: mypy src --ignore-missing-imports
-    
+
     - name: Run security scan
       run: bandit -r src -f json -o bandit-report.json || true
-    
+
     - name: Check dependencies
       run: safety check --json --output safety-report.json || true
-    
+
     - name: Run complexity analysis
       run: |
         radon cc src --json > complexity-report.json || true
         radon mi src > maintainability-report.txt || true
-    
+
     - name: Run tests with coverage
       run: pytest tests/ --cov=src --cov-report=xml --cov-report=html
-    
+
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
         flags: unittests
-    
+
     - name: Upload security reports
       uses: actions/upload-artifact@v3
       if: always()
@@ -1226,7 +1226,7 @@ jobs:
           safety-report.json
           complexity-report.json
           maintainability-report.txt
-    
+
     - name: Comment PR with results
       uses: actions/github-script@v6
       if: github.event_name == 'pull_request'
@@ -1236,7 +1236,7 @@ jobs:
           const coverage = fs.readFileSync('coverage.xml', 'utf8');
           const coverageMatch = coverage.match(/line-rate="([^"]+)"/);
           const coveragePercent = coverageMatch ? (parseFloat(coverageMatch[1]) * 100).toFixed(1) : '0.0';
-          
+
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
@@ -1360,14 +1360,14 @@ Add or modify pre-commit hooks in `.pre-commit-config.yaml`:
 ```yaml
 repos:
   # Existing hooks...
-  
+
   # Add new repository
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.0.0-alpha.9-for-vscode
     hooks:
       - id: prettier
         types: [yaml]
-  
+
   # Modify existing hook
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.6.4
@@ -1385,7 +1385,7 @@ Modify coverage requirements in `pytest.ini`:
 
 ```ini
 [tool:pytest]
-addopts = 
+addopts =
     -ra
     --strict-markers
     --strict-config
@@ -1417,12 +1417,12 @@ Modify GitHub Actions workflows to add new checks:
   run: |
     # Add custom security validation
     python scripts/custom_security_check.py --report custom-security.json
-    
+
 - name: Performance Benchmark
   run: |
     # Add performance testing
     python scripts/performance_benchmark.py --threshold 100ms
-    
+
 - name: Documentation Check
   run: |
     # Validate documentation

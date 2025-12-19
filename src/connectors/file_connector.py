@@ -780,8 +780,8 @@ class FileConnector(RemoteAgentConnector):
                 parts = line.split()
                 if len(parts) >= 9:
                     permissions = parts[0]
-                    owner = parts[2]
-                    group = parts[3]
+                    parts[2]
+                    parts[3]
                     size = int(parts[4])
                     date_str = f"{parts[5]} {parts[6]} {parts[7]}"
                     name = " ".join(parts[8:])

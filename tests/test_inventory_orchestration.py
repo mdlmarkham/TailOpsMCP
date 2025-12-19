@@ -740,7 +740,7 @@ class TestInventoryPerformance:
                 )
             )
 
-            inventory = await mock_inventory_service.run_full_discovery()
+            await mock_inventory_service.run_full_discovery()
 
             end_time = datetime.utcnow()
             processing_time = (end_time - start_time).total_seconds()

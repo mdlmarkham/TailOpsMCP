@@ -1,7 +1,8 @@
 """Integration module for Policy Gate and execution layer in capability-driven tools."""
+
 import logging
-from typing import Dict, Any, Optional
-from src.services.policy_gate import PolicyGate, OperationTier, ValidationMode
+from typing import Dict, Any
+from src.services.policy_gate import OperationTier, ValidationMode
 from src.services.executor_factory import ExecutorFactory
 from src.services.target_registry import TargetRegistry
 from src.utils.audit import AuditLogger
@@ -14,8 +15,6 @@ class ToolIntegrationManager:
     """Manages integration between tools, Policy Gate, and execution layer."""
 
     def __init__(self):
-        from src.server.dependencies import deps
-        policy_gate = deps.policy_gate
         self.executor_factory = ExecutorFactory()
         self.target_registry = TargetRegistry()
 
@@ -27,7 +26,7 @@ class ToolIntegrationManager:
         parameters: Dict[str, Any],
         command: str,
         timeout: int,
-        dry_run: bool = False
+        dry_run: bool = False,
     ) -> Dict[str, Any]:
         """Authorize and execute an operation with full integration.
 
@@ -47,20 +46,19 @@ class ToolIntegrationManager:
             # Validate target exists
             target_metadata = self.target_registry.get_target(target)
             if not target_metadata:
-                return {
-                    "success": False,
-                    "error": f"Target not found: {target}"
-                }
+                return {"success": False, "error": f"Target not found: {target}"}
 
             # Use Policy Gate for authorization
-            validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
+            validation_mode = (
+                ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
+            )
 
             await self.policy_gate.authorize(
                 operation=operation,
                 target=target,
                 tier=tier,
                 parameters=parameters,
-                mode=validation_mode
+                mode=validation_mode,
             )
 
             if dry_run:
@@ -70,7 +68,7 @@ class ToolIntegrationManager:
                     "operation": operation,
                     "target": target,
                     "parameters": parameters,
-                    "message": "Operation would be executed in non-dry-run mode"
+                    "message": "Operation would be executed in non-dry-run mode",
                 }
 
             # Get executor for target
@@ -78,9 +76,7 @@ class ToolIntegrationManager:
 
             # Execute operation
             result = await executor.execute(
-                command=command,
-                parameters=parameters,
-                timeout=timeout
+                command=command, parameters=parameters, timeout=timeout
             )
 
             # Log operation
@@ -91,7 +87,7 @@ class ToolIntegrationManager:
                 parameters=parameters,
                 result=result.output if result.success else None,
                 error=result.error if not result.success else None,
-                duration=result.duration
+                duration=result.duration,
             )
 
             if result.success:
@@ -101,7 +97,7 @@ class ToolIntegrationManager:
                     "target": target,
                     "parameters": parameters,
                     "output": result.output,
-                    "duration": result.duration
+                    "duration": result.duration,
                 }
             else:
                 return {
@@ -110,22 +106,19 @@ class ToolIntegrationManager:
                     "target": target,
                     "parameters": parameters,
                     "error": result.error,
-                    "duration": result.duration
+                    "duration": result.duration,
                 }
 
         except Exception as e:
             audit.log_operation(
-                operation=operation,
-                target=target,
-                success=False,
-                error=str(e)
+                operation=operation, target=target, success=False, error=str(e)
             )
             return {
                 "success": False,
                 "operation": operation,
                 "target": target,
                 "parameters": parameters,
-                "error": str(e)
+                "error": str(e),
             }
 
     def get_target_capabilities(self, target: str) -> Dict[str, Any]:
@@ -138,57 +131,67 @@ class ToolIntegrationManager:
         capabilities = {
             "target": target,
             "executor_type": target_metadata.executor_type,
-            "capabilities": []
+            "capabilities": [],
         }
 
         # Add capabilities based on executor type
         if target_metadata.executor_type == "local":
             capabilities["capabilities"] = [
-                "get_system_status", "restart_service", "start_container",
-                "stop_container", "inspect_container", "deploy_stack",
-                "pull_stack", "restart_stack", "test_connectivity",
-                "scan_ports", "read_file", "list_directory"
+                "get_system_status",
+                "restart_service",
+                "start_container",
+                "stop_container",
+                "inspect_container",
+                "deploy_stack",
+                "pull_stack",
+                "restart_stack",
+                "test_connectivity",
+                "scan_ports",
+                "read_file",
+                "list_directory",
             ]
         elif target_metadata.executor_type == "ssh":
             capabilities["capabilities"] = [
-                "get_system_status", "restart_service", "start_container",
-                "stop_container", "inspect_container", "deploy_stack",
-                "pull_stack", "restart_stack", "test_connectivity",
-                "scan_ports", "read_file", "list_directory"
+                "get_system_status",
+                "restart_service",
+                "start_container",
+                "stop_container",
+                "inspect_container",
+                "deploy_stack",
+                "pull_stack",
+                "restart_stack",
+                "test_connectivity",
+                "scan_ports",
+                "read_file",
+                "list_directory",
             ]
         elif target_metadata.executor_type == "docker":
             capabilities["capabilities"] = [
-                "start_container", "stop_container", "inspect_container",
-                "deploy_stack", "pull_stack", "restart_stack"
+                "start_container",
+                "stop_container",
+                "inspect_container",
+                "deploy_stack",
+                "pull_stack",
+                "restart_stack",
             ]
         elif target_metadata.executor_type == "proxmox":
-            capabilities["capabilities"] = [
-                "get_system_status", "restart_service"
-            ]
+            capabilities["capabilities"] = ["get_system_status", "restart_service"]
 
         return capabilities
 
     async def validate_operation(
-        self,
-        operation: str,
-        target: str,
-        parameters: Dict[str, Any]
+        self, operation: str, target: str, parameters: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Validate an operation without executing it."""
         try:
             # Validate target
             target_metadata = self.target_registry.get_target(target)
             if not target_metadata:
-                return {
-                    "valid": False,
-                    "error": f"Target not found: {target}"
-                }
+                return {"valid": False, "error": f"Target not found: {target}"}
 
             # Validate operation with Policy Gate
             validation_result = await self.policy_gate.validate_operation(
-                operation=operation,
-                target=target,
-                parameters=parameters
+                operation=operation, target=target, parameters=parameters
             )
 
             return {
@@ -196,7 +199,7 @@ class ToolIntegrationManager:
                 "warnings": validation_result.get("warnings", []),
                 "errors": validation_result.get("errors", []),
                 "target": target,
-                "operation": operation
+                "operation": operation,
             }
 
         except Exception as e:
@@ -204,7 +207,7 @@ class ToolIntegrationManager:
                 "valid": False,
                 "error": str(e),
                 "target": target,
-                "operation": operation
+                "operation": operation,
             }
 
 

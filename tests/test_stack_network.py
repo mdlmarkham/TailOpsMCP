@@ -64,7 +64,7 @@ def test_get_stack_network_info_cli_single_container(monkeypatch):
     ]
 
     def fake_run(args, capture_output=True, text=True, check=True):
-        cmd = args[0:3]
+        args[0:3]
         if args[:3] == ["docker", "ps", "-a"] or args[:4] == [
             "docker",
             "ps",

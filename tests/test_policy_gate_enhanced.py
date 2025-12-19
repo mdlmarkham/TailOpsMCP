@@ -336,9 +336,9 @@ class TestPolicyGatePerformance:
         authorization_time = (end_time - start_time) / 1000
 
         # Assert reasonable authorization time (less than 1ms per decision)
-        assert authorization_time < 0.001, (
-            f"Authorization time {authorization_time}s exceeds threshold"
-        )
+        assert (
+            authorization_time < 0.001
+        ), f"Authorization time {authorization_time}s exceeds threshold"
 
     def test_concurrent_authorization(self):
         """Test concurrent authorization requests."""
@@ -370,9 +370,9 @@ class TestPolicyGatePerformance:
             assert result is not None
 
         # Assert reasonable concurrent performance
-        assert total_time < 1.0, (
-            f"Concurrent authorization time {total_time}s exceeds threshold"
-        )
+        assert (
+            total_time < 1.0
+        ), f"Concurrent authorization time {total_time}s exceeds threshold"
 
 
 # Parameterized tests for different operation tiers

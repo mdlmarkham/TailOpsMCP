@@ -316,7 +316,7 @@ Create `.vscode/tasks.json` for common commands:
 #### **Project Configuration**
 
 1. **Python Interpreter**: Set to `./venv/bin/python` (Project Interpreter)
-2. **Code Style**: 
+2. **Code Style**:
    - Line length: 88
    - Import organization: Sort by name, grouped by type
    - Enable Black formatter integration
@@ -423,10 +423,10 @@ make dev
    ```bash
    # Run tests for specific module
    pytest tests/test_your_module.py -v
-   
+
    # Run tests with coverage
    pytest tests/ --cov=src --cov-report=html
-   
+
    # Run specific test
    pytest tests/test_specific_function.py::test_specific_case -v
    ```
@@ -435,7 +435,7 @@ make dev
    ```bash
    # Auto-fix formatting and import issues
    make fix
-   
+
    # Run all quality checks
    make quality
    ```

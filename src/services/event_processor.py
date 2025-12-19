@@ -316,8 +316,8 @@ class EventStreamProcessor:
             analyzer = get_event_analyzer()
 
             # Detect trends and patterns
-            trends = await analyzer.detect_trends(batch.events)
-            patterns = await analyzer.detect_patterns(batch.events)
+            await analyzer.detect_trends(batch.events)
+            await analyzer.detect_patterns(batch.events)
 
             # Generate insights and predictions if we have enough events
             if len(batch.events) >= 10:
@@ -450,7 +450,7 @@ class EventStreamProcessor:
 
         elif message_type == "set_filters":
             # Client wants to set filters
-            filters_data = data.get("filters", {})
+            data.get("filters", {})
             # Convert filters data back to EventFilters if needed
             # This is a simplified version
             await websocket.send(

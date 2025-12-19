@@ -497,7 +497,7 @@ class TestEventAlerting(unittest.TestCase):
     @pytest.mark.asyncio
     async def test_alert_creation(self):
         """Test alert creation and management."""
-        rule = AlertRule(
+        AlertRule(
             name="test_rule",
             description="Test alert rule",
             condition="severity == 'critical'",
@@ -1066,7 +1066,7 @@ class TestEndToEndScenarios(unittest.TestCase):
 
         # Verify processing
         stats = processor.get_stats()
-        buffer_status = processor.get_buffer_status()
+        processor.get_buffer_status()
 
         self.assertGreater(stats["events_processed"], 0)
         self.assertGreater(stats["batches_processed"], 0)
@@ -1090,6 +1090,8 @@ class TestEndToEndScenarios(unittest.TestCase):
 
 
 from typing import List
+
+
 # Test utilities
 def create_test_events(count: int = 10) -> List[SystemEvent]:
     """Create test events for testing purposes."""

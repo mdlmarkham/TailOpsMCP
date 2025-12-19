@@ -48,16 +48,16 @@ command_exists() {
 # Check Python version
 check_python_version() {
     print_info "Checking Python version..."
-    
+
     if ! command_exists python3; then
         print_error "Python 3 is not installed or not in PATH"
         print_info "Please install Python 3.12 or later from https://python.org"
         exit 1
     fi
-    
+
     python_version=$(python3 -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")
     required_version=$(echo "$PYTHON_MIN_VERSION" | tr '.' ' ')
-    
+
     if python3 -c "import sys; exit(0 if sys.version_info >= ($required_version) else 1)"; then
         print_success "Python $python_version found (minimum: $PYTHON_MIN_VERSION)"
     else
@@ -69,20 +69,20 @@ check_python_version() {
 # Check pip
 check_pip() {
     print_info "Checking pip..."
-    
+
     if ! command_exists pip3 && ! python3 -m pip --version >/dev/null 2>&1; then
         print_error "pip is not installed or not accessible"
         print_info "Installing pip..."
         python3 -m ensurepip --upgrade
     fi
-    
+
     print_success "pip is available"
 }
 
 # Check virtual environment tools
 check_virtual_env_tools() {
     print_info "Checking virtual environment tools..."
-    
+
     if ! command_exists virtualenv && ! python3 -m venv --help >/dev/null 2>&1; then
         print_warning "No virtual environment tool found. Installing python3-venv..."
         if command_exists apt-get; then
@@ -102,18 +102,18 @@ check_virtual_env_tools() {
 # Create virtual environment
 setup_virtual_environment() {
     print_info "Setting up virtual environment..."
-    
+
     if [ ! -d "venv" ]; then
         python3 -m venv venv
         print_success "Virtual environment created"
     else
         print_info "Virtual environment already exists"
     fi
-    
+
     # Activate virtual environment
     source venv/bin/activate
     print_success "Virtual environment activated"
-    
+
     # Upgrade pip
     pip install --upgrade pip
     print_success "pip upgraded to latest version"
@@ -122,7 +122,7 @@ setup_virtual_environment() {
 # Install project dependencies
 install_dependencies() {
     print_info "Installing project dependencies..."
-    
+
     if [ -f "$REQUIREMENTS_FILE" ]; then
         pip install -r "$REQUIREMENTS_FILE"
         print_success "Development dependencies installed"
@@ -130,7 +130,7 @@ install_dependencies() {
         print_warning "$REQUIREMENTS_FILE not found, installing basic dependencies"
         pip install pytest ruff mypy bandit safety pre-commit
     fi
-    
+
     # Install project in development mode
     if [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then
         pip install -e .
@@ -143,12 +143,12 @@ install_dependencies() {
 # Set up pre-commit hooks
 setup_pre_commit() {
     print_info "Setting up pre-commit hooks..."
-    
+
     if command_exists pre-commit; then
         # Install pre-commit hooks
         pre-commit install
         print_success "Pre-commit hooks installed"
-        
+
         # Run pre-commit on all files to set up the environment
         print_info "Running initial pre-commit check..."
         if pre-commit run --all-files; then
@@ -165,11 +165,11 @@ setup_pre_commit() {
 # Install additional development tools
 install_dev_tools() {
     print_info "Installing additional development tools..."
-    
+
     # Install radon for complexity analysis
     pip install radon
     print_success "Radon installed for complexity analysis"
-    
+
     # Install additional quality tools if needed
     if command_exists git; then
         print_info "Git detected - repository ready for development"
@@ -181,7 +181,7 @@ install_dev_tools() {
 # Create development configuration
 setup_dev_config() {
     print_info "Setting up development configuration..."
-    
+
     # Create .dev_config file
     cat > .dev_config << EOF
 # TailOpsMCP Development Configuration
@@ -205,28 +205,28 @@ PRE_COMMIT_ENABLED=true
 PROJECT_NAME=$PROJECT_NAME
 SETUP_DATE=$(date)
 EOF
-    
+
     print_success "Development configuration created (.dev_config)"
 }
 
 # Verify installation
 verify_installation() {
     print_info "Verifying installation..."
-    
+
     # Test Python imports
     if python3 -c "import pytest, ruff, mypy, bandit" 2>/dev/null; then
         print_success "All development tools can be imported"
     else
         print_warning "Some development tools may not be properly installed"
     fi
-    
+
     # Test project installation
     if python3 -c "import src" 2>/dev/null; then
         print_success "Project can be imported"
     else
         print_warning "Project may not be properly installed"
     fi
-    
+
     # Test security scanner
     if python3 -c "from src.security.scanner import SecurityScanner" 2>/dev/null; then
         print_success "Security scanner is working"
@@ -238,7 +238,7 @@ verify_installation() {
 # Create development scripts
 create_dev_scripts() {
     print_info "Creating development helper scripts..."
-    
+
     # Create activate script for easy venv activation
     cat > activate_dev.sh << 'EOF'
 #!/bin/bash
@@ -254,10 +254,10 @@ else
     exit 1
 fi
 EOF
-    
+
     chmod +x activate_dev.sh
     print_success "Development activation script created (activate_dev.sh)"
-    
+
     # Create quick test script
     cat > quick_test.sh << 'EOF'
 #!/bin/bash
@@ -283,7 +283,7 @@ fi
 
 echo "✅ Quick test completed"
 EOF
-    
+
     chmod +x quick_test.sh
     print_success "Quick test script created (quick_test.sh)"
 }
@@ -300,12 +300,12 @@ mark_setup_complete() {
 print_summary() {
     print_header "Setup Summary"
     echo -e "${GREEN}🎉 TailOpsMCP development environment setup completed!${NC}\n"
-    
+
     echo -e "${CYAN}📁 Created:${NC}"
     echo "  • Virtual environment: ./venv/"
     echo "  • Development config: ./.dev_config"
     echo "  • Helper scripts: activate_dev.sh, quick_test.sh"
-    
+
     echo -e "\n${CYAN}🔧 Available tools:${NC}"
     echo "  • Python: $(python3 --version)"
     echo "  • Testing: pytest"
@@ -315,14 +315,14 @@ print_summary() {
     echo "  • Security: bandit, safety"
     echo "  • Pre-commit hooks: pre-commit"
     echo "  • Complexity: radon"
-    
+
     echo -e "\n${CYAN}🚀 Next steps:${NC}"
     echo "  1. Activate environment: source venv/bin/activate"
     echo "  2. Or use helper: source activate_dev.sh"
     echo "  3. Run tests: make test"
     echo "  4. Run quality checks: make quality"
     echo "  5. Run security scan: make security-scan"
-    
+
     echo -e "\n${CYAN}📚 Useful commands:${NC}"
     echo "  • make help           - Show all available commands"
     echo "  • make setup          - Set up development environment"
@@ -330,7 +330,7 @@ print_summary() {
     echo "  • make test           - Run tests with coverage"
     echo "  • make security-scan  - Run security scan"
     echo "  • make fix            - Auto-fix code issues"
-    
+
     echo -e "\n${PURPLE}Happy coding! 🚀${NC}\n"
 }
 
@@ -338,7 +338,7 @@ print_summary() {
 main() {
     echo -e "${BLUE}"
     cat << 'EOF'
-    
+
     ╔══════════════════════════════════════╗
     ║     TailOpsMCP Development Setup     ║
     ║                                      ║
@@ -347,7 +347,7 @@ main() {
     ╚══════════════════════════════════════╝
 EOF
     echo -e "${NC}"
-    
+
     # Check if setup was already completed
     if [ -f "$SETUP_COMPLETE_FLAG" ]; then
         print_info "Previous setup detected"
@@ -358,7 +358,7 @@ EOF
             exit 0
         fi
     fi
-    
+
     # Run setup steps
     check_python_version
     check_pip

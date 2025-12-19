@@ -54,7 +54,7 @@ targets:
         self.create_test_config(config)
 
         registry = TargetRegistry(self.config_path)
-        assert registry.load() == True
+        assert registry.load() is True
         assert len(registry.get_errors()) == 0
         assert "local" in registry.list_targets()
 
@@ -76,7 +76,7 @@ targets:
         self.create_test_config(config)
 
         registry = TargetRegistry(self.config_path)
-        assert registry.load() == False
+        assert registry.load() is False
         assert len(registry.get_errors()) > 0
 
     def test_add_remove_target(self):
@@ -104,11 +104,11 @@ targets:
         )
 
         # Add target
-        assert registry.add_target(target) == True
+        assert registry.add_target(target) is True
         assert "test-target" in registry.list_targets()
 
         # Remove target
-        assert registry.remove_target("test-target") == True
+        assert registry.remove_target("test-target") is True
         assert "test-target" not in registry.list_targets()
 
     def test_get_target_by_type(self):
@@ -194,7 +194,7 @@ targets:
         )
 
         registry.add_target(target)
-        assert registry.save() == True
+        assert registry.save() is True
 
         # Verify file was created
         assert os.path.exists(self.config_path)
@@ -252,6 +252,6 @@ targets:
             metadata={"hostname": "test-host"},
         )
 
-        assert target.has_capability(Scope.SYSTEM_READ) == True
-        assert target.has_capability(Scope.NETWORK_READ) == True
-        assert target.has_capability(Scope.CONTAINER_WRITE) == False
+        assert target.has_capability(Scope.SYSTEM_READ) is True
+        assert target.has_capability(Scope.NETWORK_READ) is True
+        assert target.has_capability(Scope.CONTAINER_WRITE) is False

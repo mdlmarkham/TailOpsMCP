@@ -96,7 +96,7 @@ class EventManagementTools:
         try:
             # Validate source
             try:
-                event_source = EventSource(source)
+                EventSource(source)
             except ValueError:
                 return {
                     "error": f"Invalid source: {source}",

@@ -24,7 +24,7 @@ class TestTokenSecurity:
 
     def test_token_verification_valid_token(self):
         """Test verification of valid tokens."""
-        verifier = TokenVerifier()
+        TokenVerifier()
 
         # Create valid token claims
         valid_claims = TokenClaims(
@@ -161,11 +161,6 @@ class TestAuditLoggingSecurity:
         audit_logger = AuditLogger()
 
         # Log operation with sensitive data
-        sensitive_parameters = {
-            "auth_token": "secret-token-12345",
-            "password": "super-secret-password",
-            "api_key": "sk-abcdef123456",
-        }
 
         # This would test the actual redaction implementation
         # For now, we'll verify the audit logger interface
@@ -176,14 +171,6 @@ class TestAuditLoggingSecurity:
         audit_logger = AuditLogger()
 
         # Verify audit log contains required fields
-        required_fields = [
-            "timestamp",
-            "agent",
-            "tool",
-            "target",
-            "parameters",
-            "result",
-        ]
 
         # This would test the actual log entry structure
         # For now, we'll verify the interface
@@ -197,7 +184,7 @@ class TestInputValidationSecurity:
         """Test prevention of command injection attacks."""
         from src.services.input_validator import InputValidator
 
-        validator = InputValidator()
+        InputValidator()
 
         # Test malicious command patterns
         malicious_commands = [
@@ -292,7 +279,7 @@ class TestSecurityPerformance:
         """Test performance of token verification."""
         import time
 
-        verifier = TokenVerifier()
+        TokenVerifier()
 
         # Measure verification time
         start_time = time.time()
@@ -304,9 +291,9 @@ class TestSecurityPerformance:
         verification_time = (end_time - start_time) / 1000
 
         # Assert reasonable verification time
-        assert verification_time < 0.001, (
-            f"Verification time {verification_time}s exceeds threshold"
-        )
+        assert (
+            verification_time < 0.001
+        ), f"Verification time {verification_time}s exceeds threshold"
 
     def test_policy_evaluation_performance(self):
         """Test performance of policy evaluation."""
@@ -328,9 +315,9 @@ class TestSecurityPerformance:
         evaluation_time = (end_time - start_time) / 1000
 
         # Assert reasonable evaluation time
-        assert evaluation_time < 0.001, (
-            f"Evaluation time {evaluation_time}s exceeds threshold"
-        )
+        assert (
+            evaluation_time < 0.001
+        ), f"Evaluation time {evaluation_time}s exceeds threshold"
 
 
 # Security-specific test fixtures

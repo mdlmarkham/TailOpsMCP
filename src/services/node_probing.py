@@ -413,7 +413,7 @@ class NodeProbing:
                             container_name = parts[0]
                             image = parts[1]
                             status = parts[2]
-                            ports = parts[3] if len(parts) > 3 else ""
+                            parts[3] if len(parts) > 3 else ""
 
                             # Determine service status from container status
                             service_status = ServiceStatus.UNKNOWN

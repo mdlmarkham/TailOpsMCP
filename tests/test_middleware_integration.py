@@ -129,7 +129,7 @@ class TestGetClaimsFromContext:
             with patch.object(
                 middleware.token_verifier, "verify", return_value=admin_claims
             ):
-                claims = middleware.get_claims_from_context()
+                middleware.get_claims_from_context()
 
         middleware.token_verifier.verify.assert_called_once_with("lowercase_token")
 

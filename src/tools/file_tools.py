@@ -1,11 +1,12 @@
 """File operations tools for TailOpsMCP with capability-driven operations."""
+
 import logging
-from typing import Literal, Union
+from typing import Literal
 from datetime import datetime
 from fastmcp import FastMCP
 from src.auth.middleware import secure_tool
 from src.server.utils import format_error
-from src.services.policy_gate import PolicyGate, OperationTier, ValidationMode
+from src.services.policy_gate import OperationTier
 from src.services.executor_factory import ExecutorFactory
 from src.utils.audit import AuditLogger
 
@@ -19,10 +20,7 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("read_file")
     async def read_file(
-        path: str,
-        target: str = "local",
-        lines: int = 100,
-        offset: int = 0
+        path: str, target: str = "local", lines: int = 100, offset: int = 0
     ) -> dict:
         """Read a file from the target system.
 
@@ -35,12 +33,13 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="read_file",
                 target=target,
                 tier=OperationTier.OBSERVE,
-                parameters={"path": path, "lines": lines, "offset": offset}
+                parameters={"path": path, "lines": lines, "offset": offset},
             )
 
             # Get executor for target
@@ -50,7 +49,7 @@ def register_tools(mcp: FastMCP):
             result = await executor.execute(
                 command="read_file",
                 parameters={"path": path, "lines": lines, "offset": offset},
-                timeout=30
+                timeout=30,
             )
 
             if result.success:
@@ -63,7 +62,7 @@ def register_tools(mcp: FastMCP):
                     "offset": offset,
                     "lines_returned": result.output.get("lines_returned", 0),
                     "has_more": result.output.get("has_more", False),
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
             else:
                 return {
@@ -71,24 +70,18 @@ def register_tools(mcp: FastMCP):
                     "target": target,
                     "path": path,
                     "error": result.error,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
         except Exception as e:
             audit.log_operation(
-                operation="read_file",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="read_file", target=target, success=False, error=str(e)
             )
             return format_error(e, "read_file")
 
     @mcp.tool()
     @secure_tool("list_directory")
-    async def list_directory(
-        target: str = "local",
-        path: str = "/"
-    ) -> dict:
+    async def list_directory(target: str = "local", path: str = "/") -> dict:
         """List directory contents on the target system.
 
         Args:
@@ -98,12 +91,13 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="list_directory",
                 target=target,
                 tier=OperationTier.OBSERVE,
-                parameters={"path": path}
+                parameters={"path": path},
             )
 
             # Get executor for target
@@ -111,9 +105,7 @@ def register_tools(mcp: FastMCP):
 
             # Execute directory listing
             result = await executor.execute(
-                command="list_directory",
-                parameters={"path": path},
-                timeout=30
+                command="list_directory", parameters={"path": path}, timeout=30
             )
 
             if result.success:
@@ -124,7 +116,7 @@ def register_tools(mcp: FastMCP):
                     "files": result.output.get("files", []),
                     "directories": result.output.get("directories", []),
                     "total_count": result.output.get("total_count", 0),
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
             else:
                 return {
@@ -132,24 +124,18 @@ def register_tools(mcp: FastMCP):
                     "target": target,
                     "path": path,
                     "error": result.error,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
         except Exception as e:
             audit.log_operation(
-                operation="list_directory",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="list_directory", target=target, success=False, error=str(e)
             )
             return format_error(e, "list_directory")
 
     @mcp.tool()
     @secure_tool("get_file_info")
-    async def get_file_info(
-        path: str,
-        target: str = "local"
-    ) -> dict:
+    async def get_file_info(path: str, target: str = "local") -> dict:
         """Get file information (size, permissions, timestamps).
 
         Args:
@@ -159,12 +145,13 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="get_file_info",
                 target=target,
                 tier=OperationTier.OBSERVE,
-                parameters={"path": path}
+                parameters={"path": path},
             )
 
             # Get executor for target
@@ -172,9 +159,7 @@ def register_tools(mcp: FastMCP):
 
             # Execute file info query
             result = await executor.execute(
-                command="get_file_info",
-                parameters={"path": path},
-                timeout=30
+                command="get_file_info", parameters={"path": path}, timeout=30
             )
 
             if result.success:
@@ -183,7 +168,7 @@ def register_tools(mcp: FastMCP):
                     "target": target,
                     "path": path,
                     "info": result.output,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
             else:
                 return {
@@ -191,25 +176,19 @@ def register_tools(mcp: FastMCP):
                     "target": target,
                     "path": path,
                     "error": result.error,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
         except Exception as e:
             audit.log_operation(
-                operation="get_file_info",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="get_file_info", target=target, success=False, error=str(e)
             )
             return format_error(e, "get_file_info")
 
     @mcp.tool()
     @secure_tool("search_files")
     async def search_files(
-        path: str,
-        target: str = "local",
-        pattern: str = "*",
-        max_results: int = 100
+        path: str, target: str = "local", pattern: str = "*", max_results: int = 100
     ) -> dict:
         """Search for files matching a pattern.
 
@@ -222,12 +201,17 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="search_files",
                 target=target,
                 tier=OperationTier.OBSERVE,
-                parameters={"path": path, "pattern": pattern, "max_results": max_results}
+                parameters={
+                    "path": path,
+                    "pattern": pattern,
+                    "max_results": max_results,
+                },
             )
 
             # Get executor for target
@@ -236,8 +220,12 @@ def register_tools(mcp: FastMCP):
             # Execute file search
             result = await executor.execute(
                 command="search_files",
-                parameters={"path": path, "pattern": pattern, "max_results": max_results},
-                timeout=60
+                parameters={
+                    "path": path,
+                    "pattern": pattern,
+                    "max_results": max_results,
+                },
+                timeout=60,
             )
 
             if result.success:
@@ -248,7 +236,7 @@ def register_tools(mcp: FastMCP):
                     "pattern": pattern,
                     "results": result.output.get("results", []),
                     "total_found": result.output.get("total_found", 0),
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
             else:
                 return {
@@ -257,15 +245,12 @@ def register_tools(mcp: FastMCP):
                     "path": path,
                     "pattern": pattern,
                     "error": result.error,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
         except Exception as e:
             audit.log_operation(
-                operation="search_files",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="search_files", target=target, success=False, error=str(e)
             )
             return format_error(e, "search_files")
 
@@ -278,7 +263,7 @@ def register_tools(mcp: FastMCP):
         target: str = "local",
         lines: int = 100,
         offset: int = 0,
-        pattern: str = "*"
+        pattern: str = "*",
     ) -> dict:
         """Perform file system operations (backward compatibility).
 
@@ -308,10 +293,7 @@ def register_tools(mcp: FastMCP):
 
         except Exception as e:
             audit.log_operation(
-                operation="file_operations",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="file_operations", target=target, success=False, error=str(e)
             )
             return format_error(e, "file_operations")
 

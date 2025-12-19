@@ -40,7 +40,16 @@ try:
 except ImportError:
     # Fallback if security models aren't available
     class SecurityVulnerability:
-        def __init__(self, id, title, description, severity, affected_component, file_path, line_number):
+        def __init__(
+            self,
+            id,
+            title,
+            description,
+            severity,
+            affected_component,
+            file_path,
+            line_number,
+        ):
             self.id = id
             self.title = title
             self.description = description
@@ -48,7 +57,7 @@ except ImportError:
             self.affected_component = affected_component
             self.file_path = file_path
             self.line_number = line_number
-    
+
     SecurityPolicy = None
 
 logger = logging.getLogger(__name__)
@@ -728,7 +737,9 @@ class SecurityScanner:
                         yaml.dump(report_data, f, default_flow_style=False, indent=2)
                 else:
                     # Fallback to JSON if yaml is not available
-                    output_path = output_path.replace('.yml', '.json').replace('.yaml', '.json')
+                    output_path = output_path.replace(".yml", ".json").replace(
+                        ".yaml", ".json"
+                    )
                     with open(output_path, "w") as f:
                         json.dump(report_data, f, indent=2, default=str)
             else:

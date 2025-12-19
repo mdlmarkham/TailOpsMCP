@@ -1,32 +1,16 @@
 """Stack management tools for TailOpsMCP with capability-driven operations."""
+
 from __future__ import annotations
 
-import asyncio
-import json
 import os
-import shutil
-from typing import List, Optional, Dict, Any, Literal, Union
-from datetime import datetime
-from pathlib import Path
+from typing import Literal, Union
 from fastmcp import FastMCP
 
 from src.auth.middleware import secure_tool
 from src.server.utils import format_response, format_error
-from src.services.policy_gate import PolicyGate, OperationTier, ValidationMode
+from src.services.policy_gate import OperationTier, ValidationMode
 from src.services.executor_factory import ExecutorFactory
-from src.services.compose_manager import ComposeStackManager
 from src.utils.audit import AuditLogger
-from src.models.stack_models import (
-    StackMeta,
-    StackStatus,
-    ServiceSummary,
-    RepoStatus,
-    ConfigDiff,
-    DeployRequest,
-    DeployResult,
-    SimulateActionResult,
-    StackHistoryEntry,
-)
 
 logger = logging.getLogger(__name__)
 audit = AuditLogger()
@@ -42,10 +26,7 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("deploy_stack")
     async def deploy_stack(
-        stack: str,
-        target: str = "local",
-        dry_run: bool = False,
-        force: bool = False
+        stack: str, target: str = "local", dry_run: bool = False, force: bool = False
     ) -> dict:
         """Deploy a Docker stack.
 
@@ -58,15 +39,18 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
-            validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
+            validation_mode = (
+                ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
+            )
 
             await policy_gate.authorize(
                 operation="deploy_stack",
                 target=target,
                 tier=OperationTier.CONTROL,
                 parameters={"stack": stack, "force": force},
-                mode=validation_mode
+                mode=validation_mode,
             )
 
             if dry_run:
@@ -76,7 +60,7 @@ def register_tools(mcp: FastMCP):
                     "operation": "deploy_stack",
                     "stack": stack,
                     "target": target,
-                    "message": "Operation would be executed in non-dry-run mode"
+                    "message": "Operation would be executed in non-dry-run mode",
                 }
 
             # Get executor for target
@@ -86,14 +70,14 @@ def register_tools(mcp: FastMCP):
             result = await executor.execute(
                 command="deploy_stack",
                 parameters={"stack": stack, "force": force},
-                timeout=300
+                timeout=300,
             )
 
             audit.log_operation(
                 operation="deploy_stack",
                 target=target,
                 success=result.success,
-                parameters={"stack": stack, "force": force}
+                parameters={"stack": stack, "force": force},
             )
 
             if result.success:
@@ -102,7 +86,7 @@ def register_tools(mcp: FastMCP):
                     "operation": "deploy_stack",
                     "stack": stack,
                     "target": target,
-                    "output": result.output
+                    "output": result.output,
                 }
             else:
                 return {
@@ -110,24 +94,19 @@ def register_tools(mcp: FastMCP):
                     "operation": "deploy_stack",
                     "stack": stack,
                     "target": target,
-                    "error": result.error
+                    "error": result.error,
                 }
 
         except Exception as e:
             audit.log_operation(
-                operation="deploy_stack",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="deploy_stack", target=target, success=False, error=str(e)
             )
             return format_error(e, "deploy_stack")
 
     @mcp.tool()
     @secure_tool("pull_stack")
     async def pull_stack(
-        stack: str,
-        target: str = "local",
-        dry_run: bool = False
+        stack: str, target: str = "local", dry_run: bool = False
     ) -> dict:
         """Pull latest images for a Docker stack.
 
@@ -139,15 +118,18 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
-            validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
+            validation_mode = (
+                ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
+            )
 
             await policy_gate.authorize(
                 operation="pull_stack",
                 target=target,
                 tier=OperationTier.CONTROL,
                 parameters={"stack": stack},
-                mode=validation_mode
+                mode=validation_mode,
             )
 
             if dry_run:
@@ -157,7 +139,7 @@ def register_tools(mcp: FastMCP):
                     "operation": "pull_stack",
                     "stack": stack,
                     "target": target,
-                    "message": "Operation would be executed in non-dry-run mode"
+                    "message": "Operation would be executed in non-dry-run mode",
                 }
 
             # Get executor for target
@@ -165,16 +147,14 @@ def register_tools(mcp: FastMCP):
 
             # Execute stack pull
             result = await executor.execute(
-                command="pull_stack",
-                parameters={"stack": stack},
-                timeout=600
+                command="pull_stack", parameters={"stack": stack}, timeout=600
             )
 
             audit.log_operation(
                 operation="pull_stack",
                 target=target,
                 success=result.success,
-                parameters={"stack": stack}
+                parameters={"stack": stack},
             )
 
             if result.success:
@@ -183,7 +163,7 @@ def register_tools(mcp: FastMCP):
                     "operation": "pull_stack",
                     "stack": stack,
                     "target": target,
-                    "output": result.output
+                    "output": result.output,
                 }
             else:
                 return {
@@ -191,24 +171,19 @@ def register_tools(mcp: FastMCP):
                     "operation": "pull_stack",
                     "stack": stack,
                     "target": target,
-                    "error": result.error
+                    "error": result.error,
                 }
 
         except Exception as e:
             audit.log_operation(
-                operation="pull_stack",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="pull_stack", target=target, success=False, error=str(e)
             )
             return format_error(e, "pull_stack")
 
     @mcp.tool()
     @secure_tool("restart_stack")
     async def restart_stack(
-        stack: str,
-        target: str = "local",
-        dry_run: bool = False
+        stack: str, target: str = "local", dry_run: bool = False
     ) -> dict:
         """Restart a Docker stack.
 
@@ -220,15 +195,18 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
-            validation_mode = ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
+            validation_mode = (
+                ValidationMode.DRY_RUN if dry_run else ValidationMode.STRICT
+            )
 
             await policy_gate.authorize(
                 operation="restart_stack",
                 target=target,
                 tier=OperationTier.CONTROL,
                 parameters={"stack": stack},
-                mode=validation_mode
+                mode=validation_mode,
             )
 
             if dry_run:
@@ -238,7 +216,7 @@ def register_tools(mcp: FastMCP):
                     "operation": "restart_stack",
                     "stack": stack,
                     "target": target,
-                    "message": "Operation would be executed in non-dry-run mode"
+                    "message": "Operation would be executed in non-dry-run mode",
                 }
 
             # Get executor for target
@@ -246,16 +224,14 @@ def register_tools(mcp: FastMCP):
 
             # Execute stack restart
             result = await executor.execute(
-                command="restart_stack",
-                parameters={"stack": stack},
-                timeout=180
+                command="restart_stack", parameters={"stack": stack}, timeout=180
             )
 
             audit.log_operation(
                 operation="restart_stack",
                 target=target,
                 success=result.success,
-                parameters={"stack": stack}
+                parameters={"stack": stack},
             )
 
             if result.success:
@@ -264,7 +240,7 @@ def register_tools(mcp: FastMCP):
                     "operation": "restart_stack",
                     "stack": stack,
                     "target": target,
-                    "output": result.output
+                    "output": result.output,
                 }
             else:
                 return {
@@ -272,24 +248,19 @@ def register_tools(mcp: FastMCP):
                     "operation": "restart_stack",
                     "stack": stack,
                     "target": target,
-                    "error": result.error
+                    "error": result.error,
                 }
 
         except Exception as e:
             audit.log_operation(
-                operation="restart_stack",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="restart_stack", target=target, success=False, error=str(e)
             )
             return format_error(e, "restart_stack")
 
     @mcp.tool()
     @secure_tool("get_stack_status")
     async def get_stack_status(
-        stack: str,
-        target: str = "local",
-        format: Literal["json", "toon"] = "toon"
+        stack: str, target: str = "local", format: Literal["json", "toon"] = "toon"
     ) -> Union[dict, str]:
         """Get status of a Docker stack.
 
@@ -301,12 +272,13 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="get_stack_status",
                 target=target,
                 tier=OperationTier.OBSERVE,
-                parameters={"stack": stack}
+                parameters={"stack": stack},
             )
 
             # Get executor for target
@@ -314,9 +286,7 @@ def register_tools(mcp: FastMCP):
 
             # Execute stack status query
             result = await executor.execute(
-                command="stack_status",
-                parameters={"stack": stack},
-                timeout=60
+                command="stack_status", parameters={"stack": stack}, timeout=60
             )
 
             if result.success:
@@ -326,18 +296,14 @@ def register_tools(mcp: FastMCP):
 
         except Exception as e:
             audit.log_operation(
-                operation="get_stack_status",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="get_stack_status", target=target, success=False, error=str(e)
             )
             return format_error(e, "get_stack_status")
 
     @mcp.tool()
     @secure_tool("list_stacks")
     async def list_stacks(
-        target: str = "local",
-        format: Literal["json", "toon"] = "toon"
+        target: str = "local", format: Literal["json", "toon"] = "toon"
     ) -> Union[dict, str]:
         """List all Docker stacks on the target system.
 
@@ -348,11 +314,10 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
             await policy_gate.authorize(
-                operation="list_stacks",
-                target=target,
-                tier=OperationTier.OBSERVE
+                operation="list_stacks", target=target, tier=OperationTier.OBSERVE
             )
 
             # Get executor for target
@@ -360,9 +325,7 @@ def register_tools(mcp: FastMCP):
 
             # Execute stack list query
             result = await executor.execute(
-                command="list_stacks",
-                parameters={},
-                timeout=30
+                command="list_stacks", parameters={}, timeout=30
             )
 
             if result.success:
@@ -372,10 +335,7 @@ def register_tools(mcp: FastMCP):
 
         except Exception as e:
             audit.log_operation(
-                operation="list_stacks",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="list_stacks", target=target, success=False, error=str(e)
             )
             return format_error(e, "list_stacks")
 
@@ -388,7 +348,7 @@ def register_tools(mcp: FastMCP):
         target: str = "local",
         dry_run: bool = False,
         force: bool = False,
-        format: Literal["json", "toon"] = "toon"
+        format: Literal["json", "toon"] = "toon",
     ) -> Union[dict, str]:
         """Perform stack operations (backward compatibility).
 
@@ -403,19 +363,31 @@ def register_tools(mcp: FastMCP):
         try:
             if action == "deploy":
                 if not stack_name:
-                    return {"success": False, "error": "Stack name required for deploy operation"}
+                    return {
+                        "success": False,
+                        "error": "Stack name required for deploy operation",
+                    }
                 return await deploy_stack(target, stack_name, dry_run, force)
             elif action == "pull":
                 if not stack_name:
-                    return {"success": False, "error": "Stack name required for pull operation"}
+                    return {
+                        "success": False,
+                        "error": "Stack name required for pull operation",
+                    }
                 return await pull_stack(target, stack_name, dry_run)
             elif action == "restart":
                 if not stack_name:
-                    return {"success": False, "error": "Stack name required for restart operation"}
+                    return {
+                        "success": False,
+                        "error": "Stack name required for restart operation",
+                    }
                 return await restart_stack(target, stack_name, dry_run)
             elif action == "status":
                 if not stack_name:
-                    return {"success": False, "error": "Stack name required for status operation"}
+                    return {
+                        "success": False,
+                        "error": "Stack name required for status operation",
+                    }
                 return await get_stack_status(target, stack_name, format)
             elif action == "list":
                 return await list_stacks(target, format)
@@ -424,10 +396,7 @@ def register_tools(mcp: FastMCP):
 
         except Exception as e:
             audit.log_operation(
-                operation="stack_operations",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="stack_operations", target=target, success=False, error=str(e)
             )
             return format_error(e, "stack_operations")
 

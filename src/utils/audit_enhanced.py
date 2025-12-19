@@ -203,7 +203,7 @@ class StructuredAuditLogger:
     def _write_json_event(self, event: AuditEvent):
         """Write event as JSON."""
         # In a real implementation, this would write to JSON files/databases
-        event_json = {
+        {
             "id": event.id,
             "timestamp": event.timestamp.isoformat(),
             "event_type": event.event_type,
@@ -225,7 +225,7 @@ class StructuredAuditLogger:
     def _write_structured_event(self, event: AuditEvent):
         """Write event in structured format."""
         # Structured logging format (e.g., for log aggregators)
-        structured_log = {
+        {
             "audit.event_id": event.id,
             "audit.timestamp": event.timestamp.isoformat(),
             "audit.type": event.event_type,

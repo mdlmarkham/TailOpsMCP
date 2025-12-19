@@ -14,12 +14,28 @@ from datetime import datetime
 from urllib.parse import urljoin
 
 from src.models.proxmox_models import (
-    ProxmoxAPICredentials, ProxmoxContainer, ProxmoxVM, ProxmoxSnapshot,
-    ProxmoxBackup, ProxmoxStorage, ProxmoxNode,
-    ContainerConfig, VMConfig, CloneConfig, BackupConfig,
-    ContainerCreationResult, CloneResult, DeleteResult, SnapshotResult,
-    BackupResult, RestoreResult, UpdateResult, StartResult, StopResult,
-    RebootResult, OperationResult
+    ProxmoxAPICredentials,
+    ProxmoxContainer,
+    ProxmoxVM,
+    ProxmoxSnapshot,
+    ProxmoxBackup,
+    ProxmoxStorage,
+    ProxmoxNode,
+    ContainerConfig,
+    VMConfig,
+    CloneConfig,
+    BackupConfig,
+    ContainerCreationResult,
+    CloneResult,
+    DeleteResult,
+    SnapshotResult,
+    BackupResult,
+    RestoreResult,
+    UpdateResult,
+    StartResult,
+    StopResult,
+    RebootResult,
+    OperationResult,
 )
 from src.utils.retry import retry_with_backoff
 
@@ -28,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 class ProxmoxAPIError(Exception):
     """Proxmox API exception."""
+
     pass
 
 
@@ -66,9 +83,7 @@ class ProxmoxAPI:
         """Get or create HTTP session."""
         if not self._session:
             connector = aiohttp.TCPConnector(
-                verify_ssl=self.credentials.verify_ssl,
-                limit=10,
-                limit_per_host=5
+                verify_ssl=self.credentials.verify_ssl, limit=10, limit_per_host=5
             )
 
             timeout = aiohttp.ClientTimeout(total=self.credentials.timeout)
@@ -78,8 +93,8 @@ class ProxmoxAPI:
                 timeout=timeout,
                 headers={
                     "Content-Type": "application/json",
-                    "User-Agent": "TailOpsMCP-ProxmoxAPI/1.0"
-                }
+                    "User-Agent": "TailOpsMCP-ProxmoxAPI/1.0",
+                },
             )
 
         return self._session
@@ -94,7 +109,9 @@ class ProxmoxAPI:
             # Authenticate with Proxmox API
             await self._authenticate()
             self._is_authenticated = True
-            logger.info(f"Successfully connected to Proxmox API at {self.credentials.host}")
+            logger.info(
+                f"Successfully connected to Proxmox API at {self.credentials.host}"
+            )
             return True
         except Exception as e:
             logger.error(f"Failed to connect to Proxmox API: {e}")
@@ -138,9 +155,9 @@ class ProxmoxAPI:
                     data={
                         "version": version.get("version"),
                         "release": version.get("release"),
-                        "keyboard": version.get("keyboard")
+                        "keyboard": version.get("keyboard"),
                     },
-                    message="Proxmox API connection test successful"
+                    message="Proxmox API connection test successful",
                 )
             else:
                 return OperationResult.failure("No response from API")
@@ -161,7 +178,7 @@ class ProxmoxAPI:
         """Authenticate using API token."""
         auth_data = {
             "username": self.credentials.username,
-            "password": f"{self.credentials.token_name}={self.credentials.token}"
+            "password": f"{self.credentials.token_name}={self.credentials.token}",
         }
 
         response = await self._make_request("POST", "/access/ticket", auth_data)
@@ -180,7 +197,7 @@ class ProxmoxAPI:
 
         auth_data = {
             "username": self.credentials.username,
-            "password": self.credentials.password
+            "password": self.credentials.password,
         }
 
         response = await self._make_request("POST", "/access/ticket", auth_data)
@@ -193,9 +210,13 @@ class ProxmoxAPI:
             raise ProxmoxAPIError("Password authentication failed")
 
     @retry_with_backoff(max_retries=3, base_delay=1, exceptions=(ProxmoxAPIError,))
-    async def _make_request(self, method: str, endpoint: str,
-                          data: Optional[Dict[str, Any]] = None,
-                          params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    async def _make_request(
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Dict[str, Any]]:
         """Make HTTP request to Proxmox API.
 
         Args:
@@ -220,13 +241,8 @@ class ProxmoxAPI:
 
         try:
             async with self.session.request(
-                method=method,
-                url=url,
-                headers=headers,
-                json=data,
-                params=params
+                method=method, url=url, headers=headers, json=data, params=params
             ) as response:
-
                 if response.status == 401:
                     # Re-authenticate on 401
                     self._is_authenticated = False
@@ -268,12 +284,15 @@ class ProxmoxAPI:
                     if vmid:
                         # Get detailed container configuration
                         config_response = await self._make_request(
-                            "GET", f"/nodes/{container_data.get('node')}/lxc/{vmid}/config"
+                            "GET",
+                            f"/nodes/{container_data.get('node')}/lxc/{vmid}/config",
                         )
 
                         if config_response and "data" in config_response:
                             config_data = {**container_data, **config_response["data"]}
-                            container = ProxmoxContainer.from_api_response(vmid, config_data)
+                            container = ProxmoxContainer.from_api_response(
+                                vmid, config_data
+                            )
                             containers.append(container)
 
                 return containers
@@ -322,8 +341,9 @@ class ProxmoxAPI:
             logger.error(f"Failed to get container {vmid}: {e}")
             return None
 
-    async def create_container(self, config: ContainerConfig,
-                             node: Optional[str] = None) -> ContainerCreationResult:
+    async def create_container(
+        self, config: ContainerConfig, node: Optional[str] = None
+    ) -> ContainerCreationResult:
         """Create a new LXC container.
 
         Args:
@@ -342,7 +362,7 @@ class ProxmoxAPI:
                 return ContainerCreationResult(
                     vmid=0,
                     status="failed",
-                    message="No available nodes for container creation"
+                    message="No available nodes for container creation",
                 )
 
             # Generate VMID if not specified
@@ -351,9 +371,7 @@ class ProxmoxAPI:
 
             if not config.vmid:
                 return ContainerCreationResult(
-                    vmid=0,
-                    status="failed",
-                    message="Failed to allocate VMID"
+                    vmid=0, status="failed", message="Failed to allocate VMID"
                 )
 
             # Prepare container creation request
@@ -377,38 +395,35 @@ class ProxmoxAPI:
                             vmid=config.vmid,
                             task_id=task_id,
                             status="created",
-                            message="Container created successfully"
+                            message="Container created successfully",
                         )
                     else:
                         return ContainerCreationResult(
                             vmid=config.vmid,
                             task_id=task_id,
                             status="failed",
-                            message="Container creation task failed"
+                            message="Container creation task failed",
                         )
                 else:
                     return ContainerCreationResult(
                         vmid=config.vmid,
                         status="created",
-                        message="Container created (no task ID)"
+                        message="Container created (no task ID)",
                     )
             else:
                 return ContainerCreationResult(
                     vmid=config.vmid,
                     status="failed",
-                    message="Failed to create container"
+                    message="Failed to create container",
                 )
 
         except Exception as e:
             logger.error(f"Failed to create container: {e}")
-            return ContainerCreationResult(
-                vmid=0,
-                status="failed",
-                message=str(e)
-            )
+            return ContainerCreationResult(vmid=0, status="failed", message=str(e))
 
-    async def clone_container(self, source_vmid: int,
-                            config: CloneConfig) -> CloneResult:
+    async def clone_container(
+        self, source_vmid: int, config: CloneConfig
+    ) -> CloneResult:
         """Clone a container.
 
         Args:
@@ -425,7 +440,7 @@ class ProxmoxAPI:
                 return CloneResult(
                     vmid=0,
                     status="failed",
-                    message=f"Source container {source_vmid} not found"
+                    message=f"Source container {source_vmid} not found",
                 )
 
             # Generate VMID if not specified
@@ -434,9 +449,7 @@ class ProxmoxAPI:
 
             if not config.newid:
                 return CloneResult(
-                    vmid=0,
-                    status="failed",
-                    message="Failed to allocate VMID for clone"
+                    vmid=0, status="failed", message="Failed to allocate VMID for clone"
                 )
 
             # Prepare clone request
@@ -445,8 +458,9 @@ class ProxmoxAPI:
 
             # Clone container
             response = await self._make_request(
-                "POST", f"/nodes/{source_container.node}/lxc/{source_vmid}/clone",
-                clone_data
+                "POST",
+                f"/nodes/{source_container.node}/lxc/{source_vmid}/clone",
+                clone_data,
             )
 
             if response and "data" in response:
@@ -454,42 +468,40 @@ class ProxmoxAPI:
 
                 # Monitor task completion
                 if task_id:
-                    task_result = await self._monitor_task(source_container.node, task_id)
+                    task_result = await self._monitor_task(
+                        source_container.node, task_id
+                    )
 
                     if task_result:
                         return CloneResult(
                             vmid=config.newid,
                             task_id=task_id,
                             status="cloned",
-                            message="Container cloned successfully"
+                            message="Container cloned successfully",
                         )
                     else:
                         return CloneResult(
                             vmid=config.newid,
                             task_id=task_id,
                             status="failed",
-                            message="Container clone task failed"
+                            message="Container clone task failed",
                         )
                 else:
                     return CloneResult(
                         vmid=config.newid,
                         status="cloned",
-                        message="Container cloned (no task ID)"
+                        message="Container cloned (no task ID)",
                     )
             else:
                 return CloneResult(
                     vmid=config.newid,
                     status="failed",
-                    message="Failed to clone container"
+                    message="Failed to clone container",
                 )
 
         except Exception as e:
             logger.error(f"Failed to clone container {source_vmid}: {e}")
-            return CloneResult(
-                vmid=0,
-                status="failed",
-                message=str(e)
-            )
+            return CloneResult(vmid=0, status="failed", message=str(e))
 
     async def delete_container(self, vmid: int) -> DeleteResult:
         """Delete a container.
@@ -505,8 +517,7 @@ class ProxmoxAPI:
             container = await self.get_container(vmid)
             if not container:
                 return DeleteResult(
-                    status="failed",
-                    message=f"Container {vmid} not found"
+                    status="failed", message=f"Container {vmid} not found"
                 )
 
             # Stop container if running
@@ -527,31 +538,24 @@ class ProxmoxAPI:
 
                     if task_result:
                         return DeleteResult(
-                            status="deleted",
-                            message="Container deleted successfully"
+                            status="deleted", message="Container deleted successfully"
                         )
                     else:
                         return DeleteResult(
-                            status="failed",
-                            message="Container deletion task failed"
+                            status="failed", message="Container deletion task failed"
                         )
                 else:
                     return DeleteResult(
-                        status="deleted",
-                        message="Container deleted (no task ID)"
+                        status="deleted", message="Container deleted (no task ID)"
                     )
             else:
                 return DeleteResult(
-                    status="failed",
-                    message="Failed to delete container"
+                    status="failed", message="Failed to delete container"
                 )
 
         except Exception as e:
             logger.error(f"Failed to delete container {vmid}: {e}")
-            return DeleteResult(
-                status="failed",
-                message=str(e)
-            )
+            return DeleteResult(status="failed", message=str(e))
 
     # VM Management
 
@@ -586,8 +590,9 @@ class ProxmoxAPI:
             logger.error(f"Failed to list VMs: {e}")
             return []
 
-    async def create_vm(self, config: VMConfig,
-                      node: Optional[str] = None) -> ContainerCreationResult:
+    async def create_vm(
+        self, config: VMConfig, node: Optional[str] = None
+    ) -> ContainerCreationResult:
         """Create a new QEMU VM.
 
         Args:
@@ -606,7 +611,7 @@ class ProxmoxAPI:
                 return ContainerCreationResult(
                     vmid=0,
                     status="failed",
-                    message="No available nodes for VM creation"
+                    message="No available nodes for VM creation",
                 )
 
             # Generate VMID if not specified
@@ -615,9 +620,7 @@ class ProxmoxAPI:
 
             if not config.vmid:
                 return ContainerCreationResult(
-                    vmid=0,
-                    status="failed",
-                    message="Failed to allocate VMID"
+                    vmid=0, status="failed", message="Failed to allocate VMID"
                 )
 
             # Prepare VM creation request
@@ -641,35 +644,29 @@ class ProxmoxAPI:
                             vmid=config.vmid,
                             task_id=task_id,
                             status="created",
-                            message="VM created successfully"
+                            message="VM created successfully",
                         )
                     else:
                         return ContainerCreationResult(
                             vmid=config.vmid,
                             task_id=task_id,
                             status="failed",
-                            message="VM creation task failed"
+                            message="VM creation task failed",
                         )
                 else:
                     return ContainerCreationResult(
                         vmid=config.vmid,
                         status="created",
-                        message="VM created (no task ID)"
+                        message="VM created (no task ID)",
                     )
             else:
                 return ContainerCreationResult(
-                    vmid=config.vmid,
-                    status="failed",
-                    message="Failed to create VM"
+                    vmid=config.vmid, status="failed", message="Failed to create VM"
                 )
 
         except Exception as e:
             logger.error(f"Failed to create VM: {e}")
-            return ContainerCreationResult(
-                vmid=0,
-                status="failed",
-                message=str(e)
-            )
+            return ContainerCreationResult(vmid=0, status="failed", message=str(e))
 
     # Container/VM Control Operations
 
@@ -686,8 +683,7 @@ class ProxmoxAPI:
             container = await self.get_container(vmid)
             if not container:
                 return StartResult(
-                    status="failed",
-                    message=f"Container {vmid} not found"
+                    status="failed", message=f"Container {vmid} not found"
                 )
 
             response = await self._make_request(
@@ -704,31 +700,24 @@ class ProxmoxAPI:
                         return StartResult(
                             task_id=task_id,
                             status="started",
-                            message="Container started successfully"
+                            message="Container started successfully",
                         )
                     else:
                         return StartResult(
                             task_id=task_id,
                             status="failed",
-                            message="Container start task failed"
+                            message="Container start task failed",
                         )
                 else:
                     return StartResult(
-                        status="started",
-                        message="Container started (no task ID)"
+                        status="started", message="Container started (no task ID)"
                     )
             else:
-                return StartResult(
-                    status="failed",
-                    message="Failed to start container"
-                )
+                return StartResult(status="failed", message="Failed to start container")
 
         except Exception as e:
             logger.error(f"Failed to start container {vmid}: {e}")
-            return StartResult(
-                status="failed",
-                message=str(e)
-            )
+            return StartResult(status="failed", message=str(e))
 
     async def stop_container(self, vmid: int, force: bool = False) -> StopResult:
         """Stop a container.
@@ -744,8 +733,7 @@ class ProxmoxAPI:
             container = await self.get_container(vmid)
             if not container:
                 return StopResult(
-                    status="failed",
-                    message=f"Container {vmid} not found"
+                    status="failed", message=f"Container {vmid} not found"
                 )
 
             endpoint = f"/nodes/{container.node}/lxc/{vmid}/status/stop"
@@ -764,31 +752,24 @@ class ProxmoxAPI:
                         return StopResult(
                             task_id=task_id,
                             status="stopped",
-                            message="Container stopped successfully"
+                            message="Container stopped successfully",
                         )
                     else:
                         return StopResult(
                             task_id=task_id,
                             status="failed",
-                            message="Container stop task failed"
+                            message="Container stop task failed",
                         )
                 else:
                     return StopResult(
-                        status="stopped",
-                        message="Container stopped (no task ID)"
+                        status="stopped", message="Container stopped (no task ID)"
                     )
             else:
-                return StopResult(
-                    status="failed",
-                    message="Failed to stop container"
-                )
+                return StopResult(status="failed", message="Failed to stop container")
 
         except Exception as e:
             logger.error(f"Failed to stop container {vmid}: {e}")
-            return StopResult(
-                status="failed",
-                message=str(e)
-            )
+            return StopResult(status="failed", message=str(e))
 
     async def reboot_container(self, vmid: int) -> RebootResult:
         """Reboot a container.
@@ -803,8 +784,7 @@ class ProxmoxAPI:
             container = await self.get_container(vmid)
             if not container:
                 return RebootResult(
-                    status="failed",
-                    message=f"Container {vmid} not found"
+                    status="failed", message=f"Container {vmid} not found"
                 )
 
             response = await self._make_request(
@@ -821,36 +801,32 @@ class ProxmoxAPI:
                         return RebootResult(
                             task_id=task_id,
                             status="rebooted",
-                            message="Container rebooted successfully"
+                            message="Container rebooted successfully",
                         )
                     else:
                         return RebootResult(
                             task_id=task_id,
                             status="failed",
-                            message="Container reboot task failed"
+                            message="Container reboot task failed",
                         )
                 else:
                     return RebootResult(
-                        status="rebooted",
-                        message="Container rebooted (no task ID)"
+                        status="rebooted", message="Container rebooted (no task ID)"
                     )
             else:
                 return RebootResult(
-                    status="failed",
-                    message="Failed to reboot container"
+                    status="failed", message="Failed to reboot container"
                 )
 
         except Exception as e:
             logger.error(f"Failed to reboot container {vmid}: {e}")
-            return RebootResult(
-                status="failed",
-                message=str(e)
-            )
+            return RebootResult(status="failed", message=str(e))
 
     # Snapshot Management
 
-    async def create_snapshot(self, vmid: int, snapshot_name: str,
-                            description: Optional[str] = None) -> SnapshotResult:
+    async def create_snapshot(
+        self, vmid: int, snapshot_name: str, description: Optional[str] = None
+    ) -> SnapshotResult:
         """Create a snapshot.
 
         Args:
@@ -870,8 +846,9 @@ class ProxmoxAPI:
                     snapshot_data["description"] = description
 
                 response = await self._make_request(
-                    "POST", f"/nodes/{container.node}/lxc/{vmid}/snapshot",
-                    snapshot_data
+                    "POST",
+                    f"/nodes/{container.node}/lxc/{vmid}/snapshot",
+                    snapshot_data,
                 )
             else:
                 # Try as VM
@@ -880,7 +857,7 @@ class ProxmoxAPI:
                     return SnapshotResult(
                         name=snapshot_name,
                         status="failed",
-                        message=f"Resource {vmid} not found"
+                        message=f"Resource {vmid} not found",
                     )
 
                 snapshot_data = {"name": snapshot_name}
@@ -888,50 +865,47 @@ class ProxmoxAPI:
                     snapshot_data["description"] = description
 
                 response = await self._make_request(
-                    "POST", f"/nodes/{vm.node}/qemu/{vmid}/snapshot",
-                    snapshot_data
+                    "POST", f"/nodes/{vm.node}/qemu/{vmid}/snapshot", snapshot_data
                 )
 
             if response and "data" in response:
                 task_id = response["data"].get("upid")
 
                 if task_id:
-                    task_result = await self._monitor_task(container.node if container else vm.node, task_id)
+                    task_result = await self._monitor_task(
+                        container.node if container else vm.node, task_id
+                    )
 
                     if task_result:
                         return SnapshotResult(
                             name=snapshot_name,
                             task_id=task_id,
                             status="created",
-                            message="Snapshot created successfully"
+                            message="Snapshot created successfully",
                         )
                     else:
                         return SnapshotResult(
                             name=snapshot_name,
                             task_id=task_id,
                             status="failed",
-                            message="Snapshot creation task failed"
+                            message="Snapshot creation task failed",
                         )
                 else:
                     return SnapshotResult(
                         name=snapshot_name,
                         status="created",
-                        message="Snapshot created (no task ID)"
+                        message="Snapshot created (no task ID)",
                     )
             else:
                 return SnapshotResult(
                     name=snapshot_name,
                     status="failed",
-                    message="Failed to create snapshot"
+                    message="Failed to create snapshot",
                 )
 
         except Exception as e:
             logger.error(f"Failed to create snapshot {snapshot_name} for {vmid}: {e}")
-            return SnapshotResult(
-                name=snapshot_name,
-                status="failed",
-                message=str(e)
-            )
+            return SnapshotResult(name=snapshot_name, status="failed", message=str(e))
 
     async def list_snapshots(self, vmid: int) -> List[ProxmoxSnapshot]:
         """List snapshots for a VM or container.
@@ -987,15 +961,15 @@ class ProxmoxAPI:
             if container:
                 # LXC container
                 response = await self._make_request(
-                    "DELETE", f"/nodes/{container.node}/lxc/{vmid}/snapshot/{snapshot_name}"
+                    "DELETE",
+                    f"/nodes/{container.node}/lxc/{vmid}/snapshot/{snapshot_name}",
                 )
             else:
                 # Try as VM
                 vm = await self._get_vm(vmid)
                 if not vm:
                     return DeleteResult(
-                        status="failed",
-                        message=f"Resource {vmid} not found"
+                        status="failed", message=f"Resource {vmid} not found"
                     )
 
                 response = await self._make_request(
@@ -1006,38 +980,34 @@ class ProxmoxAPI:
                 task_id = response["data"].get("upid")
 
                 if task_id:
-                    task_result = await self._monitor_task(container.node if container else vm.node, task_id)
+                    task_result = await self._monitor_task(
+                        container.node if container else vm.node, task_id
+                    )
 
                     if task_result:
                         return DeleteResult(
-                            status="deleted",
-                            message="Snapshot deleted successfully"
+                            status="deleted", message="Snapshot deleted successfully"
                         )
                     else:
                         return DeleteResult(
-                            status="failed",
-                            message="Snapshot deletion task failed"
+                            status="failed", message="Snapshot deletion task failed"
                         )
                 else:
                     return DeleteResult(
-                        status="deleted",
-                        message="Snapshot deleted (no task ID)"
+                        status="deleted", message="Snapshot deleted (no task ID)"
                     )
             else:
                 return DeleteResult(
-                    status="failed",
-                    message="Failed to delete snapshot"
+                    status="failed", message="Failed to delete snapshot"
                 )
 
         except Exception as e:
             logger.error(f"Failed to delete snapshot {snapshot_name} for {vmid}: {e}")
-            return DeleteResult(
-                status="failed",
-                message=str(e)
-            )
+            return DeleteResult(status="failed", message=str(e))
 
-    async def restore_snapshot(self, vmid: int, snapshot_name: str,
-                             rollback: bool = False) -> RestoreResult:
+    async def restore_snapshot(
+        self, vmid: int, snapshot_name: str, rollback: bool = False
+    ) -> RestoreResult:
         """Restore a snapshot.
 
         Args:
@@ -1057,16 +1027,16 @@ class ProxmoxAPI:
                     restore_data["rollback"] = 1
 
                 response = await self._make_request(
-                    "POST", f"/nodes/{container.node}/lxc/{vmid}/snapshot/{snapshot_name}/rollback",
-                    restore_data
+                    "POST",
+                    f"/nodes/{container.node}/lxc/{vmid}/snapshot/{snapshot_name}/rollback",
+                    restore_data,
                 )
             else:
                 # Try as VM
                 vm = await self._get_vm(vmid)
                 if not vm:
                     return RestoreResult(
-                        status="failed",
-                        message=f"Resource {vmid} not found"
+                        status="failed", message=f"Resource {vmid} not found"
                     )
 
                 restore_data = {}
@@ -1074,49 +1044,49 @@ class ProxmoxAPI:
                     restore_data["rollback"] = 1
 
                 response = await self._make_request(
-                    "POST", f"/nodes/{vm.node}/qemu/{vmid}/snapshot/{snapshot_name}/rollback",
-                    restore_data
+                    "POST",
+                    f"/nodes/{vm.node}/qemu/{vmid}/snapshot/{snapshot_name}/rollback",
+                    restore_data,
                 )
 
             if response and "data" in response:
                 task_id = response["data"].get("upid")
 
                 if task_id:
-                    task_result = await self._monitor_task(container.node if container else vm.node, task_id)
+                    task_result = await self._monitor_task(
+                        container.node if container else vm.node, task_id
+                    )
 
                     if task_result:
                         return RestoreResult(
                             task_id=task_id,
                             status="restored",
-                            message="Snapshot restored successfully"
+                            message="Snapshot restored successfully",
                         )
                     else:
                         return RestoreResult(
                             task_id=task_id,
                             status="failed",
-                            message="Snapshot restore task failed"
+                            message="Snapshot restore task failed",
                         )
                 else:
                     return RestoreResult(
-                        status="restored",
-                        message="Snapshot restored (no task ID)"
+                        status="restored", message="Snapshot restored (no task ID)"
                     )
             else:
                 return RestoreResult(
-                    status="failed",
-                    message="Failed to restore snapshot"
+                    status="failed", message="Failed to restore snapshot"
                 )
 
         except Exception as e:
             logger.error(f"Failed to restore snapshot {snapshot_name} for {vmid}: {e}")
-            return RestoreResult(
-                status="failed",
-                message=str(e)
-            )
+            return RestoreResult(status="failed", message=str(e))
 
     # Backup Management
 
-    async def create_backup(self, vmid: int, backup_config: BackupConfig) -> BackupResult:
+    async def create_backup(
+        self, vmid: int, backup_config: BackupConfig
+    ) -> BackupResult:
         """Create a backup.
 
         Args:
@@ -1138,7 +1108,7 @@ class ProxmoxAPI:
                         filename="",
                         size=0,
                         status="failed",
-                        message=f"Resource {vmid} not found"
+                        message=f"Resource {vmid} not found",
                     )
                 resource_node = vm.node
 
@@ -1148,8 +1118,7 @@ class ProxmoxAPI:
 
             # Create backup
             response = await self._make_request(
-                "POST", f"/nodes/{resource_node}/vzdump",
-                backup_data
+                "POST", f"/nodes/{resource_node}/vzdump", backup_data
             )
 
             if response and "data" in response:
@@ -1165,7 +1134,7 @@ class ProxmoxAPI:
                             size=0,  # Will be updated after completion
                             task_id=task_id,
                             status="completed",
-                            message="Backup created successfully"
+                            message="Backup created successfully",
                         )
                     else:
                         return BackupResult(
@@ -1174,7 +1143,7 @@ class ProxmoxAPI:
                             size=0,
                             task_id=task_id,
                             status="failed",
-                            message="Backup creation task failed"
+                            message="Backup creation task failed",
                         )
                 else:
                     return BackupResult(
@@ -1182,7 +1151,7 @@ class ProxmoxAPI:
                         filename="",
                         size=0,
                         status="completed",
-                        message="Backup created (no task ID)"
+                        message="Backup created (no task ID)",
                     )
             else:
                 return BackupResult(
@@ -1190,21 +1159,18 @@ class ProxmoxAPI:
                     filename="",
                     size=0,
                     status="failed",
-                    message="Failed to create backup"
+                    message="Failed to create backup",
                 )
 
         except Exception as e:
             logger.error(f"Failed to create backup for {vmid}: {e}")
             return BackupResult(
-                backup_id="",
-                filename="",
-                size=0,
-                status="failed",
-                message=str(e)
+                backup_id="", filename="", size=0, status="failed", message=str(e)
             )
 
-    async def list_backups(self, node: Optional[str] = None,
-                         storage: Optional[str] = None) -> List[ProxmoxBackup]:
+    async def list_backups(
+        self, node: Optional[str] = None, storage: Optional[str] = None
+    ) -> List[ProxmoxBackup]:
         """List backups.
 
         Args:
@@ -1242,7 +1208,9 @@ class ProxmoxAPI:
             logger.error(f"Failed to list backups: {e}")
             return []
 
-    async def restore_backup(self, backup_id: str, target_config: Dict[str, Any]) -> RestoreResult:
+    async def restore_backup(
+        self, backup_id: str, target_config: Dict[str, Any]
+    ) -> RestoreResult:
         """Restore from backup.
 
         Args:
@@ -1257,11 +1225,11 @@ class ProxmoxAPI:
             # Format: storage:node/vzdump-ctid-vmid-*.tar.gz
 
             # For now, implement basic restore logic
-            restore_data = {
+            {
                 "backup": backup_id,
                 "target_vmid": target_config.get("vmid"),
                 "storage": target_config.get("storage"),
-                "node": target_config.get("node")
+                "node": target_config.get("node"),
             }
 
             # This would need more implementation based on Proxmox API
@@ -1269,20 +1237,18 @@ class ProxmoxAPI:
 
             return RestoreResult(
                 status="completed",
-                message="Backup restore functionality needs implementation"
+                message="Backup restore functionality needs implementation",
             )
 
         except Exception as e:
             logger.error(f"Failed to restore backup {backup_id}: {e}")
-            return RestoreResult(
-                status="failed",
-                message=str(e)
-            )
+            return RestoreResult(status="failed", message=str(e))
 
     # Resource Management
 
-    async def update_container_resources(self, vmid: int,
-                                       resources: Dict[str, Any]) -> UpdateResult:
+    async def update_container_resources(
+        self, vmid: int, resources: Dict[str, Any]
+    ) -> UpdateResult:
         """Update container resource allocation.
 
         Args:
@@ -1296,32 +1262,25 @@ class ProxmoxAPI:
             container = await self.get_container(vmid)
             if not container:
                 return UpdateResult(
-                    status="failed",
-                    message=f"Container {vmid} not found"
+                    status="failed", message=f"Container {vmid} not found"
                 )
 
             response = await self._make_request(
-                "PUT", f"/nodes/{container.node}/lxc/{vmid}/config",
-                resources
+                "PUT", f"/nodes/{container.node}/lxc/{vmid}/config", resources
             )
 
             if response:
                 return UpdateResult(
-                    status="updated",
-                    message="Container resources updated successfully"
+                    status="updated", message="Container resources updated successfully"
                 )
             else:
                 return UpdateResult(
-                    status="failed",
-                    message="Failed to update container resources"
+                    status="failed", message="Failed to update container resources"
                 )
 
         except Exception as e:
             logger.error(f"Failed to update container resources for {vmid}: {e}")
-            return UpdateResult(
-                status="failed",
-                message=str(e)
-            )
+            return UpdateResult(status="failed", message=str(e))
 
     async def get_container_status(self, vmid: int) -> Dict[str, Any]:
         """Get container status information.
@@ -1346,7 +1305,7 @@ class ProxmoxAPI:
                 "cpu": container.cpu,
                 "memory": container.memory,
                 "disk": container.disk,
-                "cores": container.cores
+                "cores": container.cores,
             }
 
         except Exception as e:
@@ -1431,8 +1390,7 @@ class ProxmoxAPI:
             logger.error(f"Failed to allocate VMID: {e}")
             return None
 
-    async def _monitor_task(self, node: str, task_id: str,
-                          timeout: int = 300) -> bool:
+    async def _monitor_task(self, node: str, task_id: str, timeout: int = 300) -> bool:
         """Monitor task completion.
 
         Args:

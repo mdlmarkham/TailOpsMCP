@@ -77,7 +77,7 @@ class TestPerformance:
                 "targets": mock_targets,
             }
 
-            result = await inventory_service.run_full_discovery()
+            await inventory_service.run_full_discovery()
 
             performance_monitor["end_time"] = time.time()
             execution_time = (
@@ -432,9 +432,9 @@ class TestPerformance:
         memory_growth = final_memory - initial_memory
 
         # Memory growth should be minimal (less than 10MB)
-        assert memory_growth < 10, (
-            f"Potential memory leak detected: {memory_growth}MB growth"
-        )
+        assert (
+            memory_growth < 10
+        ), f"Potential memory leak detected: {memory_growth}MB growth"
 
         # Check memory usage stays within limits
         max_memory = max(peak_memory)
@@ -772,9 +772,9 @@ def benchmark_performance(operation_name: str, threshold_ms: float = 1000):
             )
 
             # Assert performance threshold
-            assert execution_time_ms <= threshold_ms, (
-                f"Performance threshold exceeded: {execution_time_ms:.2f}ms > {threshold_ms}ms"
-            )
+            assert (
+                execution_time_ms <= threshold_ms
+            ), f"Performance threshold exceeded: {execution_time_ms:.2f}ms > {threshold_ms}ms"
 
             return result
 
@@ -802,9 +802,9 @@ async def benchmark_async_performance(operation_name: str, threshold_ms: float =
             )
 
             # Assert performance threshold
-            assert execution_time_ms <= threshold_ms, (
-                f"Performance threshold exceeded: {execution_time_ms:.2f}ms > {threshold_ms}ms"
-            )
+            assert (
+                execution_time_ms <= threshold_ms
+            ), f"Performance threshold exceeded: {execution_time_ms:.2f}ms > {threshold_ms}ms"
 
             return result
 

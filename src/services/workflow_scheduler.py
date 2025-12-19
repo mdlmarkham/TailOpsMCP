@@ -416,7 +416,7 @@ class WorkflowScheduler:
         """Emit scheduler event."""
         try:
             # Create system event
-            event = SystemEvent(
+            SystemEvent(
                 event_id=str(uuid.uuid4()),
                 event_type=EventType.WORKFLOW,
                 severity=EventSeverity.INFO,
@@ -522,7 +522,7 @@ class ScheduleManager:
             next_runs = []
 
             # Get next 10 execution times
-            now = datetime.now()
+            datetime.now()
             for i in range(10):
                 next_run = cron.get_next(datetime)
                 next_runs.append(next_run.strftime("%Y-%m-%d %H:%M:%S"))

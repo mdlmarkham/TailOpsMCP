@@ -274,7 +274,7 @@ graph LR
    ```bash
    # Create feature branch
    git checkout -b feature/new-feature
-   
+
    # Quick quality fix and test
    make dev  # Runs: make fix && make test
    ```
@@ -283,10 +283,10 @@ graph LR
    ```bash
    # Auto-fix common issues
    make fix
-   
+
    # Run tests frequently
    make test
-   
+
    # Check specific quality aspects
    make lint          # Quick linting
    make typecheck     # Type checking
@@ -297,7 +297,7 @@ graph LR
    ```bash
    # Pre-push checks
    make pre-push  # Runs: quality + security + test
-   
+
    # If all checks pass, commit will work (pre-commit hooks run automatically)
    git add .
    git commit -m "feat: add new feature"
@@ -307,7 +307,7 @@ graph LR
    ```bash
    # Comprehensive CI simulation
    make ci  # Runs: quality + test
-   
+
    # Push to remote
    git push origin feature/new-feature
    ```
@@ -452,21 +452,21 @@ def execute_remote_command(
     capture_output: bool = True
 ) -> Dict[str, Any]:
     """Execute a command on a remote target.
-    
+
     Args:
         target_id: Unique identifier for the target system
         command: Command string to execute
         timeout: Command timeout in seconds (default: 30)
         capture_output: Whether to capture stdout/stderr (default: True)
-        
+
     Returns:
         Dict containing 'exit_code', 'stdout', 'stderr', and 'duration'
-        
+
     Raises:
         TargetNotFoundError: If target_id is not found
         CommandTimeoutError: If command execution times out
         ConnectionError: If unable to connect to target
-        
+
     Example:
         >>> result = execute_remote_command(
         ...     target_id="web-server-01",
@@ -487,10 +487,10 @@ logger = logging.getLogger(__name__)
 
 def connect_to_target(target_config: Dict[str, Any]) -> Optional[Any]:
     """Establish connection to target system.
-    
+
     Args:
         target_config: Target configuration dictionary
-        
+
     Returns:
         Connection object or None if connection fails
     """
@@ -525,10 +525,10 @@ def test_execute_remote_command_success():
         'stderr': '',
         'duration': 0.1
     }
-    
+
     # Act
     result = execute_remote_command(target_id, command)
-    
+
     # Assert
     assert result == expected_result
     assert result['exit_code'] == 0
@@ -564,13 +564,13 @@ class TargetConfig(BaseModel):
     id: str
     host: str
     port: int = 22
-    
+
     @validator('port')
     def validate_port(cls, v):
         if not (1 <= v <= 65535):
             raise ValueError('Port must be between 1 and 65535')
         return v
-        
+
     @validator('id')
     def validate_id(cls, v):
         if not v.replace('-', '').replace('_', '').isalnum():
@@ -585,15 +585,15 @@ from cryptography.fernet import Fernet
 
 class SecureCredentials:
     """Handle encrypted credential storage."""
-    
+
     def __init__(self, encryption_key: bytes):
         self.cipher = Fernet(encryption_key)
-    
+
     def store_credential(self, key: str, value: str) -> None:
         """Store encrypted credential."""
         encrypted_value = self.cipher.encrypt(value.encode())
         os.environ[f"CRED_{key}"] = encrypted_value.decode()
-    
+
     def get_credential(self, key: str) -> str:
         """Retrieve and decrypt credential."""
         encrypted_value = os.environ[f"CRED_{key}"]
@@ -611,10 +611,10 @@ class TargetRegistry:
     def __init__(self):
         self.targets: Dict[str, Any] = {}
         self.target_types: Set[str] = set()
-    
+
     def get_targets_by_type(self, target_type: str) -> List[Any]:
         """Efficient lookup by type."""
-        return [target for target in self.targets.values() 
+        return [target for target in self.targets.values()
                 if target.get('type') == target_type]
 
 # Bad: Inefficient repeated searches
@@ -677,7 +677,7 @@ ruff check src/inventory.py
 ruff check src/inventory.py --show-source
 ```
 
-**Prevention**: 
+**Prevention**:
 - Use `make fix` before committing
 - Configure IDE to use ruff for real-time linting
 
@@ -962,13 +962,13 @@ from typing import Optional
 
 def get_secure_credential(key: str) -> Optional[str]:
     """Retrieve credential from secure storage.
-    
+
     Args:
         key: Credential identifier
-        
+
     Returns:
         Credential value or None if not found
-        
+
     Raises:
         CredentialNotFoundError: If credential doesn't exist
     """
@@ -976,12 +976,12 @@ def get_secure_credential(key: str) -> Optional[str]:
     value = os.environ.get(key)
     if value:
         return value
-    
+
     # Check secure vault (if configured)
     vault_value = os.environ.get(f"VAULT_{key}")
     if vault_value:
         return decrypt_vault_value(vault_value)
-    
+
     raise CredentialNotFoundError(f"Credential {key} not found")
 ```
 
@@ -994,7 +994,7 @@ class SecureTargetConfig(BaseModel):
     host: str
     port: int
     credentials: dict
-    
+
     @validator('host')
     def validate_host(cls, v):
         if not v or len(v.strip()) == 0:
@@ -1003,13 +1003,13 @@ class SecureTargetConfig(BaseModel):
             raise ValueError('Host name too long')
         # Additional validation for valid hostname/IP
         return v.strip()
-    
+
     @validator('port')
     def validate_port(cls, v):
         if not (1 <= v <= 65535):
             raise ValueError('Port must be between 1 and 65535')
         return v
-    
+
     @validator('credentials')
     def validate_credentials(cls, v):
         # Ensure no sensitive data in logs
@@ -1030,23 +1030,23 @@ from pathlib import Path
 
 def create_secure_file(path: str, content: str, mode: int = 0o600):
     """Create file with secure permissions.
-    
+
     Args:
         path: File path
         content: File content
         mode: File permissions (default: 600 - owner read/write only)
     """
     file_path = Path(path)
-    
+
     # Create directory if it doesn't exist
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Write content
     file_path.write_text(content)
-    
+
     # Set secure permissions
     file_path.chmod(mode)
-    
+
     # Verify permissions
     file_stat = file_path.stat()
     actual_mode = stat.filemode(file_stat.st_mode)[1:]
@@ -1357,19 +1357,19 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-      
+
       - name: Install dependencies
         run: make install-deps
-      
+
       - name: Run quality checks
         run: make quality
-      
+
       - name: Run tests
         run: make test
-      
+
       - name: Security scan
         run: make security
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
 ```

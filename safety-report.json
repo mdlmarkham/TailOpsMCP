@@ -1,0 +1,2389 @@
+
+
++===========================================================================================================================================================================================+
+
+
+DEPRECATED: this command (`check`) has been DEPRECATED, and will be unsupported beyond 01 June 2024.
+
+
+We highly encourage switching to the new `scan` command which is easier to use, more powerful, and can be set up to mimic the deprecated command if required.
+
+
++===========================================================================================================================================================================================+
+
+
+{
+    "report_meta": {
+        "scan_target": "environment",
+        "scanned": [
+            "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages",
+            "C:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\src"
+        ],
+        "scanned_full_path": [
+            "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages",
+            "C:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\src"
+        ],
+        "target_languages": [
+            "python"
+        ],
+        "policy_file": null,
+        "policy_file_source": "local",
+        "audit_and_monitor": false,
+        "api_key": false,
+        "account": "",
+        "local_database_path": null,
+        "safety_version": "3.7.0",
+        "timestamp": "2025-12-16 23:25:13",
+        "packages_found": 154,
+        "vulnerabilities_found": 0,
+        "vulnerabilities_ignored": 0,
+        "remediations_recommended": 0,
+        "telemetry": {
+            "safety_options": {
+                "output": {
+                    "--output": 1
+                }
+            },
+            "safety_version": "3.7.0",
+            "safety_source": "cli",
+            "os_type": "Windows",
+            "os_release": "11",
+            "os_description": "Windows-11-10.0.26200-SP0",
+            "python_version": "3.13.1",
+            "safety_command": "check"
+        },
+        "git": {
+            "branch": "master",
+            "tag": "",
+            "commit": "fa2a186a1166e6ebb7fc8709e396c6a5b313a710",
+            "dirty": "True",
+            "origin": ""
+        },
+        "project": null,
+        "json_version": "1.1",
+        "remediations_attempted": 0,
+        "remediations_completed": 0,
+        "remediation_mode": "NON_INTERACTIVE"
+    },
+    "scanned_packages": {
+        "aiohappyeyeballs": {
+            "name": "aiohappyeyeballs",
+            "version": "2.6.1",
+            "requirements": [
+                {
+                    "raw": "aiohappyeyeballs==2.6.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "aiohappyeyeballs",
+                    "specifier": "==2.6.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\aiohappyeyeballs-2.6.1.dist-info"
+                }
+            ]
+        },
+        "aiohttp": {
+            "name": "aiohttp",
+            "version": "3.13.2",
+            "requirements": [
+                {
+                    "raw": "aiohttp==3.13.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "aiohttp",
+                    "specifier": "==3.13.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\aiohttp-3.13.2.dist-info"
+                }
+            ]
+        },
+        "aiosignal": {
+            "name": "aiosignal",
+            "version": "1.4.0",
+            "requirements": [
+                {
+                    "raw": "aiosignal==1.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "aiosignal",
+                    "specifier": "==1.4.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\aiosignal-1.4.0.dist-info"
+                }
+            ]
+        },
+        "annotated-types": {
+            "name": "annotated-types",
+            "version": "0.7.0",
+            "requirements": [
+                {
+                    "raw": "annotated-types==0.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "annotated-types",
+                    "specifier": "==0.7.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\annotated_types-0.7.0.dist-info"
+                }
+            ]
+        },
+        "anyio": {
+            "name": "anyio",
+            "version": "4.12.0",
+            "requirements": [
+                {
+                    "raw": "anyio==4.12.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "anyio",
+                    "specifier": "==4.12.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\anyio-4.12.0.dist-info"
+                }
+            ]
+        },
+        "attrs": {
+            "name": "attrs",
+            "version": "25.4.0",
+            "requirements": [
+                {
+                    "raw": "attrs==25.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "attrs",
+                    "specifier": "==25.4.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\attrs-25.4.0.dist-info"
+                }
+            ]
+        },
+        "Authlib": {
+            "name": "Authlib",
+            "version": "1.6.6",
+            "requirements": [
+                {
+                    "raw": "Authlib==1.6.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Authlib",
+                    "specifier": "==1.6.6",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\authlib-1.6.6.dist-info"
+                }
+            ]
+        },
+        "bandit": {
+            "name": "bandit",
+            "version": "1.9.2",
+            "requirements": [
+                {
+                    "raw": "bandit==1.9.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "bandit",
+                    "specifier": "==1.9.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\bandit-1.9.2.dist-info"
+                }
+            ]
+        },
+        "bcrypt": {
+            "name": "bcrypt",
+            "version": "5.0.0",
+            "requirements": [
+                {
+                    "raw": "bcrypt==5.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "bcrypt",
+                    "specifier": "==5.0.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\bcrypt-5.0.0.dist-info"
+                }
+            ]
+        },
+        "beartype": {
+            "name": "beartype",
+            "version": "0.22.9",
+            "requirements": [
+                {
+                    "raw": "beartype==0.22.9",
+                    "extras": [],
+                    "marker": null,
+                    "name": "beartype",
+                    "specifier": "==0.22.9",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\beartype-0.22.9.dist-info"
+                }
+            ]
+        },
+        "black": {
+            "name": "black",
+            "version": "25.12.0",
+            "requirements": [
+                {
+                    "raw": "black==25.12.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "black",
+                    "specifier": "==25.12.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\black-25.12.0.dist-info"
+                }
+            ]
+        },
+        "cachetools": {
+            "name": "cachetools",
+            "version": "6.2.3",
+            "requirements": [
+                {
+                    "raw": "cachetools==6.2.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cachetools",
+                    "specifier": "==6.2.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\cachetools-6.2.3.dist-info"
+                }
+            ]
+        },
+        "certifi": {
+            "name": "certifi",
+            "version": "2025.11.12",
+            "requirements": [
+                {
+                    "raw": "certifi==2025.11.12",
+                    "extras": [],
+                    "marker": null,
+                    "name": "certifi",
+                    "specifier": "==2025.11.12",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\certifi-2025.11.12.dist-info"
+                }
+            ]
+        },
+        "cffi": {
+            "name": "cffi",
+            "version": "2.0.0",
+            "requirements": [
+                {
+                    "raw": "cffi==2.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cffi",
+                    "specifier": "==2.0.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\cffi-2.0.0.dist-info"
+                }
+            ]
+        },
+        "cfgv": {
+            "name": "cfgv",
+            "version": "3.5.0",
+            "requirements": [
+                {
+                    "raw": "cfgv==3.5.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cfgv",
+                    "specifier": "==3.5.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\cfgv-3.5.0.dist-info"
+                }
+            ]
+        },
+        "charset-normalizer": {
+            "name": "charset-normalizer",
+            "version": "3.4.4",
+            "requirements": [
+                {
+                    "raw": "charset-normalizer==3.4.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "charset-normalizer",
+                    "specifier": "==3.4.4",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\charset_normalizer-3.4.4.dist-info"
+                }
+            ]
+        },
+        "click": {
+            "name": "click",
+            "version": "8.3.1",
+            "requirements": [
+                {
+                    "raw": "click==8.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "click",
+                    "specifier": "==8.3.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\click-8.3.1.dist-info"
+                }
+            ]
+        },
+        "cloudpickle": {
+            "name": "cloudpickle",
+            "version": "3.1.2",
+            "requirements": [
+                {
+                    "raw": "cloudpickle==3.1.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cloudpickle",
+                    "specifier": "==3.1.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\cloudpickle-3.1.2.dist-info"
+                }
+            ]
+        },
+        "colorama": {
+            "name": "colorama",
+            "version": "0.4.6",
+            "requirements": [
+                {
+                    "raw": "colorama==0.4.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "colorama",
+                    "specifier": "==0.4.6",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\colorama-0.4.6.dist-info"
+                }
+            ]
+        },
+        "coverage": {
+            "name": "coverage",
+            "version": "7.13.0",
+            "requirements": [
+                {
+                    "raw": "coverage==7.13.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "coverage",
+                    "specifier": "==7.13.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\coverage-7.13.0.dist-info"
+                }
+            ]
+        },
+        "croniter": {
+            "name": "croniter",
+            "version": "6.0.0",
+            "requirements": [
+                {
+                    "raw": "croniter==6.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "croniter",
+                    "specifier": "==6.0.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\croniter-6.0.0.dist-info"
+                }
+            ]
+        },
+        "cryptography": {
+            "name": "cryptography",
+            "version": "46.0.3",
+            "requirements": [
+                {
+                    "raw": "cryptography==46.0.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cryptography",
+                    "specifier": "==46.0.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\cryptography-46.0.3.dist-info"
+                }
+            ]
+        },
+        "cyclopts": {
+            "name": "cyclopts",
+            "version": "4.3.0",
+            "requirements": [
+                {
+                    "raw": "cyclopts==4.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "cyclopts",
+                    "specifier": "==4.3.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\cyclopts-4.3.0.dist-info"
+                }
+            ]
+        },
+        "diskcache": {
+            "name": "diskcache",
+            "version": "5.6.3",
+            "requirements": [
+                {
+                    "raw": "diskcache==5.6.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "diskcache",
+                    "specifier": "==5.6.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\diskcache-5.6.3.dist-info"
+                }
+            ]
+        },
+        "distlib": {
+            "name": "distlib",
+            "version": "0.4.0",
+            "requirements": [
+                {
+                    "raw": "distlib==0.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "distlib",
+                    "specifier": "==0.4.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\distlib-0.4.0.dist-info"
+                }
+            ]
+        },
+        "dnspython": {
+            "name": "dnspython",
+            "version": "2.8.0",
+            "requirements": [
+                {
+                    "raw": "dnspython==2.8.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "dnspython",
+                    "specifier": "==2.8.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\dnspython-2.8.0.dist-info"
+                }
+            ]
+        },
+        "docker": {
+            "name": "docker",
+            "version": "7.1.0",
+            "requirements": [
+                {
+                    "raw": "docker==7.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "docker",
+                    "specifier": "==7.1.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\docker-7.1.0.dist-info"
+                }
+            ]
+        },
+        "docstring_parser": {
+            "name": "docstring_parser",
+            "version": "0.17.0",
+            "requirements": [
+                {
+                    "raw": "docstring_parser==0.17.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "docstring_parser",
+                    "specifier": "==0.17.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\docstring_parser-0.17.0.dist-info"
+                }
+            ]
+        },
+        "docutils": {
+            "name": "docutils",
+            "version": "0.22.3",
+            "requirements": [
+                {
+                    "raw": "docutils==0.22.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "docutils",
+                    "specifier": "==0.22.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\docutils-0.22.3.dist-info"
+                }
+            ]
+        },
+        "dparse": {
+            "name": "dparse",
+            "version": "0.6.4",
+            "requirements": [
+                {
+                    "raw": "dparse==0.6.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "dparse",
+                    "specifier": "==0.6.4",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\dparse-0.6.4.dist-info"
+                }
+            ]
+        },
+        "email-validator": {
+            "name": "email-validator",
+            "version": "2.3.0",
+            "requirements": [
+                {
+                    "raw": "email-validator==2.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "email-validator",
+                    "specifier": "==2.3.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\email_validator-2.3.0.dist-info"
+                }
+            ]
+        },
+        "exceptiongroup": {
+            "name": "exceptiongroup",
+            "version": "1.3.1",
+            "requirements": [
+                {
+                    "raw": "exceptiongroup==1.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "exceptiongroup",
+                    "specifier": "==1.3.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\exceptiongroup-1.3.1.dist-info"
+                }
+            ]
+        },
+        "fakeredis": {
+            "name": "fakeredis",
+            "version": "2.32.1",
+            "requirements": [
+                {
+                    "raw": "fakeredis==2.32.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "fakeredis",
+                    "specifier": "==2.32.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\fakeredis-2.32.1.dist-info"
+                }
+            ]
+        },
+        "fastmcp": {
+            "name": "fastmcp",
+            "version": "2.14.1",
+            "requirements": [
+                {
+                    "raw": "fastmcp==2.14.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "fastmcp",
+                    "specifier": "==2.14.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\fastmcp-2.14.1.dist-info"
+                }
+            ]
+        },
+        "filelock": {
+            "name": "filelock",
+            "version": "3.20.0",
+            "requirements": [
+                {
+                    "raw": "filelock==3.20.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "filelock",
+                    "specifier": "==3.20.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\filelock-3.20.0.dist-info"
+                }
+            ]
+        },
+        "flake8": {
+            "name": "flake8",
+            "version": "7.3.0",
+            "requirements": [
+                {
+                    "raw": "flake8==7.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "flake8",
+                    "specifier": "==7.3.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\flake8-7.3.0.dist-info"
+                }
+            ]
+        },
+        "frozenlist": {
+            "name": "frozenlist",
+            "version": "1.8.0",
+            "requirements": [
+                {
+                    "raw": "frozenlist==1.8.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "frozenlist",
+                    "specifier": "==1.8.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\frozenlist-1.8.0.dist-info"
+                }
+            ]
+        },
+        "gitdb": {
+            "name": "gitdb",
+            "version": "4.0.12",
+            "requirements": [
+                {
+                    "raw": "gitdb==4.0.12",
+                    "extras": [],
+                    "marker": null,
+                    "name": "gitdb",
+                    "specifier": "==4.0.12",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\gitdb-4.0.12.dist-info"
+                }
+            ]
+        },
+        "GitPython": {
+            "name": "GitPython",
+            "version": "3.1.45",
+            "requirements": [
+                {
+                    "raw": "GitPython==3.1.45",
+                    "extras": [],
+                    "marker": null,
+                    "name": "GitPython",
+                    "specifier": "==3.1.45",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\gitpython-3.1.45.dist-info"
+                }
+            ]
+        },
+        "h11": {
+            "name": "h11",
+            "version": "0.16.0",
+            "requirements": [
+                {
+                    "raw": "h11==0.16.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "h11",
+                    "specifier": "==0.16.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\h11-0.16.0.dist-info"
+                }
+            ]
+        },
+        "httpcore": {
+            "name": "httpcore",
+            "version": "1.0.9",
+            "requirements": [
+                {
+                    "raw": "httpcore==1.0.9",
+                    "extras": [],
+                    "marker": null,
+                    "name": "httpcore",
+                    "specifier": "==1.0.9",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\httpcore-1.0.9.dist-info"
+                }
+            ]
+        },
+        "httpx": {
+            "name": "httpx",
+            "version": "0.28.1",
+            "requirements": [
+                {
+                    "raw": "httpx==0.28.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "httpx",
+                    "specifier": "==0.28.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\httpx-0.28.1.dist-info"
+                }
+            ]
+        },
+        "httpx-sse": {
+            "name": "httpx-sse",
+            "version": "0.4.3",
+            "requirements": [
+                {
+                    "raw": "httpx-sse==0.4.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "httpx-sse",
+                    "specifier": "==0.4.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\httpx_sse-0.4.3.dist-info"
+                }
+            ]
+        },
+        "identify": {
+            "name": "identify",
+            "version": "2.6.15",
+            "requirements": [
+                {
+                    "raw": "identify==2.6.15",
+                    "extras": [],
+                    "marker": null,
+                    "name": "identify",
+                    "specifier": "==2.6.15",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\identify-2.6.15.dist-info"
+                }
+            ]
+        },
+        "idna": {
+            "name": "idna",
+            "version": "3.11",
+            "requirements": [
+                {
+                    "raw": "idna==3.11",
+                    "extras": [],
+                    "marker": null,
+                    "name": "idna",
+                    "specifier": "==3.11",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\idna-3.11.dist-info"
+                }
+            ]
+        },
+        "importlib_metadata": {
+            "name": "importlib_metadata",
+            "version": "8.7.0",
+            "requirements": [
+                {
+                    "raw": "importlib_metadata==8.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "importlib_metadata",
+                    "specifier": "==8.7.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\importlib_metadata-8.7.0.dist-info"
+                }
+            ]
+        },
+        "iniconfig": {
+            "name": "iniconfig",
+            "version": "2.3.0",
+            "requirements": [
+                {
+                    "raw": "iniconfig==2.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "iniconfig",
+                    "specifier": "==2.3.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\iniconfig-2.3.0.dist-info"
+                }
+            ]
+        },
+        "invoke": {
+            "name": "invoke",
+            "version": "2.2.1",
+            "requirements": [
+                {
+                    "raw": "invoke==2.2.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "invoke",
+                    "specifier": "==2.2.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\invoke-2.2.1.dist-info"
+                }
+            ]
+        },
+        "isort": {
+            "name": "isort",
+            "version": "7.0.0",
+            "requirements": [
+                {
+                    "raw": "isort==7.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "isort",
+                    "specifier": "==7.0.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\isort-7.0.0.dist-info"
+                }
+            ]
+        },
+        "jaraco.classes": {
+            "name": "jaraco.classes",
+            "version": "3.4.0",
+            "requirements": [
+                {
+                    "raw": "jaraco.classes==3.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jaraco.classes",
+                    "specifier": "==3.4.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\jaraco.classes-3.4.0.dist-info"
+                }
+            ]
+        },
+        "jaraco.context": {
+            "name": "jaraco.context",
+            "version": "6.0.1",
+            "requirements": [
+                {
+                    "raw": "jaraco.context==6.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jaraco.context",
+                    "specifier": "==6.0.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\jaraco.context-6.0.1.dist-info"
+                }
+            ]
+        },
+        "jaraco.functools": {
+            "name": "jaraco.functools",
+            "version": "4.3.0",
+            "requirements": [
+                {
+                    "raw": "jaraco.functools==4.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jaraco.functools",
+                    "specifier": "==4.3.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\jaraco_functools-4.3.0.dist-info"
+                }
+            ]
+        },
+        "Jinja2": {
+            "name": "Jinja2",
+            "version": "3.1.6",
+            "requirements": [
+                {
+                    "raw": "Jinja2==3.1.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Jinja2",
+                    "specifier": "==3.1.6",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\jinja2-3.1.6.dist-info"
+                }
+            ]
+        },
+        "joblib": {
+            "name": "joblib",
+            "version": "1.5.2",
+            "requirements": [
+                {
+                    "raw": "joblib==1.5.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "joblib",
+                    "specifier": "==1.5.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\joblib-1.5.2.dist-info"
+                }
+            ]
+        },
+        "jsonschema": {
+            "name": "jsonschema",
+            "version": "4.25.1",
+            "requirements": [
+                {
+                    "raw": "jsonschema==4.25.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jsonschema",
+                    "specifier": "==4.25.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\jsonschema-4.25.1.dist-info"
+                }
+            ]
+        },
+        "jsonschema-path": {
+            "name": "jsonschema-path",
+            "version": "0.3.4",
+            "requirements": [
+                {
+                    "raw": "jsonschema-path==0.3.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jsonschema-path",
+                    "specifier": "==0.3.4",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\jsonschema_path-0.3.4.dist-info"
+                }
+            ]
+        },
+        "jsonschema-specifications": {
+            "name": "jsonschema-specifications",
+            "version": "2025.9.1",
+            "requirements": [
+                {
+                    "raw": "jsonschema-specifications==2025.9.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "jsonschema-specifications",
+                    "specifier": "==2025.9.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\jsonschema_specifications-2025.9.1.dist-info"
+                }
+            ]
+        },
+        "keyring": {
+            "name": "keyring",
+            "version": "25.7.0",
+            "requirements": [
+                {
+                    "raw": "keyring==25.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "keyring",
+                    "specifier": "==25.7.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\keyring-25.7.0.dist-info"
+                }
+            ]
+        },
+        "librt": {
+            "name": "librt",
+            "version": "0.7.3",
+            "requirements": [
+                {
+                    "raw": "librt==0.7.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "librt",
+                    "specifier": "==0.7.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\librt-0.7.3.dist-info"
+                }
+            ]
+        },
+        "lupa": {
+            "name": "lupa",
+            "version": "2.6",
+            "requirements": [
+                {
+                    "raw": "lupa==2.6",
+                    "extras": [],
+                    "marker": null,
+                    "name": "lupa",
+                    "specifier": "==2.6",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\lupa-2.6.dist-info"
+                }
+            ]
+        },
+        "mando": {
+            "name": "mando",
+            "version": "0.7.1",
+            "requirements": [
+                {
+                    "raw": "mando==0.7.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mando",
+                    "specifier": "==0.7.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\mando-0.7.1.dist-info"
+                }
+            ]
+        },
+        "markdown-it-py": {
+            "name": "markdown-it-py",
+            "version": "4.0.0",
+            "requirements": [
+                {
+                    "raw": "markdown-it-py==4.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "markdown-it-py",
+                    "specifier": "==4.0.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\markdown_it_py-4.0.0.dist-info"
+                }
+            ]
+        },
+        "MarkupSafe": {
+            "name": "MarkupSafe",
+            "version": "3.0.3",
+            "requirements": [
+                {
+                    "raw": "MarkupSafe==3.0.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "MarkupSafe",
+                    "specifier": "==3.0.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\markupsafe-3.0.3.dist-info"
+                }
+            ]
+        },
+        "marshmallow": {
+            "name": "marshmallow",
+            "version": "4.1.1",
+            "requirements": [
+                {
+                    "raw": "marshmallow==4.1.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "marshmallow",
+                    "specifier": "==4.1.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\marshmallow-4.1.1.dist-info"
+                }
+            ]
+        },
+        "mccabe": {
+            "name": "mccabe",
+            "version": "0.7.0",
+            "requirements": [
+                {
+                    "raw": "mccabe==0.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mccabe",
+                    "specifier": "==0.7.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\mccabe-0.7.0.dist-info"
+                }
+            ]
+        },
+        "mcp": {
+            "name": "mcp",
+            "version": "1.24.0",
+            "requirements": [
+                {
+                    "raw": "mcp==1.24.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mcp",
+                    "specifier": "==1.24.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\mcp-1.24.0.dist-info"
+                }
+            ]
+        },
+        "mdurl": {
+            "name": "mdurl",
+            "version": "0.1.2",
+            "requirements": [
+                {
+                    "raw": "mdurl==0.1.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mdurl",
+                    "specifier": "==0.1.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\mdurl-0.1.2.dist-info"
+                }
+            ]
+        },
+        "more-itertools": {
+            "name": "more-itertools",
+            "version": "10.8.0",
+            "requirements": [
+                {
+                    "raw": "more-itertools==10.8.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "more-itertools",
+                    "specifier": "==10.8.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\more_itertools-10.8.0.dist-info"
+                }
+            ]
+        },
+        "multidict": {
+            "name": "multidict",
+            "version": "6.7.0",
+            "requirements": [
+                {
+                    "raw": "multidict==6.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "multidict",
+                    "specifier": "==6.7.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\multidict-6.7.0.dist-info"
+                }
+            ]
+        },
+        "mypy": {
+            "name": "mypy",
+            "version": "1.19.0",
+            "requirements": [
+                {
+                    "raw": "mypy==1.19.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mypy",
+                    "specifier": "==1.19.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\mypy-1.19.0.dist-info"
+                }
+            ]
+        },
+        "mypy_extensions": {
+            "name": "mypy_extensions",
+            "version": "1.1.0",
+            "requirements": [
+                {
+                    "raw": "mypy_extensions==1.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "mypy_extensions",
+                    "specifier": "==1.1.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\mypy_extensions-1.1.0.dist-info"
+                }
+            ]
+        },
+        "nltk": {
+            "name": "nltk",
+            "version": "3.9.2",
+            "requirements": [
+                {
+                    "raw": "nltk==3.9.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nltk",
+                    "specifier": "==3.9.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\nltk-3.9.2.dist-info"
+                }
+            ]
+        },
+        "nodeenv": {
+            "name": "nodeenv",
+            "version": "1.9.1",
+            "requirements": [
+                {
+                    "raw": "nodeenv==1.9.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "nodeenv",
+                    "specifier": "==1.9.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\nodeenv-1.9.1.dist-info"
+                }
+            ]
+        },
+        "openapi-pydantic": {
+            "name": "openapi-pydantic",
+            "version": "0.5.1",
+            "requirements": [
+                {
+                    "raw": "openapi-pydantic==0.5.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "openapi-pydantic",
+                    "specifier": "==0.5.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\openapi_pydantic-0.5.1.dist-info"
+                }
+            ]
+        },
+        "opentelemetry-api": {
+            "name": "opentelemetry-api",
+            "version": "1.39.1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-api==1.39.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-api",
+                    "specifier": "==1.39.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\opentelemetry_api-1.39.1.dist-info"
+                }
+            ]
+        },
+        "opentelemetry-exporter-prometheus": {
+            "name": "opentelemetry-exporter-prometheus",
+            "version": "0.60b1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-exporter-prometheus==0.60b1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-exporter-prometheus",
+                    "specifier": "==0.60b1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\opentelemetry_exporter_prometheus-0.60b1.dist-info"
+                }
+            ]
+        },
+        "opentelemetry-instrumentation": {
+            "name": "opentelemetry-instrumentation",
+            "version": "0.60b1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-instrumentation==0.60b1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-instrumentation",
+                    "specifier": "==0.60b1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\opentelemetry_instrumentation-0.60b1.dist-info"
+                }
+            ]
+        },
+        "opentelemetry-sdk": {
+            "name": "opentelemetry-sdk",
+            "version": "1.39.1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-sdk==1.39.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-sdk",
+                    "specifier": "==1.39.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\opentelemetry_sdk-1.39.1.dist-info"
+                }
+            ]
+        },
+        "opentelemetry-semantic-conventions": {
+            "name": "opentelemetry-semantic-conventions",
+            "version": "0.60b1",
+            "requirements": [
+                {
+                    "raw": "opentelemetry-semantic-conventions==0.60b1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "opentelemetry-semantic-conventions",
+                    "specifier": "==0.60b1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\opentelemetry_semantic_conventions-0.60b1.dist-info"
+                }
+            ]
+        },
+        "packaging": {
+            "name": "packaging",
+            "version": "25.0",
+            "requirements": [
+                {
+                    "raw": "packaging==25.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "packaging",
+                    "specifier": "==25.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\packaging-25.0.dist-info"
+                }
+            ]
+        },
+        "paramiko": {
+            "name": "paramiko",
+            "version": "4.0.0",
+            "requirements": [
+                {
+                    "raw": "paramiko==4.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "paramiko",
+                    "specifier": "==4.0.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\paramiko-4.0.0.dist-info"
+                }
+            ]
+        },
+        "pathable": {
+            "name": "pathable",
+            "version": "0.4.4",
+            "requirements": [
+                {
+                    "raw": "pathable==0.4.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pathable",
+                    "specifier": "==0.4.4",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pathable-0.4.4.dist-info"
+                }
+            ]
+        },
+        "pathspec": {
+            "name": "pathspec",
+            "version": "0.12.1",
+            "requirements": [
+                {
+                    "raw": "pathspec==0.12.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pathspec",
+                    "specifier": "==0.12.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pathspec-0.12.1.dist-info"
+                }
+            ]
+        },
+        "pathvalidate": {
+            "name": "pathvalidate",
+            "version": "3.3.1",
+            "requirements": [
+                {
+                    "raw": "pathvalidate==3.3.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pathvalidate",
+                    "specifier": "==3.3.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pathvalidate-3.3.1.dist-info"
+                }
+            ]
+        },
+        "pip": {
+            "name": "pip",
+            "version": "25.3",
+            "requirements": [
+                {
+                    "raw": "pip==25.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pip",
+                    "specifier": "==25.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pip-25.3.dist-info"
+                }
+            ]
+        },
+        "platformdirs": {
+            "name": "platformdirs",
+            "version": "4.5.1",
+            "requirements": [
+                {
+                    "raw": "platformdirs==4.5.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "platformdirs",
+                    "specifier": "==4.5.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\platformdirs-4.5.1.dist-info"
+                }
+            ]
+        },
+        "pluggy": {
+            "name": "pluggy",
+            "version": "1.6.0",
+            "requirements": [
+                {
+                    "raw": "pluggy==1.6.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pluggy",
+                    "specifier": "==1.6.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pluggy-1.6.0.dist-info"
+                }
+            ]
+        },
+        "pre_commit": {
+            "name": "pre_commit",
+            "version": "4.5.0",
+            "requirements": [
+                {
+                    "raw": "pre_commit==4.5.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pre_commit",
+                    "specifier": "==4.5.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pre_commit-4.5.0.dist-info"
+                }
+            ]
+        },
+        "prometheus_client": {
+            "name": "prometheus_client",
+            "version": "0.23.1",
+            "requirements": [
+                {
+                    "raw": "prometheus_client==0.23.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "prometheus_client",
+                    "specifier": "==0.23.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\prometheus_client-0.23.1.dist-info"
+                }
+            ]
+        },
+        "propcache": {
+            "name": "propcache",
+            "version": "0.4.1",
+            "requirements": [
+                {
+                    "raw": "propcache==0.4.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "propcache",
+                    "specifier": "==0.4.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\propcache-0.4.1.dist-info"
+                }
+            ]
+        },
+        "psutil": {
+            "name": "psutil",
+            "version": "7.1.3",
+            "requirements": [
+                {
+                    "raw": "psutil==7.1.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "psutil",
+                    "specifier": "==7.1.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\psutil-7.1.3.dist-info"
+                }
+            ]
+        },
+        "pycodestyle": {
+            "name": "pycodestyle",
+            "version": "2.14.0",
+            "requirements": [
+                {
+                    "raw": "pycodestyle==2.14.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pycodestyle",
+                    "specifier": "==2.14.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pycodestyle-2.14.0.dist-info"
+                }
+            ]
+        },
+        "pycparser": {
+            "name": "pycparser",
+            "version": "2.23",
+            "requirements": [
+                {
+                    "raw": "pycparser==2.23",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pycparser",
+                    "specifier": "==2.23",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pycparser-2.23.dist-info"
+                }
+            ]
+        },
+        "pydantic": {
+            "name": "pydantic",
+            "version": "2.12.5",
+            "requirements": [
+                {
+                    "raw": "pydantic==2.12.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic",
+                    "specifier": "==2.12.5",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pydantic-2.12.5.dist-info"
+                }
+            ]
+        },
+        "pydantic_core": {
+            "name": "pydantic_core",
+            "version": "2.41.5",
+            "requirements": [
+                {
+                    "raw": "pydantic_core==2.41.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic_core",
+                    "specifier": "==2.41.5",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pydantic_core-2.41.5.dist-info"
+                }
+            ]
+        },
+        "pydantic-settings": {
+            "name": "pydantic-settings",
+            "version": "2.12.0",
+            "requirements": [
+                {
+                    "raw": "pydantic-settings==2.12.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydantic-settings",
+                    "specifier": "==2.12.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pydantic_settings-2.12.0.dist-info"
+                }
+            ]
+        },
+        "pydocket": {
+            "name": "pydocket",
+            "version": "0.15.5",
+            "requirements": [
+                {
+                    "raw": "pydocket==0.15.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pydocket",
+                    "specifier": "==0.15.5",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pydocket-0.15.5.dist-info"
+                }
+            ]
+        },
+        "pyflakes": {
+            "name": "pyflakes",
+            "version": "3.4.0",
+            "requirements": [
+                {
+                    "raw": "pyflakes==3.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyflakes",
+                    "specifier": "==3.4.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pyflakes-3.4.0.dist-info"
+                }
+            ]
+        },
+        "Pygments": {
+            "name": "Pygments",
+            "version": "2.19.2",
+            "requirements": [
+                {
+                    "raw": "Pygments==2.19.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "Pygments",
+                    "specifier": "==2.19.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pygments-2.19.2.dist-info"
+                }
+            ]
+        },
+        "PyJWT": {
+            "name": "PyJWT",
+            "version": "2.10.1",
+            "requirements": [
+                {
+                    "raw": "PyJWT==2.10.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "PyJWT",
+                    "specifier": "==2.10.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\PyJWT-2.10.1.dist-info"
+                }
+            ]
+        },
+        "PyNaCl": {
+            "name": "PyNaCl",
+            "version": "1.6.1",
+            "requirements": [
+                {
+                    "raw": "PyNaCl==1.6.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "PyNaCl",
+                    "specifier": "==1.6.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pynacl-1.6.1.dist-info"
+                }
+            ]
+        },
+        "pyperclip": {
+            "name": "pyperclip",
+            "version": "1.11.0",
+            "requirements": [
+                {
+                    "raw": "pyperclip==1.11.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pyperclip",
+                    "specifier": "==1.11.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pyperclip-1.11.0.dist-info"
+                }
+            ]
+        },
+        "pytest": {
+            "name": "pytest",
+            "version": "9.0.2",
+            "requirements": [
+                {
+                    "raw": "pytest==9.0.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest",
+                    "specifier": "==9.0.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pytest-9.0.2.dist-info"
+                }
+            ]
+        },
+        "pytest-asyncio": {
+            "name": "pytest-asyncio",
+            "version": "1.3.0",
+            "requirements": [
+                {
+                    "raw": "pytest-asyncio==1.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-asyncio",
+                    "specifier": "==1.3.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pytest_asyncio-1.3.0.dist-info"
+                }
+            ]
+        },
+        "pytest-cov": {
+            "name": "pytest-cov",
+            "version": "7.0.0",
+            "requirements": [
+                {
+                    "raw": "pytest-cov==7.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytest-cov",
+                    "specifier": "==7.0.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pytest_cov-7.0.0.dist-info"
+                }
+            ]
+        },
+        "python-dateutil": {
+            "name": "python-dateutil",
+            "version": "2.9.0.post0",
+            "requirements": [
+                {
+                    "raw": "python-dateutil==2.9.0.post0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-dateutil",
+                    "specifier": "==2.9.0.post0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\python_dateutil-2.9.0.post0.dist-info"
+                }
+            ]
+        },
+        "python-dotenv": {
+            "name": "python-dotenv",
+            "version": "1.2.1",
+            "requirements": [
+                {
+                    "raw": "python-dotenv==1.2.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-dotenv",
+                    "specifier": "==1.2.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\python_dotenv-1.2.1.dist-info"
+                }
+            ]
+        },
+        "python-json-logger": {
+            "name": "python-json-logger",
+            "version": "4.0.0",
+            "requirements": [
+                {
+                    "raw": "python-json-logger==4.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-json-logger",
+                    "specifier": "==4.0.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\python_json_logger-4.0.0.dist-info"
+                }
+            ]
+        },
+        "python-multipart": {
+            "name": "python-multipart",
+            "version": "0.0.20",
+            "requirements": [
+                {
+                    "raw": "python-multipart==0.0.20",
+                    "extras": [],
+                    "marker": null,
+                    "name": "python-multipart",
+                    "specifier": "==0.0.20",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\python_multipart-0.0.20.dist-info"
+                }
+            ]
+        },
+        "pytokens": {
+            "name": "pytokens",
+            "version": "0.3.0",
+            "requirements": [
+                {
+                    "raw": "pytokens==0.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytokens",
+                    "specifier": "==0.3.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pytokens-0.3.0.dist-info"
+                }
+            ]
+        },
+        "pytz": {
+            "name": "pytz",
+            "version": "2025.2",
+            "requirements": [
+                {
+                    "raw": "pytz==2025.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pytz",
+                    "specifier": "==2025.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pytz-2025.2.dist-info"
+                }
+            ]
+        },
+        "pywin32": {
+            "name": "pywin32",
+            "version": "311",
+            "requirements": [
+                {
+                    "raw": "pywin32==311",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pywin32",
+                    "specifier": "==311",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pywin32-311.dist-info"
+                }
+            ]
+        },
+        "pywin32-ctypes": {
+            "name": "pywin32-ctypes",
+            "version": "0.2.3",
+            "requirements": [
+                {
+                    "raw": "pywin32-ctypes==0.2.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "pywin32-ctypes",
+                    "specifier": "==0.2.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pywin32_ctypes-0.2.3.dist-info"
+                }
+            ]
+        },
+        "PyYAML": {
+            "name": "PyYAML",
+            "version": "6.0.3",
+            "requirements": [
+                {
+                    "raw": "PyYAML==6.0.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "PyYAML",
+                    "specifier": "==6.0.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\pyyaml-6.0.3.dist-info"
+                }
+            ]
+        },
+        "py-key-value-aio": {
+            "name": "py-key-value-aio",
+            "version": "0.3.0",
+            "requirements": [
+                {
+                    "raw": "py-key-value-aio==0.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "py-key-value-aio",
+                    "specifier": "==0.3.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\py_key_value_aio-0.3.0.dist-info"
+                }
+            ]
+        },
+        "py-key-value-shared": {
+            "name": "py-key-value-shared",
+            "version": "0.3.0",
+            "requirements": [
+                {
+                    "raw": "py-key-value-shared==0.3.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "py-key-value-shared",
+                    "specifier": "==0.3.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\py_key_value_shared-0.3.0.dist-info"
+                }
+            ]
+        },
+        "radon": {
+            "name": "radon",
+            "version": "6.0.1",
+            "requirements": [
+                {
+                    "raw": "radon==6.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "radon",
+                    "specifier": "==6.0.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\radon-6.0.1.dist-info"
+                }
+            ]
+        },
+        "redis": {
+            "name": "redis",
+            "version": "7.1.0",
+            "requirements": [
+                {
+                    "raw": "redis==7.1.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "redis",
+                    "specifier": "==7.1.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\redis-7.1.0.dist-info"
+                }
+            ]
+        },
+        "referencing": {
+            "name": "referencing",
+            "version": "0.36.2",
+            "requirements": [
+                {
+                    "raw": "referencing==0.36.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "referencing",
+                    "specifier": "==0.36.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\referencing-0.36.2.dist-info"
+                }
+            ]
+        },
+        "regex": {
+            "name": "regex",
+            "version": "2025.11.3",
+            "requirements": [
+                {
+                    "raw": "regex==2025.11.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "regex",
+                    "specifier": "==2025.11.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\regex-2025.11.3.dist-info"
+                }
+            ]
+        },
+        "requests": {
+            "name": "requests",
+            "version": "2.32.5",
+            "requirements": [
+                {
+                    "raw": "requests==2.32.5",
+                    "extras": [],
+                    "marker": null,
+                    "name": "requests",
+                    "specifier": "==2.32.5",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\requests-2.32.5.dist-info"
+                }
+            ]
+        },
+        "requests-mock": {
+            "name": "requests-mock",
+            "version": "1.12.1",
+            "requirements": [
+                {
+                    "raw": "requests-mock==1.12.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "requests-mock",
+                    "specifier": "==1.12.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\requests_mock-1.12.1.dist-info"
+                }
+            ]
+        },
+        "rich": {
+            "name": "rich",
+            "version": "14.2.0",
+            "requirements": [
+                {
+                    "raw": "rich==14.2.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "rich",
+                    "specifier": "==14.2.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\rich-14.2.0.dist-info"
+                }
+            ]
+        },
+        "rich-rst": {
+            "name": "rich-rst",
+            "version": "1.3.2",
+            "requirements": [
+                {
+                    "raw": "rich-rst==1.3.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "rich-rst",
+                    "specifier": "==1.3.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\rich_rst-1.3.2.dist-info"
+                }
+            ]
+        },
+        "rpds-py": {
+            "name": "rpds-py",
+            "version": "0.30.0",
+            "requirements": [
+                {
+                    "raw": "rpds-py==0.30.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "rpds-py",
+                    "specifier": "==0.30.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\rpds_py-0.30.0.dist-info"
+                }
+            ]
+        },
+        "ruamel.yaml": {
+            "name": "ruamel.yaml",
+            "version": "0.18.16",
+            "requirements": [
+                {
+                    "raw": "ruamel.yaml==0.18.16",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ruamel.yaml",
+                    "specifier": "==0.18.16",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\ruamel.yaml-0.18.16.dist-info"
+                }
+            ]
+        },
+        "ruamel.yaml.clib": {
+            "name": "ruamel.yaml.clib",
+            "version": "0.2.15",
+            "requirements": [
+                {
+                    "raw": "ruamel.yaml.clib==0.2.15",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ruamel.yaml.clib",
+                    "specifier": "==0.2.15",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\ruamel_yaml_clib-0.2.15.dist-info"
+                }
+            ]
+        },
+        "ruff": {
+            "name": "ruff",
+            "version": "0.14.9",
+            "requirements": [
+                {
+                    "raw": "ruff==0.14.9",
+                    "extras": [],
+                    "marker": null,
+                    "name": "ruff",
+                    "specifier": "==0.14.9",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\ruff-0.14.9.dist-info"
+                }
+            ]
+        },
+        "safety": {
+            "name": "safety",
+            "version": "3.7.0",
+            "requirements": [
+                {
+                    "raw": "safety==3.7.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "safety",
+                    "specifier": "==3.7.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\safety-3.7.0.dist-info"
+                }
+            ]
+        },
+        "safety-schemas": {
+            "name": "safety-schemas",
+            "version": "0.0.16",
+            "requirements": [
+                {
+                    "raw": "safety-schemas==0.0.16",
+                    "extras": [],
+                    "marker": null,
+                    "name": "safety-schemas",
+                    "specifier": "==0.0.16",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\safety_schemas-0.0.16.dist-info"
+                }
+            ]
+        },
+        "shellcheck_py": {
+            "name": "shellcheck_py",
+            "version": "0.11.0.1",
+            "requirements": [
+                {
+                    "raw": "shellcheck_py==0.11.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "shellcheck_py",
+                    "specifier": "==0.11.0.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\shellcheck_py-0.11.0.1.dist-info"
+                }
+            ]
+        },
+        "shellingham": {
+            "name": "shellingham",
+            "version": "1.5.4",
+            "requirements": [
+                {
+                    "raw": "shellingham==1.5.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "shellingham",
+                    "specifier": "==1.5.4",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\shellingham-1.5.4.dist-info"
+                }
+            ]
+        },
+        "six": {
+            "name": "six",
+            "version": "1.17.0",
+            "requirements": [
+                {
+                    "raw": "six==1.17.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "six",
+                    "specifier": "==1.17.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\six-1.17.0.dist-info"
+                }
+            ]
+        },
+        "smmap": {
+            "name": "smmap",
+            "version": "5.0.2",
+            "requirements": [
+                {
+                    "raw": "smmap==5.0.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "smmap",
+                    "specifier": "==5.0.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\smmap-5.0.2.dist-info"
+                }
+            ]
+        },
+        "sortedcontainers": {
+            "name": "sortedcontainers",
+            "version": "2.4.0",
+            "requirements": [
+                {
+                    "raw": "sortedcontainers==2.4.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sortedcontainers",
+                    "specifier": "==2.4.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\sortedcontainers-2.4.0.dist-info"
+                }
+            ]
+        },
+        "sse-starlette": {
+            "name": "sse-starlette",
+            "version": "3.0.4",
+            "requirements": [
+                {
+                    "raw": "sse-starlette==3.0.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "sse-starlette",
+                    "specifier": "==3.0.4",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\sse_starlette-3.0.4.dist-info"
+                }
+            ]
+        },
+        "starlette": {
+            "name": "starlette",
+            "version": "0.50.0",
+            "requirements": [
+                {
+                    "raw": "starlette==0.50.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "starlette",
+                    "specifier": "==0.50.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\starlette-0.50.0.dist-info"
+                }
+            ]
+        },
+        "stevedore": {
+            "name": "stevedore",
+            "version": "5.6.0",
+            "requirements": [
+                {
+                    "raw": "stevedore==5.6.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "stevedore",
+                    "specifier": "==5.6.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\stevedore-5.6.0.dist-info"
+                }
+            ]
+        },
+        "systemmanager-mcp-server": {
+            "name": "systemmanager-mcp-server",
+            "version": "1.0.0",
+            "requirements": [
+                {
+                    "raw": "systemmanager-mcp-server==1.0.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "systemmanager-mcp-server",
+                    "specifier": "==1.0.0",
+                    "url": null,
+                    "found": "C:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\src\\systemmanager_mcp_server.egg-info"
+                }
+            ]
+        },
+        "tenacity": {
+            "name": "tenacity",
+            "version": "9.1.2",
+            "requirements": [
+                {
+                    "raw": "tenacity==9.1.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tenacity",
+                    "specifier": "==9.1.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\tenacity-9.1.2.dist-info"
+                }
+            ]
+        },
+        "tomlkit": {
+            "name": "tomlkit",
+            "version": "0.13.3",
+            "requirements": [
+                {
+                    "raw": "tomlkit==0.13.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tomlkit",
+                    "specifier": "==0.13.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\tomlkit-0.13.3.dist-info"
+                }
+            ]
+        },
+        "tqdm": {
+            "name": "tqdm",
+            "version": "4.67.1",
+            "requirements": [
+                {
+                    "raw": "tqdm==4.67.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "tqdm",
+                    "specifier": "==4.67.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\tqdm-4.67.1.dist-info"
+                }
+            ]
+        },
+        "typer": {
+            "name": "typer",
+            "version": "0.20.0",
+            "requirements": [
+                {
+                    "raw": "typer==0.20.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typer",
+                    "specifier": "==0.20.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\typer-0.20.0.dist-info"
+                }
+            ]
+        },
+        "types-psutil": {
+            "name": "types-psutil",
+            "version": "7.1.3.20251211",
+            "requirements": [
+                {
+                    "raw": "types-psutil==7.1.3.20251211",
+                    "extras": [],
+                    "marker": null,
+                    "name": "types-psutil",
+                    "specifier": "==7.1.3.20251211",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\types_psutil-7.1.3.20251211.dist-info"
+                }
+            ]
+        },
+        "typing_extensions": {
+            "name": "typing_extensions",
+            "version": "4.15.0",
+            "requirements": [
+                {
+                    "raw": "typing_extensions==4.15.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typing_extensions",
+                    "specifier": "==4.15.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\typing_extensions-4.15.0.dist-info"
+                }
+            ]
+        },
+        "typing-inspection": {
+            "name": "typing-inspection",
+            "version": "0.4.2",
+            "requirements": [
+                {
+                    "raw": "typing-inspection==0.4.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "typing-inspection",
+                    "specifier": "==0.4.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\typing_inspection-0.4.2.dist-info"
+                }
+            ]
+        },
+        "urllib3": {
+            "name": "urllib3",
+            "version": "2.6.2",
+            "requirements": [
+                {
+                    "raw": "urllib3==2.6.2",
+                    "extras": [],
+                    "marker": null,
+                    "name": "urllib3",
+                    "specifier": "==2.6.2",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\urllib3-2.6.2.dist-info"
+                }
+            ]
+        },
+        "uvicorn": {
+            "name": "uvicorn",
+            "version": "0.38.0",
+            "requirements": [
+                {
+                    "raw": "uvicorn==0.38.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "uvicorn",
+                    "specifier": "==0.38.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\uvicorn-0.38.0.dist-info"
+                }
+            ]
+        },
+        "virtualenv": {
+            "name": "virtualenv",
+            "version": "20.35.4",
+            "requirements": [
+                {
+                    "raw": "virtualenv==20.35.4",
+                    "extras": [],
+                    "marker": null,
+                    "name": "virtualenv",
+                    "specifier": "==20.35.4",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\virtualenv-20.35.4.dist-info"
+                }
+            ]
+        },
+        "websockets": {
+            "name": "websockets",
+            "version": "15.0.1",
+            "requirements": [
+                {
+                    "raw": "websockets==15.0.1",
+                    "extras": [],
+                    "marker": null,
+                    "name": "websockets",
+                    "specifier": "==15.0.1",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\websockets-15.0.1.dist-info"
+                }
+            ]
+        },
+        "wrapt": {
+            "name": "wrapt",
+            "version": "1.17.3",
+            "requirements": [
+                {
+                    "raw": "wrapt==1.17.3",
+                    "extras": [],
+                    "marker": null,
+                    "name": "wrapt",
+                    "specifier": "==1.17.3",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\wrapt-1.17.3.dist-info"
+                }
+            ]
+        },
+        "yarl": {
+            "name": "yarl",
+            "version": "1.22.0",
+            "requirements": [
+                {
+                    "raw": "yarl==1.22.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "yarl",
+                    "specifier": "==1.22.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\yarl-1.22.0.dist-info"
+                }
+            ]
+        },
+        "zipp": {
+            "name": "zipp",
+            "version": "3.23.0",
+            "requirements": [
+                {
+                    "raw": "zipp==3.23.0",
+                    "extras": [],
+                    "marker": null,
+                    "name": "zipp",
+                    "specifier": "==3.23.0",
+                    "url": null,
+                    "found": "c:\\Users\\mdlma\\Documents\\Projects\\TailOpsMCP\\.venv\\Lib\\site-packages\\zipp-3.23.0.dist-info"
+                }
+            ]
+        }
+    },
+    "affected_packages": {},
+    "announcements": [],
+    "vulnerabilities": [],
+    "ignored_vulnerabilities": [],
+    "remediations": {},
+    "remediations_results": {
+        "vulnerabilities_fixed": [],
+        "remediations_applied": {},
+        "remediations_skipped": {}
+    }
+}
+
+
++===========================================================================================================================================================================================+
+
+
+DEPRECATED: this command (`check`) has been DEPRECATED, and will be unsupported beyond 01 June 2024.
+
+
+We highly encourage switching to the new `scan` command which is easier to use, more powerful, and can be set up to mimic the deprecated command if required.
+
+
++===========================================================================================================================================================================================+
+
+

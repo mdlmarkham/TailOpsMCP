@@ -452,7 +452,7 @@ class SSHTailscaleBackend(RemoteExecutionBackend):
     ) -> str:
         """Generate command for stack deployment."""
         stack_name = parameters.get("stack_name")
-        config = parameters.get("config", {})
+        parameters.get("config", {})
         if not stack_name:
             return None
 
@@ -566,7 +566,7 @@ class SSHTailscaleBackend(RemoteExecutionBackend):
     ) -> str:
         """Generate command for file reading."""
         file_path = parameters.get("file_path")
-        encoding = parameters.get("encoding", "utf-8")
+        parameters.get("encoding", "utf-8")
         if not file_path:
             return None
 

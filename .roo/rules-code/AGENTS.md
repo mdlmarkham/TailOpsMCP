@@ -1,7 +1,7 @@
 # Project Coding Rules (Non-Obvious Only)
 
 - Always use `SystemManagerError` from `src.utils.errors` with proper `ErrorCategory` instead of raising bare exceptions
-- Import paths must include `src.` prefix due to package discovery in `pyproject.toml` 
+- Import paths must include `src.` prefix due to package discovery in `pyproject.toml`
 - Use `src.server.dependencies.deps` singleton for all services - never instantiate directly
 - All Docker operations require `_ensure_port_forwarding()` check in `src/connectors/docker_connector.py`
 - Policy validation happens in `src.services.policy_gate` before any operation execution

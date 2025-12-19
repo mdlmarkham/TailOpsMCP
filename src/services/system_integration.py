@@ -417,15 +417,10 @@ class RemoteAgentIntegration:
         events = []
 
         try:
-            from src.models.execution import ExecutionStatus
-
             for result_data in operation_results:
                 # Convert to ExecutionResult if needed
                 if isinstance(result_data, dict):
                     success = result_data.get("success", False)
-                    status = (
-                        ExecutionStatus.SUCCESS if success else ExecutionStatus.FAILURE
-                    )
 
                     event = create_operation_event(
                         source=EventSource.REMOTE_AGENT,

@@ -328,14 +328,14 @@ from src.your_module import YourClass
 
 class TestYourClass:
     """Test suite for YourClass."""
-    
+
     @pytest.mark.unit
     def test_basic_functionality(self):
         """Test basic functionality."""
         instance = YourClass()
         result = instance.method()
         assert result == expected_value
-    
+
     @pytest.mark.security
     def test_security_validation(self):
         """Test security validation."""
@@ -368,7 +368,7 @@ ptw  # pytest-watch
 
 #### Issue 1: "No Tests Discovered" in VSCode
 
-**Symptoms**: 
+**Symptoms**:
 - Test Explorer shows "No tests discovered"
 - VSCode status bar shows "Pytest not found"
 
@@ -511,7 +511,7 @@ echo %VIRTUAL_ENV% # Windows
    ```bash
    # Windows
    venv\Scripts\activate
-   
+
    # Linux/macOS
    source venv/bin/activate
    ```
@@ -626,17 +626,17 @@ tests/
 ```python
 class TestComponentName:
     """Test suite for ComponentName."""
-    
+
     @pytest.mark.unit
     def test_basic_functionality(self):
         """Test basic functionality."""
         pass
-    
+
     @pytest.mark.security
     def test_security_validation(self):
         """Test security validation."""
         pass
-    
+
     @pytest.mark.integration
     def test_integration_with_external_service(self):
         """Test integration with external services."""

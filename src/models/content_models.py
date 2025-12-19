@@ -11,6 +11,7 @@ from typing import Dict, List, Optional
 
 class ContentCategory(Enum):
     """Content categorization for TailOpsMCP operations."""
+
     SYSTEM = "system"
     USER = "user"
     CONFIGURATION = "configuration"
@@ -21,6 +22,7 @@ class ContentCategory(Enum):
 @dataclass
 class ContentMetadata:
     """Metadata for content items."""
+
     category: ContentCategory
     tags: List[str]
     created_at: str
@@ -30,14 +32,20 @@ class ContentMetadata:
 
 class SerializationResult:
     """Result of TOON serialization operations."""
-    
-    def __init__(self, content: str, metadata: Dict, success: bool = True, error: Optional[str] = None):
+
+    def __init__(
+        self,
+        content: str,
+        metadata: Dict,
+        success: bool = True,
+        error: Optional[str] = None,
+    ):
         self.content = content
         self.metadata = metadata
         self.success = success
         self.error = error
-        self.size = len(content.encode('utf-8'))
-    
+        self.size = len(content.encode("utf-8"))
+
     def to_dict(self) -> Dict:
         """Convert to dictionary representation."""
         return {
@@ -45,12 +53,13 @@ class SerializationResult:
             "metadata": self.metadata,
             "success": self.success,
             "error": self.error,
-            "size": self.size
+            "size": self.size,
         }
 
 
 class CompressionStrategy(Enum):
     """Compression strategies for TOON serialization."""
+
     NONE = "none"
     GZIP = "gzip"
     LZ4 = "lz4"

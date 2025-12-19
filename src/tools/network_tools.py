@@ -1,16 +1,14 @@
 """Network diagnostic tools for TailOpsMCP with capability-driven operations."""
+
 from __future__ import annotations
 
-import json
 import logging
-import os
-import socket
-from typing import Dict, List, Literal, Union, Optional
+from typing import Literal, Union, Optional
 from datetime import datetime
 from fastmcp import FastMCP
 from src.auth.middleware import secure_tool
 from src.server.utils import format_response, format_error
-from src.services.policy_gate import PolicyGate, OperationTier, ValidationMode
+from src.services.policy_gate import OperationTier
 from src.services.executor_factory import ExecutorFactory
 from src.utils.audit import AuditLogger
 
@@ -24,10 +22,7 @@ def register_tools(mcp: FastMCP):
     @mcp.tool()
     @secure_tool("test_connectivity")
     async def test_connectivity(
-        host: str,
-        port: int,
-        target: str = "local",
-        timeout: int = 5
+        host: str, port: int, target: str = "local", timeout: int = 5
     ) -> dict:
         """Test connectivity to a specific host and port.
 
@@ -40,12 +35,13 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="test_connectivity",
                 target=target,
                 tier=OperationTier.OBSERVE,
-                parameters={"host": host, "port": port, "timeout": timeout}
+                parameters={"host": host, "port": port, "timeout": timeout},
             )
 
             # Get executor for target
@@ -55,7 +51,7 @@ def register_tools(mcp: FastMCP):
             result = await executor.execute(
                 command="test_connectivity",
                 parameters={"host": host, "port": port, "timeout": timeout},
-                timeout=timeout + 5
+                timeout=timeout + 5,
             )
 
             if result.success:
@@ -66,7 +62,7 @@ def register_tools(mcp: FastMCP):
                     "port": port,
                     "connectivity": result.output.get("connectivity", "unknown"),
                     "response_time": result.output.get("response_time", None),
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
             else:
                 return {
@@ -75,7 +71,7 @@ def register_tools(mcp: FastMCP):
                     "host": host,
                     "port": port,
                     "error": result.error,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
         except Exception as e:
@@ -83,16 +79,14 @@ def register_tools(mcp: FastMCP):
                 operation="test_connectivity",
                 target=target,
                 success=False,
-                error=str(e)
+                error=str(e),
             )
             return format_error(e, "test_connectivity")
 
     @mcp.tool()
     @secure_tool("scan_ports")
     async def scan_ports(
-        target: str = "local",
-        range: str = "1-1000",
-        timeout: int = 1
+        target: str = "local", range: str = "1-1000", timeout: int = 1
     ) -> dict:
         """Scan a range of ports on a target system.
 
@@ -104,12 +98,13 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="scan_ports",
                 target=target,
                 tier=OperationTier.OBSERVE,
-                parameters={"range": range, "timeout": timeout}
+                parameters={"range": range, "timeout": timeout},
             )
 
             # Get executor for target
@@ -119,7 +114,7 @@ def register_tools(mcp: FastMCP):
             result = await executor.execute(
                 command="scan_ports",
                 parameters={"range": range, "timeout": timeout},
-                timeout=300  # 5 minutes max for large scans
+                timeout=300,  # 5 minutes max for large scans
             )
 
             if result.success:
@@ -129,7 +124,7 @@ def register_tools(mcp: FastMCP):
                     "range": range,
                     "open_ports": result.output.get("open_ports", []),
                     "total_scanned": result.output.get("total_scanned", 0),
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
             else:
                 return {
@@ -137,23 +132,19 @@ def register_tools(mcp: FastMCP):
                     "target": target,
                     "range": range,
                     "error": result.error,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
         except Exception as e:
             audit.log_operation(
-                operation="scan_ports",
-                target=target,
-                success=False,
-                error=str(e)
+                operation="scan_ports", target=target, success=False, error=str(e)
             )
             return format_error(e, "scan_ports")
 
     @mcp.tool()
     @secure_tool("get_network_status")
     async def get_network_status(
-        target: str = "local",
-        format: Literal["json", "toon"] = "toon"
+        target: str = "local", format: Literal["json", "toon"] = "toon"
     ) -> Union[dict, str]:
         """Get network interface status with addresses and statistics.
 
@@ -164,11 +155,12 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="get_network_status",
                 target=target,
-                tier=OperationTier.OBSERVE
+                tier=OperationTier.OBSERVE,
             )
 
             # Get executor for target
@@ -176,9 +168,7 @@ def register_tools(mcp: FastMCP):
 
             # Execute network status query
             result = await executor.execute(
-                command="network_status",
-                parameters={},
-                timeout=30
+                command="network_status", parameters={}, timeout=30
             )
 
             if result.success:
@@ -191,15 +181,13 @@ def register_tools(mcp: FastMCP):
                 operation="get_network_status",
                 target=target,
                 success=False,
-                error=str(e)
+                error=str(e),
             )
             return format_error(e, "get_network_status")
 
     @mcp.tool()
     @secure_tool("get_network_io_counters")
-    async def get_network_io_counters(
-        target: str = "local"
-    ) -> dict:
+    async def get_network_io_counters(target: str = "local") -> dict:
         """Get network I/O statistics (bytes, packets, errors) - summary only.
 
         Args:
@@ -208,11 +196,12 @@ def register_tools(mcp: FastMCP):
         try:
             # Use Policy Gate for authorization
             from src.server.dependencies import deps
+
             policy_gate = deps.policy_gate
             await policy_gate.authorize(
                 operation="get_network_io_counters",
                 target=target,
-                tier=OperationTier.OBSERVE
+                tier=OperationTier.OBSERVE,
             )
 
             # Get executor for target
@@ -220,9 +209,7 @@ def register_tools(mcp: FastMCP):
 
             # Execute network I/O query
             result = await executor.execute(
-                command="network_io_counters",
-                parameters={},
-                timeout=30
+                command="network_io_counters", parameters={}, timeout=30
             )
 
             if result.success:
@@ -235,7 +222,7 @@ def register_tools(mcp: FastMCP):
                 operation="get_network_io_counters",
                 target=target,
                 success=False,
-                error=str(e)
+                error=str(e),
             )
             return format_error(e, "get_network_io_counters")
 
@@ -249,7 +236,7 @@ def register_tools(mcp: FastMCP):
         port: Optional[int] = None,
         range: Optional[str] = None,
         timeout: int = 5,
-        format: Literal["json", "toon"] = "toon"
+        format: Literal["json", "toon"] = "toon",
     ) -> Union[dict, str]:
         """Perform network operations (backward compatibility).
 
@@ -269,11 +256,17 @@ def register_tools(mcp: FastMCP):
                 return await get_network_io_counters(target)
             elif action == "connectivity":
                 if not host or not port:
-                    return {"success": False, "error": "Host and port required for connectivity test"}
+                    return {
+                        "success": False,
+                        "error": "Host and port required for connectivity test",
+                    }
                 return await test_connectivity(target, host, port, timeout)
             elif action == "port_scan":
                 if not range:
-                    return {"success": False, "error": "Port range required for port scan"}
+                    return {
+                        "success": False,
+                        "error": "Port range required for port scan",
+                    }
                 return await scan_ports(target, range, timeout)
             else:
                 return {"success": False, "error": f"Invalid action: {action}"}
@@ -283,8 +276,10 @@ def register_tools(mcp: FastMCP):
                 operation="network_operations",
                 target=target,
                 success=False,
-                error=str(e)
+                error=str(e),
             )
             return format_error(e, "network_operations")
 
-    logger.info("Registered 5 network diagnostic tools with capability-driven operations")
+    logger.info(
+        "Registered 5 network diagnostic tools with capability-driven operations"
+    )

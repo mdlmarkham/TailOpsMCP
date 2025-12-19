@@ -128,7 +128,7 @@ class TestSSHExecutor:
         mock_stdin = Mock()
         mock_stdout = Mock()
         mock_stderr = Mock()
-        mock_channel = Mock()
+        Mock()
 
         mock_ssh_client.return_value = mock_client
         mock_client.exec_command.return_value = (mock_stdin, mock_stdout, mock_stderr)

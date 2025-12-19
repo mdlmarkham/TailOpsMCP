@@ -16,9 +16,9 @@ class TestSecurityAuditFixes:
     def test_fix1_auth_required_by_default(self):
         """AUDIT FIX #1: Auth is now required by default."""
         middleware = SecurityMiddleware()
-        assert middleware.require_auth is True, (
-            "FAIL: Auth should be required by default"
-        )
+        assert (
+            middleware.require_auth is True
+        ), "FAIL: Auth should be required by default"
 
     def test_fix2_no_anonymous_access(self):
         """AUDIT FIX #2: No anonymous access without token."""
@@ -29,9 +29,9 @@ class TestSecurityAuditFixes:
 
         assert "Authentication required" in str(
             exc.value
-        ) or "No authentication token" in str(exc.value), (
-            "FAIL: Should reject anonymous access"
-        )
+        ) or "No authentication token" in str(
+            exc.value
+        ), "FAIL: Should reject anonymous access"
 
     def test_fix3_no_auto_approve_bypass(self):
         """AUDIT FIX #3: auto_approve bypass removed."""
@@ -41,9 +41,9 @@ class TestSecurityAuditFixes:
         with pytest.raises(Exception) as exc:
             middleware.check_approval("install_package", {"auto_approve": True})
 
-        assert "approval" in str(exc.value).lower(), (
-            "FAIL: auto_approve should not bypass approval"
-        )
+        assert (
+            "approval" in str(exc.value).lower()
+        ), "FAIL: auto_approve should not bypass approval"
 
         os.environ.pop("SYSTEMMANAGER_ENABLE_APPROVAL", None)
 
@@ -57,9 +57,9 @@ class TestSecurityAuditFixes:
         claims1.host_tags.append("tag1")
 
         # Second instance should NOT have tag1
-        assert "tag1" not in claims2.host_tags, (
-            "FAIL: Mutable default bug - host_tags shared between instances"
-        )
+        assert (
+            "tag1" not in claims2.host_tags
+        ), "FAIL: Mutable default bug - host_tags shared between instances"
 
     def test_fix5_file_path_restrictions(self):
         """AUDIT FIX #5: File operations have path restrictions."""
@@ -155,9 +155,9 @@ class TestSecurityAuditFixes:
         secure_tool_count = source.count("@secure_tool")
 
         assert secure_tool_count > 0, "FAIL: No @secure_tool decorators found"
-        assert secure_tool_count >= mcp_tool_count - 2, (
-            f"FAIL: Only {secure_tool_count} @secure_tool decorators but {mcp_tool_count} @mcp.tool decorators"
-        )
+        assert (
+            secure_tool_count >= mcp_tool_count - 2
+        ), f"FAIL: Only {secure_tool_count} @secure_tool decorators but {mcp_tool_count} @mcp.tool decorators"
 
 
 def test_security_audit_summary():

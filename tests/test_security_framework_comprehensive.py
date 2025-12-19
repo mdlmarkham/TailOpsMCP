@@ -304,7 +304,7 @@ class TestIdentityManager:
             RiskProfile,
         )
 
-        identity = IdentityContext(
+        IdentityContext(
             user_id="test_user",
             username="test.user@company.com",
             email="test.user@company.com",

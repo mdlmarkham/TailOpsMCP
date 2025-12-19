@@ -62,7 +62,6 @@ class TestRetryWithBackoff:
     @pytest.mark.asyncio
     async def test_retry_exponential_backoff(self):
         """Test exponential backoff delays."""
-        delays = []
         call_count = 0
 
         @retry_with_backoff(max_retries=3, base_delay=0.1)

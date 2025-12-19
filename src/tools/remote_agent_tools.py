@@ -199,7 +199,7 @@ class RemoteAgentTools:
         """
         try:
             target_config = await self._get_target_connection(target)
-            connector = await self._create_connector(target_config, "journald")
+            await self._create_connector(target_config, "journald")
 
             # Note: This returns an async iterator, which MCP tools can't directly handle
             # In a real implementation, this would need to be handled differently

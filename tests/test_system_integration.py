@@ -206,7 +206,7 @@ class TestSystemIntegration:
     ):
         """Test end-to-end backup and recovery workflow."""
         inventory_service = system_integration_framework["inventory_service"]
-        policy_engine = system_integration_framework["policy_engine"]
+        system_integration_framework["policy_engine"]
         workflow_engine = system_integration_framework["workflow_engine"]
         test_data = system_integration_framework["test_data"]
 
@@ -297,7 +297,7 @@ class TestSystemIntegration:
         """Test end-to-end security compliance workflow."""
         inventory_service = system_integration_framework["inventory_service"]
         policy_engine = system_integration_framework["policy_engine"]
-        workflow_engine = system_integration_framework["workflow_engine"]
+        system_integration_framework["workflow_engine"]
         event_processor = system_integration_framework["event_processor"]
 
         # Step 1: Run security assessment
@@ -360,9 +360,9 @@ class TestSystemIntegration:
     @pytest.mark.asyncio
     async def test_multi_system_orchestration(self, system_integration_framework):
         """Test orchestration across multiple systems."""
-        inventory_service = system_integration_framework["inventory_service"]
+        system_integration_framework["inventory_service"]
         workflow_engine = system_integration_framework["workflow_engine"]
-        event_processor = system_integration_framework["event_processor"]
+        system_integration_framework["event_processor"]
         test_data = system_integration_framework["test_data"]
 
         # Setup multiple system environments
@@ -456,7 +456,7 @@ class TestSystemIntegration:
         """Test gateway-first architecture integration."""
         inventory_service = system_integration_framework["inventory_service"]
         policy_engine = system_integration_framework["policy_engine"]
-        workflow_engine = system_integration_framework["workflow_engine"]
+        system_integration_framework["workflow_engine"]
         event_processor = system_integration_framework["event_processor"]
 
         # Test gateway-first security model

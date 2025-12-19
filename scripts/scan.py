@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import List, Optional, Set, Dict, Any
 
 # Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 # Import yaml with fallback
 try:
@@ -42,15 +42,7 @@ try:
 except ImportError:
     yaml = None
 
-from security.scanner import (
-    SecurityScanner,
-    SecurityScanConfig,
-    ScanResult,
-    ScanType,
-    quick_security_scan,
-    scan_for_secrets,
-    scan_vulnerabilities
-)
+from security.scanner import SecurityScanner, SecurityScanConfig, ScanResult, ScanType
 
 
 class SecurityScanCLI:
@@ -66,11 +58,11 @@ class SecurityScanCLI:
         scan_types: Optional[Set[ScanType]] = None,
         output_file: Optional[str] = None,
         output_format: str = "json",
-        verbose: bool = False
+        verbose: bool = False,
     ) -> int:
         """Run security scan with specified parameters."""
         target_path = os.path.abspath(target_path)
-        
+
         if not os.path.exists(target_path):
             print(f"❌ Error: Target path '{target_path}' does not exist")
             return 1
@@ -86,7 +78,9 @@ class SecurityScanCLI:
             results = self.scanner.scan(target_path, scan_types)
 
             if verbose:
-                print(f"✅ Scan completed in {sum(r.duration_seconds or 0 for r in results):.2f}s")
+                print(
+                    f"✅ Scan completed in {sum(r.duration_seconds or 0 for r in results):.2f}s"
+                )
 
             # Generate report
             report = self._generate_report(results, target_path)
@@ -107,26 +101,29 @@ class SecurityScanCLI:
             print(f"❌ Error during scan: {e}")
             if verbose:
                 import traceback
+
                 traceback.print_exc()
             return 1
 
-    def _generate_report(self, results: List[ScanResult], target_path: str) -> Dict[str, Any]:
+    def _generate_report(
+        self, results: List[ScanResult], target_path: str
+    ) -> Dict[str, Any]:
         """Generate comprehensive report from scan results."""
         report = {
             "scan_info": {
                 "target_path": target_path,
                 "scan_time": datetime.now().isoformat(),
                 "total_scans": len(results),
-                "scanner_version": "1.0.0"
+                "scanner_version": "1.0.0",
             },
             "summary": {
                 "total_files_scanned": sum(r.files_scanned for r in results),
                 "total_lines_scanned": sum(r.lines_scanned for r in results),
                 "total_issues": sum(r.issues_found for r in results),
-                "risk_score": self._calculate_risk_score(results)
+                "risk_score": self._calculate_risk_score(results),
             },
             "scan_results": [],
-            "recommendations": []
+            "recommendations": [],
         }
 
         # Add individual scan results
@@ -139,10 +136,12 @@ class SecurityScanCLI:
                 "files_scanned": result.files_scanned,
                 "lines_scanned": result.lines_scanned,
                 "issues_found": result.issues_found,
-                "vulnerabilities": [self._serialize_vulnerability(v) for v in result.vulnerabilities],
+                "vulnerabilities": [
+                    self._serialize_vulnerability(v) for v in result.vulnerabilities
+                ],
                 "secrets_found": result.secrets_found,
                 "compliance_issues": result.compliance_issues,
-                "policy_violations": result.policy_violations
+                "policy_violations": result.policy_violations,
             }
             report["scan_results"].append(scan_data)
 
@@ -153,15 +152,15 @@ class SecurityScanCLI:
 
     def _serialize_vulnerability(self, vuln) -> Dict[str, Any]:
         """Serialize vulnerability object to dictionary."""
-        if hasattr(vuln, '__dict__'):
+        if hasattr(vuln, "__dict__"):
             return {
-                "id": getattr(vuln, 'id', 'Unknown'),
-                "title": getattr(vuln, 'title', 'Unknown'),
-                "description": getattr(vuln, 'description', 'Unknown'),
-                "severity": getattr(vuln, 'severity', 'Unknown'),
-                "affected_component": getattr(vuln, 'affected_component', 'Unknown'),
-                "file_path": getattr(vuln, 'file_path', 'Unknown'),
-                "line_number": getattr(vuln, 'line_number', 0)
+                "id": getattr(vuln, "id", "Unknown"),
+                "title": getattr(vuln, "title", "Unknown"),
+                "description": getattr(vuln, "description", "Unknown"),
+                "severity": getattr(vuln, "severity", "Unknown"),
+                "affected_component": getattr(vuln, "affected_component", "Unknown"),
+                "file_path": getattr(vuln, "file_path", "Unknown"),
+                "line_number": getattr(vuln, "line_number", 0),
             }
         return {"error": "Unable to serialize vulnerability"}
 
@@ -175,14 +174,23 @@ class SecurityScanCLI:
 
         for result in results:
             # Calculate score based on issues found
-            vuln_score = len([v for v in result.vulnerabilities if v.severity == "critical"]) * 10
-            vuln_score += len([v for v in result.vulnerabilities if v.severity == "high"]) * 5
-            vuln_score += len([v for v in result.vulnerabilities if v.severity == "medium"]) * 2
-            vuln_score += len([v for v in result.vulnerabilities if v.severity == "low"]) * 1
-            
+            vuln_score = (
+                len([v for v in result.vulnerabilities if v.severity == "critical"])
+                * 10
+            )
+            vuln_score += (
+                len([v for v in result.vulnerabilities if v.severity == "high"]) * 5
+            )
+            vuln_score += (
+                len([v for v in result.vulnerabilities if v.severity == "medium"]) * 2
+            )
+            vuln_score += (
+                len([v for v in result.vulnerabilities if v.severity == "low"]) * 1
+            )
+
             secret_score = len(result.secrets_found) * 8
             compliance_score = len(result.compliance_issues) * 3
-            
+
             result_score = vuln_score + secret_score + compliance_score
             total_score += result_score
             max_score += 100  # Maximum possible score per scan
@@ -194,54 +202,72 @@ class SecurityScanCLI:
         recommendations = []
 
         # Analyze vulnerabilities
-        critical_vulns = sum(1 for r in results for v in r.vulnerabilities if v.severity == "critical")
-        high_vulns = sum(1 for r in results for v in r.vulnerabilities if v.severity == "high")
+        critical_vulns = sum(
+            1 for r in results for v in r.vulnerabilities if v.severity == "critical"
+        )
+        high_vulns = sum(
+            1 for r in results for v in r.vulnerabilities if v.severity == "high"
+        )
         total_secrets = sum(len(r.secrets_found) for r in results)
         total_compliance = sum(len(r.compliance_issues) for r in results)
 
         if critical_vulns > 0:
-            recommendations.append(f"🚨 CRITICAL: Address {critical_vulns} critical vulnerabilities immediately")
+            recommendations.append(
+                f"🚨 CRITICAL: Address {critical_vulns} critical vulnerabilities immediately"
+            )
 
         if high_vulns > 0:
-            recommendations.append(f"⚠️  HIGH: Address {high_vulns} high-severity vulnerabilities within 7 days")
+            recommendations.append(
+                f"⚠️  HIGH: Address {high_vulns} high-severity vulnerabilities within 7 days"
+            )
 
         if total_secrets > 0:
-            recommendations.append(f"🔐 URGENT: Remove {total_secrets} exposed secrets and rotate credentials")
+            recommendations.append(
+                f"🔐 URGENT: Remove {total_secrets} exposed secrets and rotate credentials"
+            )
 
         if total_compliance > 0:
-            recommendations.append(f"📋 COMPLIANCE: Address {total_compliance} compliance issues")
+            recommendations.append(
+                f"📋 COMPLIANCE: Address {total_compliance} compliance issues"
+            )
 
         # General recommendations
         if not recommendations:
-            recommendations.append("✅ No critical issues found. Maintain good security practices.")
-        
-        recommendations.extend([
-            "📈 Implement regular security scanning in CI/CD pipeline",
-            "🔍 Establish security monitoring and alerting",
-            "🚨 Create incident response procedures",
-            "📚 Conduct regular security training for development team",
-            "🔄 Review and update security policies quarterly"
-        ])
+            recommendations.append(
+                "✅ No critical issues found. Maintain good security practices."
+            )
+
+        recommendations.extend(
+            [
+                "📈 Implement regular security scanning in CI/CD pipeline",
+                "🔍 Establish security monitoring and alerting",
+                "🚨 Create incident response procedures",
+                "📚 Conduct regular security training for development team",
+                "🔄 Review and update security policies quarterly",
+            ]
+        )
 
         return recommendations
 
-    def _save_report(self, report: Dict[str, Any], output_file: str, output_format: str):
+    def _save_report(
+        self, report: Dict[str, Any], output_file: str, output_format: str
+    ):
         """Save report to file in specified format."""
         output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         if output_format.lower() == "yaml" or output_file.endswith((".yaml", ".yml")):
             if yaml is not None:
-                with open(output_path, 'w') as f:
+                with open(output_path, "w") as f:
                     yaml.dump(report, f, default_flow_style=False, indent=2)
             else:
                 # Fallback to JSON if yaml is not available
-                output_path = output_path.with_suffix('.json')
-                with open(output_path, 'w') as f:
+                output_path = output_path.with_suffix(".json")
+                with open(output_path, "w") as f:
                     json.dump(report, f, indent=2, default=str)
                 print("YAML not available, saved as JSON instead", "WARNING")
         else:
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 json.dump(report, f, indent=2, default=str)
 
     def _display_summary(self, results: List[ScanResult], verbose: bool = False):
@@ -258,12 +284,12 @@ class SecurityScanCLI:
 
         if total_issues > 0:
             print("🔍 Issues by type:")
-            
+
             # Count issues by type
             secrets_count = sum(len(r.secrets_found) for r in results)
             vuln_count = sum(len(r.vulnerabilities) for r in results)
             compliance_count = sum(len(r.compliance_issues) for r in results)
-            
+
             if secrets_count > 0:
                 print(f"   🔐 Secrets: {secrets_count}")
             if vuln_count > 0:
@@ -279,30 +305,29 @@ class SecurityScanCLI:
             len([v for v in r.vulnerabilities if v.severity == "critical"])
             for r in results
         )
-        
+
         if critical_issues > 0:
             return 2  # Critical issues found
-        
+
         high_issues = sum(
-            len([v for v in r.vulnerabilities if v.severity == "high"])
-            for r in results
+            len([v for v in r.vulnerabilities if v.severity == "high"]) for r in results
         )
-        
+
         if high_issues > 0 or sum(len(r.secrets_found) for r in results) > 0:
             return 1  # High priority issues found
-        
+
         return 0  # No issues found
 
     def interactive_scan(self):
         """Run interactive security scan."""
         print("🔍 TailOpsMCP Interactive Security Scanner")
         print("=" * 50)
-        
+
         # Get target path
         target = input("Enter target path (default: current directory): ").strip()
         if not target:
             target = "."
-        
+
         # Get scan types
         print("\nAvailable scan types:")
         print("1. Quick scan (vulnerabilities + secrets)")
@@ -310,13 +335,18 @@ class SecurityScanCLI:
         print("3. Secrets only")
         print("4. Vulnerabilities only")
         print("5. Compliance only")
-        
+
         choice = input("\nSelect scan type (1-5, default: 1): ").strip()
-        
+
         scan_types = None
         if choice == "2":
-            scan_types = {ScanType.VULNERABILITY, ScanType.SECRETS, ScanType.COMPLIANCE, 
-                         ScanType.POLICY, ScanType.INFRASTRUCTURE}
+            scan_types = {
+                ScanType.VULNERABILITY,
+                ScanType.SECRETS,
+                ScanType.COMPLIANCE,
+                ScanType.POLICY,
+                ScanType.INFRASTRUCTURE,
+            }
         elif choice == "3":
             scan_types = {ScanType.SECRETS}
         elif choice == "4":
@@ -324,19 +354,23 @@ class SecurityScanCLI:
         elif choice == "5":
             scan_types = {ScanType.COMPLIANCE}
         # Default is choice "1" or any other input
-        
+
         # Get output options
-        save_report = input("\nSave detailed report? (y/N): ").strip().lower() == 'y'
+        save_report = input("\nSave detailed report? (y/N): ").strip().lower() == "y"
         output_file = None
         output_format = "json"
-        
+
         if save_report:
-            output_file = input("Enter output file path (default: security-report.json): ").strip()
+            output_file = input(
+                "Enter output file path (default: security-report.json): "
+            ).strip()
             if not output_file:
                 output_file = "security-report.json"
-        
+
         print(f"\n🚀 Starting scan of '{target}'...")
-        return self.run_scan(target, scan_types, output_file, output_format, verbose=True)
+        return self.run_scan(
+            target, scan_types, output_file, output_format, verbose=True
+        )
 
 
 def main():
@@ -351,84 +385,74 @@ Examples:
   %(prog)s --secrets --output report.json  # Secrets scan with output
   %(prog)s --vulnerabilities --verbose    # Verbose vulnerability scan
   %(prog)s --interactive              # Interactive scan mode
-        """
+        """,
     )
-    
+
     parser.add_argument(
         "target_path",
         nargs="?",
         default=".",
-        help="Path to scan (default: current directory)"
+        help="Path to scan (default: current directory)",
     )
-    
+
     # Scan type options
     scan_group = parser.add_argument_group("Scan Types")
     scan_group.add_argument(
-        "--quick",
-        action="store_true",
-        help="Quick scan (vulnerabilities and secrets)"
+        "--quick", action="store_true", help="Quick scan (vulnerabilities and secrets)"
     )
     scan_group.add_argument(
-        "--full",
-        action="store_true",
-        help="Full comprehensive scan"
+        "--full", action="store_true", help="Full comprehensive scan"
     )
     scan_group.add_argument(
         "--secrets",
         action="store_true",
-        help="Scan for exposed secrets and credentials"
+        help="Scan for exposed secrets and credentials",
     )
     scan_group.add_argument(
-        "--vulnerabilities",
-        action="store_true",
-        help="Scan for known vulnerabilities"
+        "--vulnerabilities", action="store_true", help="Scan for known vulnerabilities"
     )
     scan_group.add_argument(
-        "--compliance",
-        action="store_true",
-        help="Scan for compliance violations"
+        "--compliance", action="store_true", help="Scan for compliance violations"
     )
     scan_group.add_argument(
-        "--interactive",
-        action="store_true",
-        help="Run in interactive mode"
+        "--interactive", action="store_true", help="Run in interactive mode"
     )
-    
+
     # Output options
     output_group = parser.add_argument_group("Output Options")
-    output_group.add_argument(
-        "--output", "-o",
-        help="Output file for detailed report"
-    )
+    output_group.add_argument("--output", "-o", help="Output file for detailed report")
     output_group.add_argument(
         "--format",
         choices=["json", "yaml"],
         default="json",
-        help="Output format (default: json)"
+        help="Output format (default: json)",
     )
     output_group.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Verbose output"
+        "--verbose", "-v", action="store_true", help="Verbose output"
     )
     output_group.add_argument(
-        "--quiet", "-q",
-        action="store_true",
-        help="Quiet mode (minimal output)"
+        "--quiet", "-q", action="store_true", help="Quiet mode (minimal output)"
     )
-    
+
     args = parser.parse_args()
-    
+
     # Handle interactive mode
     if args.interactive:
         cli = SecurityScanCLI()
         return cli.interactive_scan()
-    
+
     # Determine scan types
     scan_types = None
     if args.full:
-        scan_types = {ScanType.VULNERABILITY, ScanType.SECRETS, ScanType.COMPLIANCE, 
-                     ScanType.POLICY, ScanType.INFRASTRUCTURE, ScanType.CONTAINER, ScanType.NETWORK}
+        scan_types = {
+            ScanType.VULNERABILITY,
+            ScanType.SECRETS,
+            ScanType.COMPLIANCE,
+            ScanType.POLICY,
+            ScanType.INFRASTRUCTURE,
+            ScanType.CONTAINER,
+            ScanType.NETWORK,
+        }
     elif args.secrets:
         scan_types = {ScanType.SECRETS}
     elif args.vulnerabilities:
@@ -436,7 +460,7 @@ Examples:
     elif args.compliance:
         scan_types = {ScanType.COMPLIANCE}
     # Default to quick scan if no specific type chosen
-    
+
     # Initialize and run scanner
     cli = SecurityScanCLI()
     exit_code = cli.run_scan(
@@ -444,9 +468,9 @@ Examples:
         scan_types=scan_types,
         output_file=args.output,
         output_format=args.format,
-        verbose=args.verbose and not args.quiet
+        verbose=args.verbose and not args.quiet,
     )
-    
+
     return exit_code
 
 

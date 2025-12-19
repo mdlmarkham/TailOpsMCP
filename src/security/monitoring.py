@@ -444,7 +444,7 @@ class SecurityMonitor:
         """Get security dashboard data."""
         now = datetime.now()
         last_24h = now - timedelta(hours=24)
-        last_7d = now - timedelta(days=7)
+        now - timedelta(days=7)
 
         # Alert statistics
         all_alerts = list(self._alerts.values())
@@ -630,7 +630,7 @@ class SecurityMonitor:
                     "outcome": event.outcome,
                 }
 
-                alert = self.create_alert(rule, context)
+                self.create_alert(rule, context)
 
                 # Update rule trigger statistics
                 rule.last_triggered = datetime.now()

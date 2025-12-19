@@ -727,7 +727,7 @@ class TestTOONIntegrationScenarios:
 
         # Test with caching
         start_time = time.time()
-        results_cached = optimized_batch_process(test_data[:10], use_parallel=False)
+        optimized_batch_process(test_data[:10], use_parallel=False)
         end_time = time.time()
 
         cached_time = end_time - start_time
@@ -747,12 +747,12 @@ class TestTOONErrorHandling:
         serializer = TOONEnhancedSerializer()
 
         # Test with None data
-        result = serializer.serialize_fleet_inventory(None)
+        serializer.serialize_fleet_inventory(None)
         # Should handle gracefully or raise appropriate exception
 
         # Test with invalid data types
         try:
-            result = serializer.serialize_fleet_inventory("invalid_data")
+            serializer.serialize_fleet_inventory("invalid_data")
             # Should handle gracefully
         except (AttributeError, TypeError):
             # Expected for invalid input

@@ -636,7 +636,7 @@ class EventAggregator:
 
         # Calculate health score based on event severity
         score = 100.0
-        total_events = len(events)
+        len(events)
 
         for event in events:
             if event.severity == EventSeverity.CRITICAL:

@@ -643,13 +643,13 @@ class ComplianceFramework:
             )
 
             # Calculate cutoff dates
-            audit_cutoff = datetime.datetime.utcnow() - datetime.timedelta(
+            datetime.datetime.utcnow() - datetime.timedelta(
                 days=audit_log_retention_days
             )
-            security_cutoff = datetime.datetime.utcnow() - datetime.timedelta(
+            datetime.datetime.utcnow() - datetime.timedelta(
                 days=security_event_retention_days
             )
-            session_cutoff = datetime.datetime.utcnow() - datetime.timedelta(
+            datetime.datetime.utcnow() - datetime.timedelta(
                 days=user_session_retention_days
             )
 

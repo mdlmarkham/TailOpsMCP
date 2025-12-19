@@ -352,7 +352,6 @@ class TestUpdateContainer:
         self, docker_manager, mock_docker_client
     ):
         """Test updating container without pulling new image."""
-        container = mock_docker_client.containers.get.return_value
 
         result = await docker_manager.update_container(
             "test-container", pull_latest=False
@@ -421,9 +420,7 @@ class TestUpdateContainer:
         new_image.attrs = {"Size": 150000000}
         mock_docker_client.images.pull.return_value = new_image
 
-        result = await docker_manager.update_container(
-            "test-container", pull_latest=True
-        )
+        await docker_manager.update_container("test-container", pull_latest=True)
 
         # Verify configuration was preserved
         run_call = mock_docker_client.containers.run.call_args

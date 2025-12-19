@@ -739,7 +739,7 @@ class WorkflowGovernance:
     async def _emit_governance_event(self, event_type: str, details: Dict[str, Any]):
         """Emit governance event."""
         try:
-            event = SystemEvent(
+            SystemEvent(
                 event_id=str(uuid.uuid4()),
                 event_type=EventType.WORKFLOW,
                 severity=EventSeverity.INFO,
@@ -870,7 +870,7 @@ class WorkflowPolicyIntegration:
     async def _emit_policy_event(self, event_type: str, details: Dict[str, Any]):
         """Emit policy event."""
         try:
-            event = SystemEvent(
+            SystemEvent(
                 event_id=str(uuid.uuid4()),
                 event_type=EventType.WORKFLOW,
                 severity=EventSeverity.INFO,

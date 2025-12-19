@@ -289,10 +289,10 @@ The security scanning capabilities include:
    ```bash
    # Auto-fix issues as you code
    make fix
-   
+
    # Quick quality check
    make test-fast
-   
+
    # Security scan for changes
    make security-quick
    ```

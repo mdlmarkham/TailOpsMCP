@@ -90,7 +90,7 @@ class SerializationResult:
 
     def __post_init__(self):
         if self.size == 0:
-            self.size = len(self.content.encode('utf-8'))
+            self.size = len(self.content.encode("utf-8"))
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
@@ -99,7 +99,7 @@ class SerializationResult:
             "metadata": self.metadata,
             "success": self.success,
             "error": self.error,
-            "size": self.size
+            "size": self.size,
         }
 
 
@@ -727,39 +727,39 @@ class TOONSerializer(TOONEnhancedSerializer):
             doc._recalculate_metrics()
 
         return doc.to_compact_format()
-    
-    
-    def serialize_to_toon(data: Any, token_budget: Optional[int] = None) -> SerializationResult:
+
+    def serialize_to_toon(
+        data: Any, token_budget: Optional[int] = None
+    ) -> SerializationResult:
         """Serialize data to TOON format."""
         serializer = TOONSerializer()
         content = serializer.serialize(data, token_budget)
         return SerializationResult(
             content=content,
             metadata={"version": "1.0", "token_budget": token_budget},
-            success=True
+            success=True,
         )
-    
-    
+
     def deserialize_from_toon(toon_content: str) -> Dict[str, Any]:
         """Deserialize TOON content to Python data."""
         try:
             import json
+
             return json.loads(toon_content)
         except json.JSONDecodeError:
             return {"error": "Invalid TOON format", "content": toon_content}
-    
-    
+
     def estimate_toon_size(data: Any) -> int:
         """Estimate TOON serialization size for data."""
         serializer = TOONSerializer()
         content = serializer.serialize(data)
-        return len(content.encode('utf-8'))
-    
-    
+        return len(content.encode("utf-8"))
+
     def validate_toon_structure(toon_content: str) -> bool:
         """Validate TOON document structure."""
         try:
             import json
+
             json.loads(toon_content)
             return True
         except json.JSONDecodeError:

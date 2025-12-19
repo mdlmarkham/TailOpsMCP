@@ -574,7 +574,6 @@ def create_health_event(
     details: Optional[Dict[str, Any]] = None,
 ) -> SystemEvent:
     """Create a health-related event."""
-    severity = EventSeverity.ERROR if status == "failed" else EventSeverity.INFO
     event = EventBuilder.health_check(source, target, status, details)
     if health_score is not None:
         event.set_health_score(health_score)

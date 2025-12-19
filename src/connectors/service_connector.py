@@ -649,7 +649,7 @@ class ServiceConnector(RemoteAgentConnector):
                 parts = line.split(None, 4)
                 if len(parts) >= 4:
                     unit_name = parts[0]
-                    load_state = parts[1]
+                    parts[1]
                     active_state = parts[2]
                     sub_state = parts[3]
                     description = parts[4] if len(parts) > 4 else ""

@@ -77,7 +77,7 @@ class TestFleetTools:
             fleet_discover = mock_mcp.tool.call_args_list[0][0][0]
 
             # Call the function
-            result = await fleet_discover(
+            await fleet_discover(
                 targets=["node1", "node2"], force_refresh=True, format="toon"
             )
 
@@ -98,7 +98,7 @@ class TestFleetTools:
             register_tools(mock_mcp)
             fleet_discover = mock_mcp.tool.call_args_list[0][0][0]
 
-            result = await fleet_discover()
+            await fleet_discover()
 
             mock_format_error.assert_called_once_with(
                 "fleet_discover", "Operation only available in gateway mode"
@@ -130,7 +130,7 @@ class TestFleetTools:
             register_tools(mock_mcp)
             fleet_inventory_get = mock_mcp.tool.call_args_list[1][0][0]
 
-            result = await fleet_inventory_get(format="json")
+            await fleet_inventory_get(format="json")
 
             mock_policy_gate.authorize.assert_called_once()
             mock_inventory_persistence.load_latest.assert_called_once()
@@ -161,7 +161,7 @@ class TestFleetTools:
             register_tools(mock_mcp)
             fleet_node_health = mock_mcp.tool.call_args_list[2][0][0]
 
-            result = await fleet_node_health(node_id="test-node")
+            await fleet_node_health(node_id="test-node")
 
             mock_policy_gate.authorize.assert_called_once()
             mock_inventory.get_node.assert_called_once_with("test-node")
@@ -181,7 +181,7 @@ class TestFleetTools:
             register_tools(mock_mcp)
             fleet_operation_plan = mock_mcp.tool.call_args_list[3][0][0]
 
-            result = await fleet_operation_plan(
+            await fleet_operation_plan(
                 op_name="update_packages",
                 targets=["node1", "node2"],
                 parameters={"update_only": True},
@@ -201,7 +201,7 @@ class TestFleetTools:
             register_tools(mock_mcp)
             fleet_operation_plan = mock_mcp.tool.call_args_list[3][0][0]
 
-            result = await fleet_operation_plan(
+            await fleet_operation_plan(
                 op_name="invalid_operation", targets=["node1"], parameters={}
             )
 
@@ -237,7 +237,7 @@ class TestFleetTools:
             register_tools(mock_mcp)
             fleet_operation_execute = mock_mcp.tool.call_args_list[4][0][0]
 
-            result = await fleet_operation_execute(plan_id="test-plan")
+            await fleet_operation_execute(plan_id="test-plan")
 
             # Verify authorization was called for each target
             assert mock_policy_gate.authorize.call_count == 2

@@ -650,9 +650,9 @@ def validate_test_environment():
         # Validate required environment variables
         required_vars = ["TAILOPS_TEST_MODE"]
         for var in required_vars:
-            assert os.getenv(var) is not None, (
-                f"Required environment variable {var} not set"
-            )
+            assert (
+                os.getenv(var) is not None
+            ), f"Required environment variable {var} not set"
 
         # Validate Python version
         import sys

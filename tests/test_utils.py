@@ -64,9 +64,9 @@ class ExecutionAssertions:
             max_duration: Maximum allowed duration
             min_duration: Minimum expected duration
         """
-        assert min_duration <= result.duration <= max_duration, (
-            f"Duration {result.duration}s not in range [{min_duration}, {max_duration}]"
-        )
+        assert (
+            min_duration <= result.duration <= max_duration
+        ), f"Duration {result.duration}s not in range [{min_duration}, {max_duration}]"
 
 
 class TargetAssertions:
@@ -83,9 +83,9 @@ class TargetAssertions:
             required_capabilities: List of required capabilities
         """
         for capability in required_capabilities:
-            assert capability in target.capabilities, (
-                f"Target {target.id} missing capability: {capability}"
-            )
+            assert (
+                capability in target.capabilities
+            ), f"Target {target.id} missing capability: {capability}"
 
     @staticmethod
     def assert_target_constraints(
@@ -103,14 +103,14 @@ class TargetAssertions:
         )
 
         if constraint_name in constraints_dict:
-            assert constraints_dict[constraint_name] == expected_value, (
-                f"Constraint {constraint_name} mismatch: {constraints_dict[constraint_name]} != {expected_value}"
-            )
+            assert (
+                constraints_dict[constraint_name] == expected_value
+            ), f"Constraint {constraint_name} mismatch: {constraints_dict[constraint_name]} != {expected_value}"
         else:
             # If constraint doesn't exist, it should be None or empty
-            assert expected_value is None or expected_value == [], (
-                f"Constraint {constraint_name} not found but expected {expected_value}"
-            )
+            assert (
+                expected_value is None or expected_value == []
+            ), f"Constraint {constraint_name} not found but expected {expected_value}"
 
     @staticmethod
     def assert_target_metadata(
@@ -124,9 +124,9 @@ class TargetAssertions:
         """
         for key, expected_value in expected_metadata.items():
             assert key in target.metadata, f"Metadata key {key} not found"
-            assert target.metadata[key] == expected_value, (
-                f"Metadata {key} mismatch: {target.metadata[key]} != {expected_value}"
-            )
+            assert (
+                target.metadata[key] == expected_value
+            ), f"Metadata {key} mismatch: {target.metadata[key]} != {expected_value}"
 
 
 class AuthorizationAssertions:
@@ -407,9 +407,9 @@ class PerformanceMetrics:
         # Allow some degradation due to concurrency overhead
         max_allowed = single_thread_estimate * (1 + max_increase_percent / 100)
 
-        assert stats["avg"] <= max_allowed, (
-            f"Concurrent performance degradation too high: {stats['avg']} > {max_allowed}"
-        )
+        assert (
+            stats["avg"] <= max_allowed
+        ), f"Concurrent performance degradation too high: {stats['avg']} > {max_allowed}"
 
 
 # Utility functions for common test patterns
@@ -440,9 +440,9 @@ def assert_json_contains(response: Dict[str, Any], expected: Dict[str, Any]):
     """
     for key, expected_value in expected.items():
         assert key in response, f"Response missing key: {key}"
-        assert response[key] == expected_value, (
-            f"Value mismatch for {key}: {response[key]} != {expected_value}"
-        )
+        assert (
+            response[key] == expected_value
+        ), f"Value mismatch for {key}: {response[key]} != {expected_value}"
 
 
 def assert_error_response(
