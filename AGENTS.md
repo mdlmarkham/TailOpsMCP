@@ -42,3 +42,13 @@ This file provides guidance to agents when working with code in this repository.
 
 Always use the projects virtual environment for testing and development to ensure dependencies are correctly managed.
 Activate with: `source .venv/bin/activate` on Unix or `.venv\Scripts\activate` on Windows.
+
+## Code Style Guidelines
+
+- **Formatting**: Use ruff format (line-length 88, py311 target) and isort (black profile)
+- **Linting**: Ruff checks, mypy strict typing required, no untyped defs
+- **Error Handling**: Always use `SystemManagerError` with proper `ErrorCategory`, never bare exceptions
+- **Imports**: Group imports (stdlib, third-party, local), isort handles automatically
+- **Naming**: snake_case for functions/variables, PascalCase for classes, UPPER_CASE for constants
+- **Type Hints**: Required for all public functions and class attributes
+- **Security**: Never log secrets, always use dependency injection via `src.server.dependencies.deps`

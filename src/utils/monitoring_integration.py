@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 from typing import Any, Dict, List
 
-from src.utils.audit import AuditLogger, LogLevel
+from src.utils.audit import audit_logger, LogLevel
 from src.utils.logging_config import health_checker
 
 
@@ -334,7 +334,7 @@ def setup_monitoring() -> None:
 
     for system, connected in connection_results.items():
         status = "connected" if connected else "disconnected"
-        AuditLogger().log_structured(
+        audit_logger.log_structured(
             level=LogLevel.INFO,
             message=f"Monitoring system {system}: {status}",
             correlation_id="monitoring_setup",

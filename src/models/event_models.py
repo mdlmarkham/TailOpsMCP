@@ -6,10 +6,10 @@ including health checks, operations, security events, and lifecycle events.
 """
 
 import uuid
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from dataclasses import dataclass, field, asdict
 
 
 class EventType(Enum):
@@ -59,6 +59,8 @@ class EventType(Enum):
     TARGET_ADDED = "target_added"
     TARGET_REMOVED = "target_removed"
     HEALTH_SCORE_CHANGED = "health_score_changed"
+    # Workflow related events
+    WORKFLOW = "workflow"
 
 
 class HealthReport:
@@ -118,6 +120,7 @@ class EventSource(Enum):
     USER_OPERATION = "user_operation"
     SYSTEM = "system"
     EXTERNAL = "external"
+    WORKFLOW_ENGINE = "workflow_engine"
 
 
 class EventCategory(Enum):
@@ -131,6 +134,7 @@ class EventCategory(Enum):
     FLEET_MANAGEMENT = "fleet_management"
     PERFORMANCE = "performance"
     COMPLIANCE = "compliance"
+    WORKFLOW = "workflow"
 
 
 class EventStatus(Enum):

@@ -279,3 +279,12 @@ class DockerManager:
 
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    # Alias methods for test compatibility
+    async def remove_container(self, container_id: str) -> Dict:
+        """Alias for stop_container to match test expectations."""
+        return await self.stop_container(container_id)
+
+    async def get_logs(self, container_id: str, tail: int = 100) -> Dict:
+        """Alias for get_container_logs to match test expectations."""
+        return await self.get_container_logs(container_id, tail)

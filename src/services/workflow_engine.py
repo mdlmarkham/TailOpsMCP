@@ -7,38 +7,38 @@ with existing systems, and comprehensive error handling.
 
 import asyncio
 import logging
-import uuid
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any
 import traceback
+import uuid
+from types import SimpleNamespace
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, cast
 
-from src.models.workflow_models import (
-    WorkflowBlueprint,
-    WorkflowExecution,
-    WorkflowStep,
-    StepResult,
-    ExecutionStatus,
-    ApprovalStatus,
-    ValidationResult,
-    WorkflowMetrics,
-    StepType,
-    Parameter,
-    RollbackAction,
-    ApprovalRecord,
-)
 from src.models.event_models import (
-    SystemEvent,
-    EventType,
+    EventCategory,
     EventSeverity,
     EventSource,
-    EventCategory,
+    EventType,
+    SystemEvent,
+)
+from src.models.workflow_models import (
+    ApprovalRecord,
+    ApprovalStatus,
+    ExecutionStatus,
+    Parameter,
+    RollbackAction,
+    StepResult,
+    StepType,
+    ValidationResult,
+    WorkflowBlueprint,
+    WorkflowExecution,
+    WorkflowMetrics,
+    WorkflowStep,
 )
 from src.services.capability_executor import CapabilityExecutor
 from src.services.event_collector import EventCollector
 from src.services.policy_engine import PolicyEngine
 from src.utils.audit import AuditLogger
-from src.utils.errors import SystemManagerError, ErrorCategory
-
+from src.utils.errors import ErrorCategory, SystemManagerError
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class WorkflowStepError(WorkflowExecutionError):
         message: str,
         step_id: str,
         execution_id: str,
-        original_error: Exception = None,
+        original_error: Optional[Exception] = None,
     ):
         super().__init__(message, step_id, execution_id)
         self.original_error = original_error
@@ -99,7 +99,7 @@ class WorkflowEngine:
         blueprint: WorkflowBlueprint,
         parameters: Dict[str, Any],
         created_by: str = "",
-        approvals: Dict[str, str] = None,
+        approvals: Optional[Dict[str, str]] = None,
     ) -> WorkflowExecution:
         """Execute a workflow blueprint."""
         execution_id = str(uuid.uuid4())
@@ -170,8 +170,8 @@ class WorkflowEngine:
         self, blueprint: WorkflowBlueprint, parameters: Dict[str, Any]
     ) -> ValidationResult:
         """Validate workflow prerequisites."""
-        errors = []
-        warnings = []
+        errors: List[str] = []
+        warnings: List[str] = []
 
         # Validate blueprint structure
         blueprint_errors = blueprint.validate()
@@ -312,7 +312,11 @@ class WorkflowEngine:
 
             # Load blueprint to check rollback plan
             blueprint = await self._get_blueprint(execution.blueprint_id)
-            if not blueprint.rollback_plan or not blueprint.rollback_plan.enabled:
+            if (
+                not blueprint
+                or not blueprint.rollback_plan
+                or not blueprint.rollback_plan.enabled
+            ):
                 return False
 
             # Start rollback
@@ -433,11 +437,11 @@ class WorkflowEngine:
 
     async def _execute_workflow_async(
         self, execution: WorkflowExecution, blueprint: WorkflowBlueprint
-    ):
+    ) -> None:
         """Internal workflow execution coroutine."""
         try:
             # Execute steps in dependency order
-            completed_steps = set()
+            completed_steps: set[str] = set()
 
             while len(completed_steps) < len(blueprint.steps):
                 # Find next executable steps
@@ -550,7 +554,7 @@ class WorkflowEngine:
 
         try:
             # Map step types to execution functions
-            step_handlers = {
+            step_handlers: Dict[StepType, Any] = {
                 StepType.VALIDATION: self._handle_validation_step,
                 StepType.RESOURCE_ALLOCATION: self._handle_resource_allocation_step,
                 StepType.CONTAINER_OPERATIONS: self._handle_container_operations_step,
@@ -598,15 +602,33 @@ class WorkflowEngine:
         """Handle validation step execution."""
         try:
             # Use capability executor for validation
-            validation_result = await self.capability_executor.validate_operation(
-                operation_type="validate_workflow_step",
-                parameters={
+            # capability_executor provides execute_operation(Operation) interface
+            # Build a minimal CapabilityOperation-like object if needed
+            try:
+                validation_result = await self.capability_executor.validate_operation(
+                    operation_type="validate_workflow_step",
+                    parameters={
+                        "step_id": step.step_id,
+                        "step_type": step.step_type.value,
+                        "parameters": step.parameters,
+                        "execution_context": execution.context,
+                    },
+                )
+            except AttributeError:
+                # Fallback to execute_operation signature
+                from types import SimpleNamespace
+
+                op = SimpleNamespace()
+                op.capability = None
+                op.parameters = {
                     "step_id": step.step_id,
                     "step_type": step.step_type.value,
                     "parameters": step.parameters,
                     "execution_context": execution.context,
-                },
-            )
+                }
+                validation_result = await self.capability_executor.execute_operation(
+                    cast(Any, op)
+                )
 
             if validation_result.success:
                 return StepResult(
@@ -644,13 +666,17 @@ class WorkflowEngine:
                     )
 
             # Use capability executor for resource allocation
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "allocate_resources"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             allocation_result = await self.capability_executor.execute_operation(
-                operation_type="allocate_resources",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -672,13 +698,15 @@ class WorkflowEngine:
         """Handle container operations step execution."""
         try:
             # Use capability executor for container operations
+            op = SimpleNamespace()
+            op.capability = "container_operations"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             operation_result = await self.capability_executor.execute_operation(
-                operation_type="container_operations",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -700,13 +728,15 @@ class WorkflowEngine:
         """Handle service deployment step execution."""
         try:
             # Use capability executor for service deployment
+            op = SimpleNamespace()
+            op.capability = "service_deployment"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             deployment_result = await self.capability_executor.execute_operation(
-                operation_type="service_deployment",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -728,13 +758,17 @@ class WorkflowEngine:
         """Handle network configuration step execution."""
         try:
             # Use capability executor for network configuration
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "network_configuration"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             network_result = await self.capability_executor.execute_operation(
-                operation_type="network_configuration",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -756,13 +790,17 @@ class WorkflowEngine:
         """Handle health validation step execution."""
         try:
             # Use capability executor for health validation
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "health_validation"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             health_result = await self.capability_executor.execute_operation(
-                operation_type="health_validation",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -784,13 +822,17 @@ class WorkflowEngine:
         """Handle backup step execution."""
         try:
             # Use capability executor for backup operations
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "backup_operations"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             backup_result = await self.capability_executor.execute_operation(
-                operation_type="backup_operations",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -810,13 +852,17 @@ class WorkflowEngine:
         """Handle restore step execution."""
         try:
             # Use capability executor for restore operations
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "restore_operations"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             restore_result = await self.capability_executor.execute_operation(
-                operation_type="restore_operations",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -836,13 +882,17 @@ class WorkflowEngine:
         """Handle snapshot step execution."""
         try:
             # Use capability executor for snapshot operations
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "snapshot_operations"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             snapshot_result = await self.capability_executor.execute_operation(
-                operation_type="snapshot_operations",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -862,13 +912,17 @@ class WorkflowEngine:
         """Handle upgrade step execution."""
         try:
             # Use capability executor for upgrade operations
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "upgrade_operations"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             upgrade_result = await self.capability_executor.execute_operation(
-                operation_type="upgrade_operations",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -888,13 +942,17 @@ class WorkflowEngine:
         """Handle testing step execution."""
         try:
             # Use capability executor for testing operations
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "testing_operations"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             test_result = await self.capability_executor.execute_operation(
-                operation_type="testing_operations",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -914,13 +972,17 @@ class WorkflowEngine:
         """Handle configuration step execution."""
         try:
             # Use capability executor for configuration operations
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "configuration_operations"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             config_result = await self.capability_executor.execute_operation(
-                operation_type="configuration_operations",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -942,13 +1004,17 @@ class WorkflowEngine:
         """Handle discovery step execution."""
         try:
             # Use capability executor for discovery operations
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "discovery_operations"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             discovery_result = await self.capability_executor.execute_operation(
-                operation_type="discovery_operations",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -970,13 +1036,17 @@ class WorkflowEngine:
         """Handle transfer step execution."""
         try:
             # Use capability executor for transfer operations
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "transfer_operations"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             transfer_result = await self.capability_executor.execute_operation(
-                operation_type="transfer_operations",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -995,14 +1065,17 @@ class WorkflowEngine:
     ) -> StepResult:
         """Handle maintenance step execution."""
         try:
-            # Use capability executor for maintenance operations
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "maintenance_operations"
+            op.parameters = {
+                **step.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+            }
             maintenance_result = await self.capability_executor.execute_operation(
-                operation_type="maintenance_operations",
-                parameters={
-                    **step.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                },
+                cast(Any, op)
             )
 
             return StepResult(
@@ -1023,15 +1096,18 @@ class WorkflowEngine:
     ):
         """Execute rollback action."""
         try:
-            # Use capability executor for rollback operations
+            from types import SimpleNamespace
+
+            op = SimpleNamespace()
+            op.capability = "rollback_operations"
+            op.parameters = {
+                **rollback_action.parameters,
+                "execution_id": execution.execution_id,
+                "workflow_name": execution.blueprint_name,
+                "action_id": rollback_action.action_id,
+            }
             rollback_result = await self.capability_executor.execute_operation(
-                operation_type="rollback_operations",
-                parameters={
-                    **rollback_action.parameters,
-                    "execution_id": execution.execution_id,
-                    "workflow_name": execution.blueprint_name,
-                    "action_id": rollback_action.action_id,
-                },
+                cast(Any, op)
             )
 
             if not rollback_result.success:

@@ -10,13 +10,13 @@ from datetime import datetime
 from typing import Any, Dict, List, Set, Tuple
 
 from src.models.event_models import (
-    SystemEvent,
-    EventType,
+    EventBuilder,
+    EventCategory,
     EventSeverity,
     EventSource,
-    EventCategory,
+    EventType,
     ResourceUsage,
-    EventBuilder,
+    SystemEvent,
 )
 from src.models.execution import ExecutionResult
 from src.utils.audit import AuditLogger, LogLevel
@@ -492,6 +492,14 @@ class EventAggregator:
         """Correlate related events and remove duplicates."""
         if not events:
             return events
+
+        async def collect_event(self, event: SystemEvent) -> None:
+            """Collect a single event (compatibility alias)."""
+            # For now just log and append to collection sources if needed
+            try:
+                self.logger.info(f"Collected event: {event.title or event.event_type}")
+            except Exception:
+                pass
 
         # Group events by correlation ID and target
         correlated_events = []

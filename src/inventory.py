@@ -173,6 +173,11 @@ class Inventory:
     def list_applications(self) -> Dict[str, Dict]:
         return self._data.get("applications", {})
 
+    # Alias for test compatibility
+    def list_services(self) -> Dict[str, Dict]:
+        """Alias for list_applications to match test expectations."""
+        return self.list_applications()
+
     def get_application(self, app_id: str) -> Optional[ApplicationMetadata]:
         app_data = self._data.get("applications", {}).get(app_id)
         if app_data:

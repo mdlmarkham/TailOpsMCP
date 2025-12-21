@@ -8,6 +8,7 @@ class ErrorCategory(str, Enum):
     UNAUTHORIZED = "unauthorized"
     FORBIDDEN = "forbidden"
     CONFIGURATION = "configuration"
+    EXECUTION = "execution"
 
 
 class SystemManagerError(Exception):

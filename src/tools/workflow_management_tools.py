@@ -6,24 +6,24 @@ executing workflows, monitoring execution, and handling approvals.
 """
 
 import logging
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
 from fastmcp import FastMCP
+
 from src.auth.middleware import secure_tool
-from src.services.workflow_engine import WorkflowEngine
-from src.services.workflow_scheduler import WorkflowScheduler, ScheduleManager
-from src.services.workflow_approval import ApprovalSystem, WorkflowGovernance
-from src.services.workflow_blueprints import (
-    EnvironmentProvisioningWorkflow,
-    BackupOrchestrationWorkflow,
-    SafeUpgradeWorkflow,
-    DisasterRecoveryWorkflow,
-    SecurityComplianceWorkflow,
-    MonitoringSetupWorkflow,
-)
 from src.models.workflow_models import WorkflowBlueprint
 from src.server.utils import format_error
-
+from src.services.workflow_approval import ApprovalSystem, WorkflowGovernance
+from src.services.workflow_blueprints import (
+    BackupOrchestrationWorkflow,
+    DisasterRecoveryWorkflow,
+    EnvironmentProvisioningWorkflow,
+    MonitoringSetupWorkflow,
+    SafeUpgradeWorkflow,
+    SecurityComplianceWorkflow,
+)
+from src.services.workflow_engine import WorkflowEngine
+from src.services.workflow_scheduler import ScheduleManager, WorkflowScheduler
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class WorkflowManagementTools:
 
     def _load_default_blueprints(self) -> Dict[str, WorkflowBlueprint]:
         """Load default workflow blueprints."""
-        blueprints = {}
+        blueprints: Dict[str, WorkflowBlueprint] = {}
 
         # Add standard blueprints
         blueprints["environment_provisioning"] = EnvironmentProvisioningWorkflow(
@@ -62,7 +62,7 @@ class WorkflowManagementTools:
 
         return blueprints
 
-    def list_available_workflows(self) -> Dict[str, Any]:
+    async def list_available_workflows(self) -> Dict[str, Any]:
         """List all available workflow blueprints."""
         try:
             workflows = []
@@ -110,7 +110,7 @@ class WorkflowManagementTools:
             logger.error(f"Failed to list workflows: {e}")
             return {"success": False, "error": str(e)}
 
-    def get_workflow_details(self, workflow_name: str) -> Dict[str, Any]:
+    async def get_workflow_details(self, workflow_name: str) -> Dict[str, Any]:
         """Get detailed information about a workflow."""
         try:
             # Find blueprint by name
@@ -130,7 +130,7 @@ class WorkflowManagementTools:
                 }
 
             # Get workflow details
-            details = {
+            details: Dict[str, Any] = {
                 "name": blueprint.name,
                 "blueprint_id": blueprint_id,
                 "description": blueprint.description,
@@ -154,7 +154,9 @@ class WorkflowManagementTools:
 
             # Add parameters
             for param_name, param in blueprint.parameters.items():
-                details["parameters"][param_name] = {
+                # ensure parameters mapping is present and typed
+                params: Dict[str, Any] = details.setdefault("parameters", {})
+                params[param_name] = {
                     "type": param.type,
                     "required": param.required,
                     "default": param.default,
@@ -165,8 +167,9 @@ class WorkflowManagementTools:
                 }
 
             # Add steps
+            steps_list: list = details.setdefault("steps", [])
             for step in blueprint.steps:
-                details["steps"].append(
+                steps_list.append(
                     {
                         "step_id": step.step_id,
                         "name": step.name,
@@ -185,8 +188,9 @@ class WorkflowManagementTools:
                 )
 
             # Add approvals
+            approvals_list: list = details.setdefault("approvals", [])
             for approval in blueprint.approvals:
-                details["approvals"].append(
+                approvals_list.append(
                     {
                         "step_id": approval.step_id,
                         "required_approvers": approval.required_approvers,
@@ -199,7 +203,7 @@ class WorkflowManagementTools:
 
             # Add rollback plan
             if blueprint.rollback_plan:
-                rollback_actions = []
+                rollback_actions: list = []
                 for action in blueprint.rollback_plan.actions:
                     rollback_actions.append(
                         {
@@ -222,12 +226,12 @@ class WorkflowManagementTools:
             logger.error(f"Failed to get workflow details: {e}")
             return {"success": False, "error": str(e)}
 
-    def execute_workflow(
+    async def execute_workflow(
         self,
         workflow_name: str,
         parameters: Dict[str, Any],
         created_by: str = "",
-        approvals: Dict[str, str] = None,
+        approvals: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """Execute a workflow with parameters."""
         try:
@@ -245,8 +249,10 @@ class WorkflowManagementTools:
                 }
 
             # Validate parameters
-            validation_result = self.workflow_engine.validate_workflow_prerequisites(
-                blueprint, parameters
+            validation_result = (
+                await self.workflow_engine.validate_workflow_prerequisites(
+                    blueprint, parameters
+                )
             )
             if not validation_result.valid:
                 return {
@@ -256,11 +262,11 @@ class WorkflowManagementTools:
                 }
 
             # Execute workflow
-            execution = self.workflow_engine.execute_workflow(
+            execution = await self.workflow_engine.execute_workflow(
                 blueprint=blueprint,
                 parameters=parameters,
                 created_by=created_by,
-                approvals=approvals,
+                approvals=approvals or {},
             )
 
             return {
@@ -274,10 +280,10 @@ class WorkflowManagementTools:
             logger.error(f"Failed to execute workflow: {e}")
             return {"success": False, "error": str(e)}
 
-    def get_workflow_status(self, execution_id: str) -> Dict[str, Any]:
+    async def get_workflow_status(self, execution_id: str) -> Dict[str, Any]:
         """Get status of workflow execution."""
         try:
-            status = self.workflow_engine.get_workflow_status(execution_id)
+            status = await self.workflow_engine.get_workflow_status(execution_id)
 
             if not status:
                 return {
@@ -291,10 +297,10 @@ class WorkflowManagementTools:
             logger.error(f"Failed to get workflow status: {e}")
             return {"success": False, "error": str(e)}
 
-    def pause_workflow(self, execution_id: str) -> Dict[str, Any]:
+    async def pause_workflow(self, execution_id: str) -> Dict[str, Any]:
         """Pause running workflow."""
         try:
-            success = self.workflow_engine.pause_workflow(execution_id)
+            success = await self.workflow_engine.pause_workflow(execution_id)
 
             if not success:
                 return {
@@ -311,10 +317,10 @@ class WorkflowManagementTools:
             logger.error(f"Failed to pause workflow: {e}")
             return {"success": False, "error": str(e)}
 
-    def resume_workflow(self, execution_id: str) -> Dict[str, Any]:
+    async def resume_workflow(self, execution_id: str) -> Dict[str, Any]:
         """Resume paused workflow."""
         try:
-            success = self.workflow_engine.resume_workflow(execution_id)
+            success = await self.workflow_engine.resume_workflow(execution_id)
 
             if not success:
                 return {
@@ -331,10 +337,12 @@ class WorkflowManagementTools:
             logger.error(f"Failed to resume workflow: {e}")
             return {"success": False, "error": str(e)}
 
-    def cancel_workflow(self, execution_id: str, reason: str = "") -> Dict[str, Any]:
+    async def cancel_workflow(
+        self, execution_id: str, reason: str = ""
+    ) -> Dict[str, Any]:
         """Cancel workflow execution."""
         try:
-            success = self.workflow_engine.cancel_workflow(execution_id, reason)
+            success = await self.workflow_engine.cancel_workflow(execution_id, reason)
 
             if not success:
                 return {
@@ -351,14 +359,14 @@ class WorkflowManagementTools:
             logger.error(f"Failed to cancel workflow: {e}")
             return {"success": False, "error": str(e)}
 
-    def list_workflow_executions(
+    async def list_workflow_executions(
         self, workflow_name: Optional[str] = None, limit: int = 50
     ) -> Dict[str, Any]:
         """List workflow executions."""
         try:
             # This would query from persistent storage
             # For now, return placeholder data
-            executions = []
+            executions: list[Dict[str, Any]] = []
 
             return {
                 "success": True,
@@ -371,12 +379,12 @@ class WorkflowManagementTools:
             logger.error(f"Failed to list workflow executions: {e}")
             return {"success": False, "error": str(e)}
 
-    def get_workflow_history(self, execution_id: str) -> Dict[str, Any]:
+    async def get_workflow_history(self, execution_id: str) -> Dict[str, Any]:
         """Get detailed execution history."""
         try:
             # This would load detailed history from persistent storage
             # For now, return basic status
-            status = self.workflow_engine.get_workflow_status(execution_id)
+            status = await self.workflow_engine.get_workflow_status(execution_id)
 
             if not status:
                 return {
@@ -412,7 +420,7 @@ class WorkflowManagementTools:
             logger.error(f"Failed to get workflow history: {e}")
             return {"success": False, "error": str(e)}
 
-    def schedule_workflow(
+    async def schedule_workflow(
         self, workflow_name: str, schedule: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Schedule recurring workflow."""
@@ -435,7 +443,9 @@ class WorkflowManagementTools:
             if not cron_expression:
                 return {"success": False, "error": "cron_expression is required"}
 
-            validation = self.schedule_manager.validate_cron_expression(cron_expression)
+            validation = await self.schedule_manager.validate_cron_expression(
+                cron_expression
+            )
             if not validation["valid"]:
                 return {
                     "success": False,
@@ -443,7 +453,7 @@ class WorkflowManagementTools:
                 }
 
             # Schedule workflow
-            schedule_id = self.scheduler.schedule_recurring_workflow(
+            schedule_id = await self.scheduler.schedule_recurring_workflow(
                 blueprint=blueprint,
                 schedule_expression=cron_expression,
                 timezone_str=schedule.get("timezone", "UTC"),
@@ -462,10 +472,10 @@ class WorkflowManagementTools:
             logger.error(f"Failed to schedule workflow: {e}")
             return {"success": False, "error": str(e)}
 
-    def cancel_scheduled_workflow(self, schedule_id: str) -> Dict[str, Any]:
+    async def cancel_scheduled_workflow(self, schedule_id: str) -> Dict[str, Any]:
         """Cancel scheduled workflow."""
         try:
-            success = self.scheduler.cancel_scheduled_workflow(schedule_id)
+            success = await self.scheduler.cancel_scheduled_workflow(schedule_id)
 
             if not success:
                 return {
@@ -482,12 +492,14 @@ class WorkflowManagementTools:
             logger.error(f"Failed to cancel scheduled workflow: {e}")
             return {"success": False, "error": str(e)}
 
-    def list_scheduled_workflows(
+    async def list_scheduled_workflows(
         self, workflow_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """List scheduled workflows."""
         try:
-            scheduled_workflows = self.scheduler.get_scheduled_workflows(workflow_name)
+            scheduled_workflows = await self.scheduler.get_scheduled_workflows(
+                workflow_name
+            )
 
             return {
                 "success": True,
@@ -499,10 +511,10 @@ class WorkflowManagementTools:
             logger.error(f"Failed to list scheduled workflows: {e}")
             return {"success": False, "error": str(e)}
 
-    def get_upcoming_executions(self, hours_ahead: int = 24) -> Dict[str, Any]:
+    async def get_upcoming_executions(self, hours_ahead: int = 24) -> Dict[str, Any]:
         """Get upcoming workflow executions."""
         try:
-            upcoming = self.scheduler.get_upcoming_executions(hours_ahead)
+            upcoming = await self.scheduler.get_upcoming_executions(hours_ahead)
 
             return {
                 "success": True,
@@ -515,13 +527,17 @@ class WorkflowManagementTools:
             logger.error(f"Failed to get upcoming executions: {e}")
             return {"success": False, "error": str(e)}
 
-    def request_workflow_approval(
-        self, execution_id: str, step_id: str, approver: str, comment: str = None
+    async def request_workflow_approval(
+        self,
+        execution_id: str,
+        step_id: str,
+        approver: str,
+        comment: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Request approval for workflow step."""
         try:
             # Get execution
-            execution = self.workflow_engine.get_workflow_status(execution_id)
+            execution = await self.workflow_engine.get_workflow_status(execution_id)
             if not execution:
                 return {
                     "success": False,
@@ -566,7 +582,7 @@ class WorkflowManagementTools:
             )
 
             # Request approval
-            approval_request = self.approval_system.request_approval(
+            approval_request = await self.approval_system.request_approval(
                 execution_instance, step
             )
 
@@ -584,12 +600,14 @@ class WorkflowManagementTools:
             logger.error(f"Failed to request approval: {e}")
             return {"success": False, "error": str(e)}
 
-    def approve_workflow_step(
-        self, approval_id: str, approver: str, comment: str = None
+    async def approve_workflow_step(
+        self, approval_id: str, approver: str, comment: Optional[str] = None
     ) -> Dict[str, Any]:
         """Approve workflow step."""
         try:
-            success = self.approval_system.approve_step(approval_id, approver, comment)
+            success = await self.approval_system.approve_step(
+                approval_id, approver, comment or ""
+            )
 
             if not success:
                 return {
@@ -606,12 +624,14 @@ class WorkflowManagementTools:
             logger.error(f"Failed to approve step: {e}")
             return {"success": False, "error": str(e)}
 
-    def reject_workflow_step(
+    async def reject_workflow_step(
         self, approval_id: str, approver: str, reason: str
     ) -> Dict[str, Any]:
         """Reject workflow step."""
         try:
-            success = self.approval_system.reject_step(approval_id, approver, reason)
+            success = await self.approval_system.reject_step(
+                approval_id, approver, reason
+            )
 
             if not success:
                 return {
@@ -628,10 +648,12 @@ class WorkflowManagementTools:
             logger.error(f"Failed to reject step: {e}")
             return {"success": False, "error": str(e)}
 
-    def get_pending_approvals(self, approver: str) -> Dict[str, Any]:
+    async def get_pending_approvals(self, approver: str) -> Dict[str, Any]:
         """Get pending approvals for user."""
         try:
-            pending_approvals = self.approval_system.get_pending_approvals(approver)
+            pending_approvals = await self.approval_system.get_pending_approvals(
+                approver
+            )
 
             return {
                 "success": True,
@@ -643,7 +665,7 @@ class WorkflowManagementTools:
             logger.error(f"Failed to get pending approvals: {e}")
             return {"success": False, "error": str(e)}
 
-    def validate_workflow_compliance(self, workflow_name: str) -> Dict[str, Any]:
+    async def validate_workflow_compliance(self, workflow_name: str) -> Dict[str, Any]:
         """Validate workflow against governance policies."""
         try:
             # Find blueprint
@@ -660,7 +682,9 @@ class WorkflowManagementTools:
                 }
 
             # Validate compliance
-            compliance_result = self.governance.validate_workflow_compliance(blueprint)
+            compliance_result = await self.governance.validate_workflow_compliance(
+                blueprint
+            )
 
             return {
                 "success": True,
@@ -674,10 +698,10 @@ class WorkflowManagementTools:
             logger.error(f"Failed to validate compliance: {e}")
             return {"success": False, "error": str(e)}
 
-    def get_workflow_metrics(self, execution_id: str) -> Dict[str, Any]:
+    async def get_workflow_metrics(self, execution_id: str) -> Dict[str, Any]:
         """Get workflow execution metrics."""
         try:
-            metrics = self.workflow_engine.get_workflow_metrics(execution_id)
+            metrics = await self.workflow_engine.get_workflow_metrics(execution_id)
 
             if not metrics:
                 return {
@@ -712,7 +736,7 @@ class WorkflowManagementTools:
             return {"success": False, "error": str(e)}
 
 
-def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
+def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools) -> None:
     """Register workflow management tools with MCP instance."""
 
     @mcp.tool()
@@ -724,10 +748,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing all available workflows with basic information
         """
         try:
-            return workflow_tools.list_available_workflows()
+            return await workflow_tools.list_available_workflows()
         except Exception as e:
             logger.error(f"List workflows failed: {e}")
-            return format_error(e)
+            return format_error(e, "list_workflows")
 
     @mcp.tool()
     @secure_tool("get_workflow_details")
@@ -741,10 +765,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing detailed workflow information
         """
         try:
-            return workflow_tools.get_workflow_details(workflow_name)
+            return await workflow_tools.get_workflow_details(workflow_name)
         except Exception as e:
             logger.error(f"Get workflow details failed: {e}")
-            return format_error(e)
+            return format_error(e, "get_workflow_details")
 
     @mcp.tool()
     @secure_tool("execute_workflow")
@@ -752,7 +776,7 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
         workflow_name: str,
         parameters: dict,
         created_by: str = "",
-        approvals: dict = None,
+        approvals: Optional[dict] = None,
     ) -> dict:
         """Execute a workflow with specified parameters.
 
@@ -766,12 +790,12 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing execution ID and status
         """
         try:
-            return workflow_tools.execute_workflow(
+            return await workflow_tools.execute_workflow(
                 workflow_name, parameters, created_by, approvals
             )
         except Exception as e:
             logger.error(f"Execute workflow failed: {e}")
-            return format_error(e)
+            return format_error(e, "execute_workflow")
 
     @mcp.tool()
     @secure_tool("get_workflow_status")
@@ -785,10 +809,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing execution status and details
         """
         try:
-            return workflow_tools.get_workflow_status(execution_id)
+            return await workflow_tools.get_workflow_status(execution_id)
         except Exception as e:
             logger.error(f"Get workflow status failed: {e}")
-            return format_error(e)
+            return format_error(e, "get_workflow_status")
 
     @mcp.tool()
     @secure_tool("pause_workflow")
@@ -802,10 +826,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary indicating success or failure
         """
         try:
-            return workflow_tools.pause_workflow(execution_id)
+            return await workflow_tools.pause_workflow(execution_id)
         except Exception as e:
             logger.error(f"Pause workflow failed: {e}")
-            return format_error(e)
+            return format_error(e, "pause_workflow")
 
     @mcp.tool()
     @secure_tool("resume_workflow")
@@ -819,10 +843,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary indicating success or failure
         """
         try:
-            return workflow_tools.resume_workflow(execution_id)
+            return await workflow_tools.resume_workflow(execution_id)
         except Exception as e:
             logger.error(f"Resume workflow failed: {e}")
-            return format_error(e)
+            return format_error(e, "resume_workflow")
 
     @mcp.tool()
     @secure_tool("cancel_workflow")
@@ -837,15 +861,15 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary indicating success or failure
         """
         try:
-            return workflow_tools.cancel_workflow(execution_id, reason)
+            return await workflow_tools.cancel_workflow(execution_id, reason)
         except Exception as e:
             logger.error(f"Cancel workflow failed: {e}")
-            return format_error(e)
+            return format_error(e, "cancel_workflow")
 
     @mcp.tool()
     @secure_tool("list_workflow_executions")
     async def list_workflow_executions(
-        workflow_name: str = None, limit: int = 50
+        workflow_name: Optional[str] = None, limit: int = 50
     ) -> dict:
         """List workflow executions with optional filtering.
 
@@ -857,10 +881,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing list of executions
         """
         try:
-            return workflow_tools.list_workflow_executions(workflow_name, limit)
+            return await workflow_tools.list_workflow_executions(workflow_name, limit)
         except Exception as e:
             logger.error(f"List workflow executions failed: {e}")
-            return format_error(e)
+            return format_error(e, "list_workflow_executions")
 
     @mcp.tool()
     @secure_tool("get_workflow_history")
@@ -874,10 +898,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing execution history
         """
         try:
-            return workflow_tools.get_workflow_history(execution_id)
+            return await workflow_tools.get_workflow_history(execution_id)
         except Exception as e:
             logger.error(f"Get workflow history failed: {e}")
-            return format_error(e)
+            return format_error(e, "get_workflow_history")
 
     @mcp.tool()
     @secure_tool("schedule_workflow")
@@ -892,10 +916,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing schedule ID and details
         """
         try:
-            return workflow_tools.schedule_workflow(workflow_name, schedule)
+            return await workflow_tools.schedule_workflow(workflow_name, schedule)
         except Exception as e:
             logger.error(f"Schedule workflow failed: {e}")
-            return format_error(e)
+            return format_error(e, "schedule_workflow")
 
     @mcp.tool()
     @secure_tool("cancel_scheduled_workflow")
@@ -909,14 +933,14 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary indicating success or failure
         """
         try:
-            return workflow_tools.cancel_scheduled_workflow(schedule_id)
+            return await workflow_tools.cancel_scheduled_workflow(schedule_id)
         except Exception as e:
             logger.error(f"Cancel scheduled workflow failed: {e}")
-            return format_error(e)
+            return format_error(e, "cancel_scheduled_workflow")
 
     @mcp.tool()
     @secure_tool("list_scheduled_workflows")
-    async def list_scheduled_workflows(workflow_name: str = None) -> dict:
+    async def list_scheduled_workflows(workflow_name: Optional[str] = None) -> dict:
         """List all scheduled workflows.
 
         Args:
@@ -926,10 +950,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing list of scheduled workflows
         """
         try:
-            return workflow_tools.list_scheduled_workflows(workflow_name)
+            return await workflow_tools.list_scheduled_workflows(workflow_name)
         except Exception as e:
             logger.error(f"List scheduled workflows failed: {e}")
-            return format_error(e)
+            return format_error(e, "list_scheduled_workflows")
 
     @mcp.tool()
     @secure_tool("get_upcoming_executions")
@@ -943,15 +967,15 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing upcoming executions
         """
         try:
-            return workflow_tools.get_upcoming_executions(hours_ahead)
+            return await workflow_tools.get_upcoming_executions(hours_ahead)
         except Exception as e:
             logger.error(f"Get upcoming executions failed: {e}")
-            return format_error(e)
+            return format_error(e, "get_upcoming_executions")
 
     @mcp.tool()
     @secure_tool("request_workflow_approval")
     async def request_workflow_approval(
-        execution_id: str, step_id: str, approver: str, comment: str = None
+        execution_id: str, step_id: str, approver: str, comment: Optional[str] = None
     ) -> dict:
         """Request approval for a workflow step.
 
@@ -965,17 +989,17 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing approval request details
         """
         try:
-            return workflow_tools.request_workflow_approval(
+            return await workflow_tools.request_workflow_approval(
                 execution_id, step_id, approver, comment
             )
         except Exception as e:
             logger.error(f"Request workflow approval failed: {e}")
-            return format_error(e)
+            return format_error(e, "request_workflow_approval")
 
     @mcp.tool()
     @secure_tool("approve_workflow_step")
     async def approve_workflow_step(
-        approval_id: str, approver: str, comment: str = None
+        approval_id: str, approver: str, comment: Optional[str] = None
     ) -> dict:
         """Approve a workflow step.
 
@@ -988,10 +1012,12 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary indicating success or failure
         """
         try:
-            return workflow_tools.approve_workflow_step(approval_id, approver, comment)
+            return await workflow_tools.approve_workflow_step(
+                approval_id, approver, comment
+            )
         except Exception as e:
             logger.error(f"Approve workflow step failed: {e}")
-            return format_error(e)
+            return format_error(e, "approve_workflow_step")
 
     @mcp.tool()
     @secure_tool("reject_workflow_step")
@@ -1009,10 +1035,12 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary indicating success or failure
         """
         try:
-            return workflow_tools.reject_workflow_step(approval_id, approver, reason)
+            return await workflow_tools.reject_workflow_step(
+                approval_id, approver, reason
+            )
         except Exception as e:
             logger.error(f"Reject workflow step failed: {e}")
-            return format_error(e)
+            return format_error(e, "reject_workflow_step")
 
     @mcp.tool()
     @secure_tool("get_pending_approvals")
@@ -1026,10 +1054,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing pending approvals
         """
         try:
-            return workflow_tools.get_pending_approvals(approver)
+            return await workflow_tools.get_pending_approvals(approver)
         except Exception as e:
             logger.error(f"Get pending approvals failed: {e}")
-            return format_error(e)
+            return format_error(e, "get_pending_approvals")
 
     @mcp.tool()
     @secure_tool("validate_workflow_compliance")
@@ -1043,10 +1071,10 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing compliance validation results
         """
         try:
-            return workflow_tools.validate_workflow_compliance(workflow_name)
+            return await workflow_tools.validate_workflow_compliance(workflow_name)
         except Exception as e:
             logger.error(f"Validate workflow compliance failed: {e}")
-            return format_error(e)
+            return format_error(e, "validate_workflow_compliance")
 
     @mcp.tool()
     @secure_tool("get_workflow_metrics")
@@ -1060,7 +1088,7 @@ def register_tools(mcp: FastMCP, workflow_tools: WorkflowManagementTools):
             Dictionary containing execution metrics
         """
         try:
-            return workflow_tools.get_workflow_metrics(execution_id)
+            return await workflow_tools.get_workflow_metrics(execution_id)
         except Exception as e:
             logger.error(f"Get workflow metrics failed: {e}")
-            return format_error(e)
+            return format_error(e, "get_workflow_metrics")

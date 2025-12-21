@@ -5,7 +5,7 @@ Integration layer to update existing components with new observability features.
 from typing import Any, Dict, Optional
 
 from src.models.execution import ExecutionResult, ExecutionRequest, ExecutionStatus
-from src.utils.audit import AuditLogger, LogLevel
+from src.utils.audit import audit_logger, LogLevel, StructuredAuditLogger
 from src.utils.logging_config import get_logger, metrics_collector
 from src.utils.observability_config import generate_correlation_id
 
@@ -93,7 +93,7 @@ class ObservabilityIntegration:
         metrics_collector.start_timer(operation)
 
         # Log the operation
-        AuditLogger().log_operation(
+        audit_logger.log_operation(
             operation=operation,
             correlation_id=correlation_id,
             target=target,
@@ -123,7 +123,7 @@ class LegacyAuditLoggerAdapter:
     """Adapter to maintain backward compatibility with the original AuditLogger."""
 
     def __init__(self):
-        self.enhanced_logger = AuditLogger()
+        self.enhanced_logger = StructuredAuditLogger()
         self.logger = get_logger("legacy_adapter")
 
     def log(
@@ -207,7 +207,7 @@ class ToolIntegration:
                 duration = metrics_collector.stop_timer(tool_name)
 
                 # Log success
-                AuditLogger().log_operation(
+                audit_logger.log_operation(
                     operation=tool_name,
                     correlation_id=correlation_id,
                     target=target,
@@ -228,7 +228,7 @@ class ToolIntegration:
                 duration = metrics_collector.stop_timer(tool_name)
 
                 # Log error
-                AuditLogger().log_operation(
+                audit_logger.log_operation(
                     operation=tool_name,
                     correlation_id=correlation_id,
                     target=target,
@@ -263,7 +263,7 @@ def integrate_with_existing_system() -> None:
         test_id = generate_correlation_id()
 
         # Log integration start
-        AuditLogger().log_structured(
+        audit_logger.log_structured(
             level=LogLevel.INFO,
             message="Observability integration initialized",
             correlation_id=test_id,

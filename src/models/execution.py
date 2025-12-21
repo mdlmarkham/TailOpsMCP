@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
+
 from pydantic import BaseModel, Field
 
 
@@ -104,6 +105,21 @@ class ExecutionResult(BaseModel):
     class Config:
         json_encoders = {datetime: lambda v: v.isoformat()}
 
+    @property
+    def message(self) -> Optional[str]:
+        """Backward-compatible message alias."""
+        # Prefer structured_error.message if present, else error or output
+        if self.structured_error and self.structured_error.message:
+            return self.structured_error.message
+        if self.error:
+            return self.error
+        return self.output
+
+    @property
+    def data(self) -> Dict[str, Any]:
+        """Backward-compatible data alias (metrics + metadata)."""
+        return {**self.metrics, **({} if self.metadata is None else self.metadata)}
+
 
 class OperationResult:
     """Result of an operation."""
@@ -112,6 +128,9 @@ class OperationResult:
         self.success = success
         self.message = message
         self.data = data
+        # Backwards-compatible aliases used across the codebase
+        self.error = message
+        self.output = None
 
 
 class CapabilityExecution:

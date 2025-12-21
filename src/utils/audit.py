@@ -17,7 +17,7 @@ ENHANCED: This file now contains all audit functionality including:
 """
 
 from __future__ import annotations
-import datetime
+from datetime import datetime
 import json
 import os
 import subprocess

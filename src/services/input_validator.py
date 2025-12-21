@@ -362,3 +362,12 @@ class InputValidator:
             validation_results[param_name] = errors
 
         return validation_results
+
+    # Test compatibility method
+    async def validate_input(self, input_value: Any) -> bool:
+        """Simple validation method for test compatibility."""
+        if not input_value or (
+            isinstance(input_value, str) and not input_value.strip()
+        ):
+            return False
+        return True

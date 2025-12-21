@@ -15,7 +15,7 @@ CONSOLIDATED: All LLM formatting and template functionality in one place.
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 import logging
@@ -44,6 +44,18 @@ class ContextType(Enum):
     CLARIFICATION = "clarification"
     COMPARISON = "comparison"
     TREND_ANALYSIS = "trend_analysis"
+
+
+@dataclass
+class FormatResult:
+    """Result of formatting operation."""
+
+    formatted_content: str
+    format_type: LLMFormat
+    context_type: ContextType
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    success: bool = True
+    error: Optional[str] = None
 
 
 @dataclass

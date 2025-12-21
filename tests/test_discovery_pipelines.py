@@ -3,6 +3,7 @@ Test module for Discovery Pipelines implementation.
 """
 
 import unittest
+import pytest
 from unittest.mock import Mock, patch
 from src.services.proxmox_discovery import ProxmoxDiscovery
 from src.services.node_probing import NodeProbing
@@ -239,6 +240,7 @@ class TestDiscoveryManager(unittest.TestCase):
         self.assertTrue(updated_config["features"]["auto_register"])
 
 
+@pytest.mark.asyncio
 async def test_discovery_pipeline_integration():
     """Test discovery pipeline integration."""
 
@@ -267,11 +269,12 @@ async def test_discovery_pipeline_integration():
                 inventory = await pipeline.run_discovery_cycle()
 
                 # Verify results
-                self.assertIsNotNone(inventory)
-                self.assertEqual(inventory.total_hosts, 0)
-                self.assertEqual(inventory.total_nodes, 0)
+                assert inventory is not None
+                assert inventory.total_hosts == 0
+                assert inventory.total_nodes == 0
 
 
+@pytest.mark.asyncio
 async def test_discovery_manager_operations():
     """Test discovery manager operations."""
 
@@ -288,13 +291,13 @@ async def test_discovery_manager_operations():
 
         # Test force discovery
         result = await manager.force_discovery()
-        self.assertTrue(result["success"])
-        self.assertIn("inventory", result)
+        assert result["success"] is True
+        assert "inventory" in result
 
         # Test status retrieval
         status = manager.get_discovery_status()
-        self.assertIn("last_discovery", status)
-        self.assertIn("inventory_stats", status)
+        assert "last_discovery" in status
+        assert "inventory_stats" in status
 
 
 def test_create_default_discovery_config():
@@ -303,12 +306,12 @@ def test_create_default_discovery_config():
 
     config = create_default_discovery_config()
 
-    self.assertEqual(config["discovery_interval"], 300)
-    self.assertEqual(config["health_check_interval"], 60)
-    self.assertEqual(config["max_concurrent_probes"], 5)
-    self.assertFalse(config["auto_register"])
-    self.assertEqual(config["proxmox_api"]["username"], "root@pam")
-    self.assertEqual(config["tailscale"]["ssh_user"], "root")
+    assert config["discovery_interval"] == 300
+    assert config["health_check_interval"] == 60
+    assert config["max_concurrent_probes"] == 5
+    assert not config["auto_register"]
+    assert config["proxmox_api"]["username"] == "root@pam"
+    assert config["tailscale"]["ssh_user"] == "root"
 
 
 if __name__ == "__main__":
