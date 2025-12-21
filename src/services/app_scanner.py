@@ -5,6 +5,7 @@ Detects common home lab applications like Jellyfin, Pi-hole, Ollama, PostgreSQL,
 
 import re
 import subprocess
+import shutil
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Any
 import logging
@@ -168,6 +169,25 @@ class ApplicationScanner:
 
     def __init__(self):
         self.detected_apps: List[DetectedApp] = []
+        self._validated_commands = self._validate_system_commands()
+
+    def _validate_system_commands(self) -> Dict[str, str]:
+        """Validate and get absolute paths for system commands."""
+        commands = {
+            "systemctl": shutil.which("systemctl"),
+            "ps": shutil.which("ps"),
+            "ss": shutil.which("ss"),
+            "test": shutil.which("test"),
+        }
+
+        # Filter out commands that aren't available
+        validated_commands = {k: v for k, v in commands.items() if v}
+        missing_commands = [k for k, v in commands.items() if not v]
+
+        if missing_commands:
+            logger.warning(f"Some system commands not found: {missing_commands}")
+
+        return validated_commands
 
     def scan(self) -> List[DetectedApp]:
         """Run full system scan for applications."""
@@ -262,9 +282,13 @@ class ApplicationScanner:
     def _get_systemd_services(self) -> List[str]:
         """Get list of active systemd services."""
         try:
+            if "systemctl" not in self._validated_commands:
+                logger.error("systemctl command not found")
+                return []
+
             result = subprocess.run(
                 [
-                    "systemctl",
+                    self._validated_commands["systemctl"],
                     "list-units",
                     "--type=service",
                     "--state=running",
@@ -291,8 +315,15 @@ class ApplicationScanner:
     def _get_running_processes(self) -> List[str]:
         """Get list of running process names."""
         try:
+            if "ps" not in self._validated_commands:
+                logger.error("ps command not found")
+                return []
+
             result = subprocess.run(
-                ["ps", "aux"], capture_output=True, text=True, timeout=10
+                [self._validated_commands["ps"], "aux"],
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             if result.returncode == 0:
                 return result.stdout.splitlines()
@@ -304,8 +335,15 @@ class ApplicationScanner:
         """Get list of listening TCP ports."""
         ports = []
         try:
+            if "ss" not in self._validated_commands:
+                logger.error("ss command not found")
+                return []
+
             result = subprocess.run(
-                ["ss", "-tlnH"],  # TCP listening, numeric, no header
+                [
+                    self._validated_commands["ss"],
+                    "-tlnH",
+                ],  # TCP listening, numeric, no header
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -323,7 +361,12 @@ class ApplicationScanner:
     def _file_exists(self, path: str) -> bool:
         """Check if file or directory exists."""
         try:
-            result = subprocess.run(["test", "-e", path], timeout=5)
+            if "test" not in self._validated_commands:
+                return False
+
+            result = subprocess.run(
+                [self._validated_commands["test"], "-e", path], timeout=5
+            )
             return result.returncode == 0
         except Exception:
             return False
@@ -331,8 +374,24 @@ class ApplicationScanner:
     def _get_version(self, cmd: str) -> Optional[str]:
         """Try to get application version."""
         try:
+            # Validate command path for security
+            cmd_parts = cmd.split()
+            if not cmd_parts or not cmd_parts[0]:
+                return None
+
+            # Get absolute path for the command
+            cmd_path = shutil.which(cmd_parts[0])
+            if not cmd_path:
+                logger.debug(f"Command not found: {cmd_parts[0]}")
+                return None
+
+            # Use validated command path
+            validated_cmd = (
+                [cmd_path] + cmd_parts[1:] if len(cmd_parts) > 1 else [cmd_path]
+            )
+
             result = subprocess.run(
-                cmd.split(), capture_output=True, text=True, timeout=5
+                validated_cmd, capture_output=True, text=True, timeout=5
             )
             if result.returncode == 0:
                 # Try to extract version number

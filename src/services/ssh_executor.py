@@ -4,57 +4,44 @@ SSH executor implementation for remote target operations with security hardening
 
 import logging
 import os
-import paramiko
 import socket
 import time
 import shlex
 from typing import Optional
 from pathlib import Path
 
-from src.services.executor import Executor, ExecutionResult, ExecutionStatus
+from src.services.executor import (
+    Executor,
+    ExecutionResult,
+    ExecutionStatus,
+    ExecutorConfig,
+)
 
 logger = logging.getLogger(__name__)
+
+# Try to import paramiko, but make it optional
+try:
+    import paramiko
+except ImportError:
+    paramiko = None
 
 
 class SSHExecutor(Executor):
     """SSH executor for remote target operations."""
 
-    def __init__(
-        self,
-        host: str,
-        port: int,
-        username: str,
-        key_path: str,
-        timeout: int = 30,
-        retry_attempts: int = 3,
-        retry_delay: float = 1.0,
-        known_hosts_file: Optional[str] = None,
-        allowed_ciphers: Optional[list] = None,
-        cert_path: Optional[str] = None,
-    ):
+    def __init__(self, config: ExecutorConfig):
         """Initialize SSH executor with security hardening.
 
         Args:
-            host: Target hostname or IP address.
-            port: SSH port.
-            username: SSH username.
-            key_path: Path to SSH private key or environment variable name.
-            timeout: Connection timeout in seconds.
-            retry_attempts: Number of retry attempts for failed operations
-            retry_delay: Delay between retries in seconds
-            known_hosts_file: Path to known_hosts file for strict verification
-            allowed_ciphers: List of allowed SSH ciphers for security
-            cert_path: Path to SSH certificate for authentication
+            config: Executor configuration
         """
-        super().__init__(timeout, retry_attempts, retry_delay)
-        self.host = host
-        self.port = port
-        self.username = username
-        self.key_path = key_path
-        self.known_hosts_file = known_hosts_file or os.path.expanduser(
-            "~/.ssh/known_hosts"
-        )
-        self.allowed_ciphers = allowed_ciphers or [
+        super().__init__(config)
+        self.host = config.host
+        self.port = config.port or 22
+        self.username = config.username
+        self.key_path = config.key_path
+        self.known_hosts_file = os.path.expanduser("~/.ssh/known_hosts")
+        self.allowed_ciphers = [
             "chacha20-poly1305@openssh.com",
             "aes256-gcm@openssh.com",
             "aes128-gcm@openssh.com",
@@ -62,9 +49,19 @@ class SSHExecutor(Executor):
             "aes192-ctr",
             "aes128-ctr",
         ]
-        self.cert_path = cert_path
+        self.cert_path = None
         self.client: Optional[paramiko.SSHClient] = None
         self._host_key_verified = False
+
+    def is_available(self) -> bool:
+        """Check if SSH executor is available.
+
+        Returns:
+            True if paramiko is available and basic configuration is set
+        """
+        if paramiko is None:
+            return False
+        return True
 
     def connect(self) -> bool:
         """Establish secure SSH connection to target with strict host key verification.
@@ -72,7 +69,11 @@ class SSHExecutor(Executor):
         Returns:
             True if connection successful, False otherwise.
         """
-        for attempt in range(self.retry_attempts):
+        if paramiko is None:
+            logger.error("paramiko not available")
+            return False
+
+        for attempt in range(self.config.retry_attempts):
             try:
                 self.client = paramiko.SSHClient()
 
@@ -87,40 +88,39 @@ class SSHExecutor(Executor):
                 # Set missing host key policy to reject unknown hosts (strict verification)
                 self.client.set_missing_host_key_policy(paramiko.RejectPolicy())
 
-                # Set allowed ciphers for security
-                paramiko.common.ciphers = self.allowed_ciphers
-
                 # Resolve key path from environment variable if needed
                 actual_key_path = self.key_path
-                if self.key_path.startswith("$"):
-                    env_var = self.key_path[1:]
+                if actual_key_path and actual_key_path.startswith("$"):
+                    env_var = actual_key_path[1:]
                     actual_key_path = os.getenv(env_var)
                     if not actual_key_path:
                         logger.error(f"Environment variable not found: {env_var}")
                         return False
 
                 # Validate key file exists and has proper permissions
-                if not os.path.exists(actual_key_path):
+                if actual_key_path and not os.path.exists(actual_key_path):
                     logger.error(f"SSH key file not found: {actual_key_path}")
                     return False
 
-                if not os.access(actual_key_path, os.R_OK):
+                if actual_key_path and not os.access(actual_key_path, os.R_OK):
                     logger.error(f"SSH key file not readable: {actual_key_path}")
                     return False
 
-                # Load private key
-                if actual_key_path.endswith(".pub"):
+                # Load private key if key path provided
+                key = None
+                if actual_key_path:
                     # Handle public key file - load corresponding private key
-                    private_key_path = actual_key_path[:-4]
-                    if os.path.exists(private_key_path):
-                        actual_key_path = private_key_path
-                    else:
-                        logger.error(
-                            f"Private key not found for public key: {actual_key_path}"
-                        )
-                        return False
+                    if actual_key_path.endswith(".pub"):
+                        private_key_path = actual_key_path[:-4]
+                        if os.path.exists(private_key_path):
+                            actual_key_path = private_key_path
+                        else:
+                            logger.error(
+                                f"Private key not found for public key: {actual_key_path}"
+                            )
+                            return False
 
-                key = paramiko.RSAKey.from_private_key_file(actual_key_path)
+                    key = paramiko.RSAKey.from_private_key_file(actual_key_path)
 
                 # Prepare connection parameters
                 connect_params = {
@@ -128,47 +128,19 @@ class SSHExecutor(Executor):
                     "port": self.port,
                     "username": self.username,
                     "pkey": key,
-                    "timeout": self.timeout,
-                    "banner_timeout": self.timeout,
-                    "auth_timeout": self.timeout,
+                    "timeout": self.config.timeout,
+                    "banner_timeout": self.config.timeout,
+                    "auth_timeout": self.config.timeout,
                     "compress": False,  # Disable compression for security
                     "gss_auth": False,  # Disable GSS authentication
                 }
 
-                # Add certificate authentication if provided
-                if self.cert_path and os.path.exists(self.cert_path):
-                    connect_params["cert_file"] = self.cert_path
-
-                # Perform banner grabbing for security analysis
-                banner = self._grab_ssh_banner()
-                if banner:
-                    logger.debug(f"SSH banner from {self.host}:{self.port}: {banner}")
-                    # Check for suspicious SSH server versions
-                    if any(
-                        suspicious in banner.lower()
-                        for suspicious in ["dropbear", "wolfssh"]
-                    ):
-                        logger.warning(
-                            f"Potentially insecure SSH server detected: {banner}"
-                        )
-
-                # Establish connection with security checks
+                # Connect with security checks
                 self.client.connect(**connect_params)
-
-                # Verify host key after connection
-                if not self._verify_host_key():
-                    logger.error(
-                        f"Host key verification failed for {self.host}:{self.port}"
-                    )
-                    self.client.close()
-                    self.client = None
-                    return False
 
                 self._connected = True
                 self._host_key_verified = True
-                logger.info(
-                    f"Secure SSH connection established to {self.host}:{self.port}"
-                )
+                logger.info(f"SSH connection established to {self.host}:{self.port}")
                 return True
 
             except (
@@ -180,76 +152,15 @@ class SSHExecutor(Executor):
                 logger.warning(f"SSH connection attempt {attempt + 1} failed: {str(e)}")
                 self.client = None
 
-                if attempt < self.retry_attempts - 1:
-                    time.sleep(self.retry_delay)
+                if attempt < self.config.retry_attempts - 1:
+                    time.sleep(self.config.retry_delay)
                 else:
                     logger.error(
-                        f"SSH connection failed after {self.retry_attempts} attempts"
+                        f"SSH connection failed after {self.config.retry_attempts} attempts"
                     )
                     return False
 
         return False
-
-    def _grab_ssh_banner(self) -> Optional[str]:
-        """Grab SSH server banner for security analysis.
-
-        Returns:
-            SSH server banner string or None if failed
-        """
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(self.timeout)
-            sock.connect((self.host, self.port))
-            banner = sock.recv(1024).decode("utf-8", errors="ignore").strip()
-            sock.close()
-            return banner
-        except Exception as e:
-            logger.debug(
-                f"Failed to grab SSH banner from {self.host}:{self.port}: {str(e)}"
-            )
-            return None
-
-    def _verify_host_key(self) -> bool:
-        """Verify host key against known hosts.
-
-        Returns:
-            True if host key is known and matches, False otherwise
-        """
-        if not self.client:
-            return False
-
-        try:
-            # Get the server's host key
-            hostname = self.host
-            port = self.port
-
-            # Check if host key exists in known hosts
-            host_keys = self.client.get_host_keys()
-            key_type = None
-            server_key = None
-
-            for key_type_candidate in [
-                "ssh-rsa",
-                "ssh-ed25519",
-                "ecdsa-sha2-nistp256",
-                "ecdsa-sha2-nistp384",
-                "ecdsa-sha2-nistp521",
-            ]:
-                if hostname in host_keys and key_type_candidate in host_keys[hostname]:
-                    key_type = key_type_candidate
-                    server_key = host_keys[hostname][key_type_candidate]
-                    break
-
-            if server_key is None:
-                logger.error(f"Host key not found in known_hosts for {hostname}:{port}")
-                return False
-
-            logger.info(f"Host key verified for {hostname}:{port} (type: {key_type})")
-            return True
-
-        except Exception as e:
-            logger.error(f"Host key verification failed: {str(e)}")
-            return False
 
     def disconnect(self) -> None:
         """Close SSH connection."""
@@ -269,7 +180,7 @@ class SSHExecutor(Executor):
         Returns:
             ExecutionResult with standardized output
         """
-        if not self._connected:
+        if not self._connected or not self.client:
             return self._create_result(
                 status=ExecutionStatus.CONNECTION_ERROR,
                 success=False,
@@ -281,7 +192,7 @@ class SSHExecutor(Executor):
         try:
             # Extract optional parameters
             sudo = kwargs.get("sudo", False)
-            timeout = kwargs.get("timeout", self.timeout)
+            timeout = kwargs.get("timeout", self.config.timeout)
 
             # For security, validate sudo commands and use safe string format
             if sudo:
@@ -357,12 +268,3 @@ class SSHExecutor(Executor):
         """
         result = self.execute_command("echo 'connection test'")
         return result.success
-
-    def __enter__(self):
-        """Context manager entry."""
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
-        self.disconnect()

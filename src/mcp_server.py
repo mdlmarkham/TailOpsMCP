@@ -61,5 +61,7 @@ if __name__ == "__main__":
 
     logger.info("Intelligent log analysis with AI sampling enabled")
 
-    # Use HTTP streaming transport
-    mcp.run(transport="http", host="0.0.0.0", port=8080)
+    # Use HTTP streaming transport - bind to localhost for security
+    host = os.getenv("MCP_HOST", "127.0.0.1")  # Default to localhost
+    port = int(os.getenv("MCP_PORT", "8080"))  # Configurable port
+    mcp.run(transport="http", host=host, port=port)

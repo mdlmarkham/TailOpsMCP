@@ -108,8 +108,23 @@ class SSHTailscaleBackend(RemoteExecutionBackend):
 
             self.client = paramiko.SSHClient()
 
-            # Set strict host key checking
-            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            # SECURITY: Load system host keys for secure SSH connections
+            self.client.load_system_host_keys()
+
+            # For development/testing environments, allow strict checking
+            import os
+
+            if os.getenv("SSH_STRICT_HOST_KEY_CHECKING", "true").lower() == "true":
+                # Reject unknown hosts for production security
+                self.client.set_missing_host_key_policy(paramiko.RejectPolicy())
+            else:
+                # Allow known hosts for development (with warning log)
+                import logging
+
+                logging.warning(
+                    "SSH host key verification disabled - use only in development"
+                )
+                self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             # Resolve target host
             target_host = self._resolve_target_host()

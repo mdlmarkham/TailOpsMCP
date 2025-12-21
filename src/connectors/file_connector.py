@@ -58,21 +58,29 @@ class DirectoryTreeNode:
 class SecureFilePaths:
     """Secure path handling with whitelist validation."""
 
-    # Allowed base paths for file operations
-    ALLOWED_BASE_PATHS = {
-        "/etc/systemd/system/",
-        "/etc/nginx/",
-        "/etc/ssl/",
-        "/etc/cron.d/",
-        "/etc/logrotate.d/",
-        "/var/log/",
-        "/var/log/journal/",
-        "/tmp/",
-        "/var/tmp/",
-        "/opt/",
-        "/usr/local/bin/",
-        "/home/",
-    }
+    def __init__(self):
+        # Initialize allowed paths from environment if available
+        import os
+
+        allowed_paths_env = os.getenv("SYSTEMMANAGER_ALLOWED_BASE_PATHS", "")
+        if allowed_paths_env:
+            self.ALLOWED_BASE_PATHS = set(allowed_paths_env.split(","))
+        else:
+            # Default allowed base paths for file operations
+            self.ALLOWED_BASE_PATHS = {
+                "/etc/systemd/system/",
+                "/etc/nginx/",
+                "/etc/ssl/",
+                "/etc/cron.d/",
+                "/etc/logrotate.d/",
+                "/var/log/",
+                "/var/log/journal/",
+                "/tmp/",
+                "/var/tmp/",
+                "/opt/",
+                "/usr/local/bin/",
+                "/home/",
+            }
 
     # Forbidden paths that should never be accessible
     FORBIDDEN_PATHS = {

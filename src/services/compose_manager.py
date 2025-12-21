@@ -5,6 +5,7 @@ Similar to Portainer/Komodo stacks - deploy from GitHub repos
 
 import os
 import subprocess
+import shutil
 import logging
 import re
 from typing import Dict, Optional
@@ -21,6 +22,22 @@ class ComposeStackManager:
     def __init__(self, stacks_dir: str = "/opt/stacks"):
         self.stacks_dir = Path(stacks_dir)
         self.stacks_dir.mkdir(parents=True, exist_ok=True)
+        self._validated_commands = self._validate_system_commands()
+
+    def _validate_system_commands(self) -> Dict[str, str]:
+        """Validate and get absolute paths for system commands."""
+        commands = {
+            "docker": shutil.which("docker"),
+        }
+
+        # Filter out commands that aren't available
+        validated_commands = {k: v for k, v in commands.items() if v}
+        missing_commands = [k for k, v in commands.items() if not v]
+
+        if missing_commands:
+            logger.warning(f"Docker command not found: {missing_commands}")
+
+        return validated_commands
 
     def _validate_repo_url(self, url: str) -> bool:
         """Securely validate repository URL to prevent command injection.
@@ -174,7 +191,7 @@ class ComposeStackManager:
                     for key, value in env_vars.items():
                         f.write(f"{key}={value}\n")
 
-            # Deploy with docker compose
+            # Run docker compose up
             compose_path = stack_path / compose_file
             if not compose_path.exists():
                 return {
@@ -182,9 +199,14 @@ class ComposeStackManager:
                     "error": f"Compose file not found: {compose_file}",
                 }
 
+            # Validate docker command exists
+            docker_cmd = self._validated_commands.get("docker", "docker")
+            if not shutil.which(docker_cmd):
+                return {"success": False, "error": "Docker command not available"}
+
             # Run docker compose up
             result = subprocess.run(
-                ["docker", "compose", "-f", str(compose_path), "up", "-d"],
+                [docker_cmd, "compose", "-f", str(compose_path), "up", "-d"],
                 cwd=stack_path,
                 capture_output=True,
                 text=True,
@@ -223,9 +245,13 @@ class ComposeStackManager:
                 # Get compose services
                 compose_file = stack_dir / "docker-compose.yml"
                 if compose_file.exists():
+                    docker_cmd = self._validated_commands.get("docker", "docker")
+                    if not shutil.which(docker_cmd):
+                        continue
+
                     result = subprocess.run(
                         [
-                            "docker",
+                            docker_cmd,
                             "compose",
                             "-f",
                             str(compose_file),
@@ -277,9 +303,11 @@ class ComposeStackManager:
 
             # Restart services
             compose_file = stack_path / "docker-compose.yml"
+            docker_cmd = self._validated_commands.get("docker", "docker")
+
             result = subprocess.run(
                 [
-                    "docker",
+                    docker_cmd,
                     "compose",
                     "-f",
                     str(compose_file),
@@ -314,7 +342,9 @@ class ComposeStackManager:
         try:
             # Stop and remove containers
             compose_file = stack_path / "docker-compose.yml"
-            cmd = ["docker", "compose", "-f", str(compose_file), "down"]
+            docker_cmd = self._validated_commands.get("docker", "docker")
+
+            cmd = [docker_cmd, "compose", "-f", str(compose_file), "down"]
             if delete_data:
                 cmd.append("-v")  # Remove volumes
 

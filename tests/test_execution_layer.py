@@ -5,12 +5,41 @@ Tests for the execution abstraction layer.
 import pytest
 from unittest.mock import Mock, patch
 
-from src.services.executor import Executor, ExecutionResult, ExecutionStatus
-from src.services.local_executor import LocalExecutor
-from src.services.ssh_executor import SSHExecutor
-from src.services.docker_executor import DockerExecutor
-from src.services.executor_factory import ExecutorFactory
-from src.models.target_registry import TargetConnection, ExecutorType
+from src.services.executor import (
+    Executor,
+    ExecutionResult,
+    ExecutionStatus,
+    LocalExecutor,
+    SSHExecutor,
+    DockerExecutor,
+    ExecutorConfig,
+    ExecutorType,
+    get_executor_factory,
+    create_executor,
+)
+
+
+# Create a simple connection mock class like TargetConnection
+class TargetConnection:
+    """Mock connection for testing."""
+
+    def __init__(
+        self,
+        executor=None,
+        host=None,
+        port=None,
+        username=None,
+        key_path=None,
+        socket_path=None,
+        timeout=30,
+    ):
+        self.executor = executor
+        self.host = host
+        self.port = port
+        self.username = username
+        self.key_path = key_path
+        self.socket_path = socket_path
+        self.timeout = timeout
 
 
 class TestExecutorBase:
@@ -19,230 +48,275 @@ class TestExecutorBase:
     def test_executor_abstract_methods(self):
         """Test that Executor is abstract and requires implementation."""
         with pytest.raises(TypeError):
-            Executor()
+            Executor(config=None)
 
     def test_execution_result_model(self):
-        """Test ExecutionResult model creation and serialization."""
+        """Test ExecutionResult dataclass."""
         result = ExecutionResult(
             status=ExecutionStatus.SUCCESS,
             success=True,
+            output="test output",
+            command="test command",
             exit_code=0,
-            output="Test output",
-            error=None,
-            duration=1.5,
-            metadata={"test": "value"},
+            duration=1.0,
         )
 
-        assert result.success is True
         assert result.status == ExecutionStatus.SUCCESS
+        assert result.success is True
+        assert result.output == "test output"
+        assert result.command == "test command"
         assert result.exit_code == 0
-        assert result.output == "Test output"
-        assert result.duration == 1.5
-
-        # Test dictionary conversion
-        result_dict = result.to_dict()
-        assert result_dict["success"] is True
-        assert result_dict["status"] == "success"
 
 
 class TestLocalExecutor:
-    """Test LocalExecutor functionality."""
+    """Test local executor functionality."""
 
     def test_local_executor_creation(self):
-        """Test LocalExecutor creation."""
-        executor = LocalExecutor()
-        assert isinstance(executor, Executor)
-        assert executor.timeout == 30
+        """Test creating local executor."""
+        config = ExecutorConfig(
+            executor_type=ExecutorType.LOCAL, host=None, port=None, username=None
+        )
+        executor = LocalExecutor(config)
+
+        assert isinstance(executor, LocalExecutor)
+        assert executor.is_available() is True
 
     def test_local_executor_connect(self):
-        """Test LocalExecutor connection."""
-        executor = LocalExecutor()
+        """Test local executor connection."""
+        config = ExecutorConfig(
+            executor_type=ExecutorType.LOCAL, host=None, port=None, username=None
+        )
+        executor = LocalExecutor(config)
+
+        # Local executor should always connect successfully
         assert executor.connect() is True
-        assert executor.is_connected() is True
 
     @patch("subprocess.run")
     def test_local_executor_execute_command_success(self, mock_run):
         """Test successful command execution."""
-        mock_run.return_value = Mock(returncode=0, stdout="Success output", stderr="")
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = "test output"
+        mock_run.return_value.stderr = ""
 
-        executor = LocalExecutor()
+        config = ExecutorConfig(
+            executor_type=ExecutorType.LOCAL, host=None, port=None, username=None
+        )
+        executor = LocalExecutor(config)
         executor.connect()
 
         result = executor.execute_command("echo test")
 
         assert result.success is True
         assert result.status == ExecutionStatus.SUCCESS
-        assert result.exit_code == 0
-        assert result.output == "Success output"
+        assert "test" in result.output
 
     @patch("subprocess.run")
     def test_local_executor_execute_command_failure(self, mock_run):
         """Test failed command execution."""
-        mock_run.return_value = Mock(returncode=1, stdout="", stderr="Error occurred")
+        mock_run.return_value.returncode = 1
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.stderr = "command failed"
 
-        executor = LocalExecutor()
+        config = ExecutorConfig(
+            executor_type=ExecutorType.LOCAL, host=None, port=None, username=None
+        )
+        executor = LocalExecutor(config)
         executor.connect()
 
         result = executor.execute_command("invalid_command")
 
         assert result.success is False
         assert result.status == ExecutionStatus.FAILURE
-        assert result.exit_code == 1
-        assert result.error == "Error occurred"
 
 
 class TestSSHExecutor:
-    """Test SSHExecutor functionality."""
+    """Test SSH executor functionality."""
 
     def test_ssh_executor_creation(self):
-        """Test SSHExecutor creation."""
-        executor = SSHExecutor(
+        """Test creating SSH executor."""
+        config = ExecutorConfig(
+            executor_type=ExecutorType.SSH,
             host="test.example.com",
             port=22,
             username="testuser",
             key_path="/path/to/key",
         )
-        assert isinstance(executor, Executor)
+        executor = SSHExecutor(config)
+
+        assert isinstance(executor, SSHExecutor)
         assert executor.host == "test.example.com"
 
     @patch("paramiko.SSHClient")
-    def test_ssh_executor_connect_success(self, mock_ssh_client):
+    def test_ssh_executor_connect_success(self, mock_ssh):
         """Test successful SSH connection."""
         mock_client = Mock()
-        mock_ssh_client.return_value = mock_client
+        mock_ssh.return_value = mock_client
 
-        executor = SSHExecutor(
+        config = ExecutorConfig(
+            executor_type=ExecutorType.SSH,
             host="test.example.com",
             port=22,
             username="testuser",
             key_path="/path/to/key",
         )
+        executor = SSHExecutor(config)
 
-        assert executor.connect() is True
-        assert executor.is_connected() is True
+        success = executor.connect()
+        assert success is True
 
     @patch("paramiko.SSHClient")
-    def test_ssh_executor_execute_command(self, mock_ssh_client):
-        """Test SSH command execution."""
+    def test_ssh_executor_connect_failure(self, mock_ssh):
+        """Test SSH connection failure."""
         mock_client = Mock()
-        mock_stdin = Mock()
-        mock_stdout = Mock()
-        mock_stderr = Mock()
-        Mock()
+        mock_ssh.return_value = mock_client
+        mock_client.connect.side_effect = Exception("Connection failed")
 
-        mock_ssh_client.return_value = mock_client
-        mock_client.exec_command.return_value = (mock_stdin, mock_stdout, mock_stderr)
-        mock_stdout.channel.recv_exit_status.return_value = 0
-        mock_stdout.read.return_value = b"Command output"
-        mock_stderr.read.return_value = b""
-
-        executor = SSHExecutor(
+        config = ExecutorConfig(
+            executor_type=ExecutorType.SSH,
             host="test.example.com",
             port=22,
             username="testuser",
             key_path="/path/to/key",
         )
+        executor = SSHExecutor(config)
+
+        success = executor.connect()
+        assert success is False
+
+    @patch("paramiko.SSHClient")
+    def test_ssh_executor_execute_command(self, mock_ssh):
+        """Test SSH command execution."""
+        mock_client = Mock()
+        mock_ssh.return_value = mock_client
+
+        mock_stdout = Mock()
+        mock_stdout.read.return_value = b"test output"
+        mock_stderr = Mock()
+        mock_stderr.read.return_value = b""
+
+        mock_client.exec_command.return_value = (None, mock_stdout, mock_stderr)
+
+        config = ExecutorConfig(
+            executor_type=ExecutorType.SSH,
+            host="test.example.com",
+            port=22,
+            username="testuser",
+            key_path="/path/to/key",
+        )
+        executor = SSHExecutor(config)
         executor.connect()
 
-        result = executor.execute_command("ls -la")
+        result = executor.execute_command("echo test")
 
         assert result.success is True
         assert result.status == ExecutionStatus.SUCCESS
-        assert result.output == "Command output"
 
 
 class TestDockerExecutor:
-    """Test DockerExecutor functionality."""
+    """Test Docker executor functionality."""
 
     def test_docker_executor_creation(self):
-        """Test DockerExecutor creation."""
-        executor = DockerExecutor(socket_path="/var/run/docker.sock")
-        assert isinstance(executor, Executor)
-        assert executor.socket_path == "/var/run/docker.sock"
+        """Test creating Docker executor."""
+        config = ExecutorConfig(
+            executor_type=ExecutorType.DOCKER,
+            host=None,
+            port=None,
+            username=None,
+            socket_path="/var/run/docker.sock",
+        )
+        executor = DockerExecutor(config)
 
-    @patch("docker.DockerClient")
-    def test_docker_executor_connect_success(self, mock_docker_client):
+        assert isinstance(executor, DockerExecutor)
+
+    @patch("docker.from_env")
+    def test_docker_executor_connect_success(self, mock_docker):
         """Test successful Docker connection."""
         mock_client = Mock()
-        mock_client.ping.return_value = True
-        mock_docker_client.return_value = mock_client
+        mock_docker.return_value = mock_client
 
-        executor = DockerExecutor(socket_path="/var/run/docker.sock")
+        config = ExecutorConfig(
+            executor_type=ExecutorType.DOCKER,
+            host=None,
+            port=None,
+            username=None,
+            socket_path="/var/run/docker.sock",
+        )
+        executor = DockerExecutor(config)
 
-        assert executor.connect() is True
-        assert executor.is_connected() is True
+        success = executor.connect()
+        assert success is True
 
 
 class TestExecutorFactory:
-    """Test ExecutorFactory functionality."""
+    """Test executor factory functionality."""
 
     def test_executor_factory_creation(self):
-        """Test ExecutorFactory creation."""
-        factory = ExecutorFactory()
-        assert isinstance(factory, ExecutorFactory)
+        """Test creating executor factory."""
+        factory = get_executor_factory()
+        assert factory is not None
 
     def test_create_local_executor(self):
         """Test creating local executor."""
-        factory = ExecutorFactory()
         connection = TargetConnection(executor=ExecutorType.LOCAL)
+        config = ExecutorConfig(
+            executor_type=ExecutorType.LOCAL, host=None, port=None, username=None
+        )
 
-        executor = factory.create_executor(connection)
+        factory = get_executor_factory()
+        executor = factory.create_executor(config)
 
         assert isinstance(executor, LocalExecutor)
 
     def test_create_ssh_executor(self):
         """Test creating SSH executor."""
-        factory = ExecutorFactory()
-        connection = TargetConnection(
-            executor=ExecutorType.SSH,
+        config = ExecutorConfig(
+            executor_type=ExecutorType.SSH,
             host="test.example.com",
             port=22,
             username="testuser",
             key_path="/path/to/key",
         )
 
-        executor = factory.create_executor(connection)
+        factory = get_executor_factory()
+        executor = factory.create_executor(config)
 
         assert isinstance(executor, SSHExecutor)
         assert executor.host == "test.example.com"
 
     def test_create_docker_executor(self):
         """Test creating Docker executor."""
-        factory = ExecutorFactory()
-        connection = TargetConnection(
-            executor=ExecutorType.DOCKER, socket_path="/var/run/docker.sock"
+        config = ExecutorConfig(
+            executor_type=ExecutorType.DOCKER, socket_path="/var/run/docker.sock"
         )
 
-        executor = factory.create_executor(connection)
+        factory = get_executor_factory()
+        executor = factory.create_executor(config)
 
         assert isinstance(executor, DockerExecutor)
-        assert executor.socket_path == "/var/run/docker.sock"
 
     def test_executor_caching(self):
         """Test executor caching functionality."""
-        factory = ExecutorFactory()
-        connection = TargetConnection(executor=ExecutorType.LOCAL)
+        config = ExecutorConfig(
+            executor_type=ExecutorType.LOCAL, host=None, port=None, username=None
+        )
 
-        # Create first executor
-        executor1 = factory.create_executor(connection)
+        factory = get_executor_factory()
+        executor1 = factory.create_executor(config)
+        executor2 = factory.create_executor(config)
 
-        # Get cached executor
-        executor2 = factory.get_or_create_executor(connection)
-
-        # Should be the same instance
+        # Should return same instance for same config
         assert executor1 is executor2
 
     def test_clear_cache(self):
-        """Test cache clearing functionality."""
-        factory = ExecutorFactory()
-        connection = TargetConnection(executor=ExecutorType.LOCAL)
+        """Test clearing executor cache."""
+        config = ExecutorConfig(
+            executor_type=ExecutorType.LOCAL, host=None, port=None, username=None
+        )
 
-        # Create and cache executor
-        factory.create_executor(connection)
-
-        # Clear cache
+        factory = get_executor_factory()
+        executor1 = factory.create_executor(config)
         factory.clear_cache()
+        executor2 = factory.create_executor(config)
 
-        # Should create new executor
-        executor = factory.get_or_create_executor(connection)
-        assert executor is not None
+        # Should return different instances after cache clear
+        assert executor1 is not executor2

@@ -146,6 +146,8 @@ class RemoteAgentConnector(ABC):
         self.connection = connection
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._capabilities: Dict[str, Any] = {}
+        # Initialize secure allowlist for allowed commands
+        self._allowed_commands_set = self._build_allowed_commands()
 
     @abstractmethod
     async def get_capabilities(self) -> Dict[str, Any]:
@@ -298,7 +300,49 @@ class RemoteAgentConnector(ABC):
             )
             raise OperationError(f"Failed to download file: {str(e)}")
 
-    def _validate_command_safety(self, command: str) -> bool:
+    def _build_allowed_commands(self) -> set:
+        """Build set of allowed commands for security."""
+        allowed_commands = {
+            # System information
+            "echo",
+            "whoami",
+            "hostname",
+            "uname",
+            "date",
+            "uptime",
+            # File operations (limited)
+            "ls",
+            "cat",
+            "stat",
+            "find",
+            "head",
+            "tail",
+            "wc",
+            "grep",
+            "sed",
+            "awk",
+            # Network operations (limited)
+            "ping",
+            "nc",
+            "ss",
+            "ip",
+            "netstat",
+            "nmap",
+            # Process operations (limited)
+            "ps",
+            "pgrep",
+            "pidof",
+            # Service operations (limited)
+            "systemctl",
+            "service",
+            # Docker operations (limited)
+            "docker",
+            # Package operations (read-only)
+            "dpkg",
+            "apt-cache",
+            "apt-listchanges",
+        }
+        return allowed_commands
         """Validate command safety before execution.
 
         Args:

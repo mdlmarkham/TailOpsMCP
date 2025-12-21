@@ -24,6 +24,7 @@ src/integration/toon/serializer.py
 src/models/__init__.py
 src/models/connection_types.py
 src/models/containers.py
+src/models/content_models.py
 src/models/enhanced_fleet_inventory.py
 src/models/event_models.py
 src/models/execution.py
@@ -36,6 +37,7 @@ src/models/inventory_snapshot.py
 src/models/network.py
 src/models/policy_models.py
 src/models/proxmox_models.py
+src/models/security_models.py
 src/models/stack_models.py
 src/models/system.py
 src/models/target_registry.py
@@ -122,6 +124,7 @@ src/tools/__init__.py
 src/tools/admin_tools.py
 src/tools/capability_tools.py
 src/tools/container_tools.py
+src/tools/enhanced_inventory_tools.py
 src/tools/event_management_tools.py
 src/tools/file_tools.py
 src/tools/fleet_policy.py
@@ -155,12 +158,16 @@ src/utils/proxmox_monitoring.py
 src/utils/retry.py
 src/utils/sandbox.py
 src/utils/toon.py
+tests/test_corrected_high_performance_modules.py
+tests/test_coverage_enhancement.py
+tests/test_coverage_simple.py
 tests/test_discovery_pipelines.py
 tests/test_docker_manager.py
 tests/test_edge_cases.py
 tests/test_execution_layer.py
 tests/test_fleet_inventory.py
 tests/test_fleet_tools.py
+tests/test_high_performance_modules.py
 tests/test_input_validation.py
 tests/test_inventory_orchestration.py
 tests/test_mcp_wrapper_stack_network.py
@@ -195,3 +202,4 @@ tests/test_toon_extra.py
 tests/test_toon_integration.py
 tests/test_utils.py
 tests/test_workflow_orchestration.py
+tests/test_zero_coverage_models.py

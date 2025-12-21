@@ -193,7 +193,15 @@ class SSHConnectionImpl:
 
         try:
             self.client = paramiko.SSHClient()
-            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+            # Load system host keys for security
+            self.client.load_system_host_keys()
+            self.client.load_host_keys_from_file(
+                os.path.expanduser("~/.ssh/known_hosts")
+            )
+
+            # Reject unknown hosts by default
+            self.client.set_missing_host_key_policy(paramiko.RejectPolicy())
 
             # Build connection arguments
             connection_kwargs = {

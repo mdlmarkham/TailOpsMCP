@@ -36,6 +36,30 @@ import json
 logger = logging.getLogger(__name__)
 
 
+# Import concrete executor implementations lazily to avoid circular imports
+def _import_executors():
+    """Import concrete executor implementations."""
+    global LocalExecutor, SSHExecutor, DockerExecutor
+
+    try:
+        from .local_executor import LocalExecutor
+    except ImportError as e:
+        logger.warning(f"LocalExecutor not available: {e}")
+        LocalExecutor = None
+
+    try:
+        from .ssh_executor import SSHExecutor
+    except ImportError as e:
+        logger.warning(f"SSHExecutor not available: {e}")
+        SSHExecutor = None
+
+    try:
+        from .docker_executor import DockerExecutor
+    except ImportError as e:
+        logger.warning(f"DockerExecutor not available: {e}")
+        DockerExecutor = None
+
+
 # Execution Enums
 class ExecutionStatus(str, Enum):
     """Execution result status."""
@@ -615,8 +639,8 @@ class ExecutorFactory:
                 errors.append("Username is required for SSH executors")
 
         if config.executor_type == ExecutorType.DOCKER:
-            if not config.socket_path and not config.host:
-                errors.append("Socket path or host is required for Docker executors")
+            # Allow default Docker connection (docker.from_env) without socket_path or host
+            pass  # Docker can connect via default environment
 
         return errors
 
@@ -641,7 +665,7 @@ class ExecutorFactory:
 
         # Create hash
         key_string = json.dumps(key_data, sort_keys=True, default=str)
-        return hashlib.md5(key_string.encode()).hexdigest()
+        return hashlib.sha256(key_string.encode()).hexdigest()
 
 
 # Global factory instance
@@ -723,6 +747,28 @@ __all__ = [
     # Version info
     "__version__",
 ]
+
+# Make executors available by importing from their modules
+try:
+    from .local_executor import LocalExecutor
+
+    __all__.append("LocalExecutor")
+except ImportError:
+    pass
+
+try:
+    from .ssh_executor import SSHExecutor
+
+    __all__.append("SSHExecutor")
+except ImportError:
+    pass
+
+try:
+    from .docker_executor import DockerExecutor
+
+    __all__.append("DockerExecutor")
+except ImportError:
+    pass
 
 # Version information
 __version__ = "1.0.0"

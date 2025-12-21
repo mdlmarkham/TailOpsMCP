@@ -1,0 +1,6 @@
+{
+  "plugin": [
+    "opencode-beads"
+  ],
+  "$schema": "https://opencode.ai/config.json"
+}

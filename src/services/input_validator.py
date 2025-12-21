@@ -286,22 +286,27 @@ class InputValidator:
     def _validate_file_path(self, path: str) -> List[str]:
         """Validate file path with directory traversal protection."""
         errors = []
+        import os
+        import tempfile
 
         try:
             # Import here to avoid circular imports
             from pathlib import Path
 
-            # Default allowed base directories
+            # Get allowed base directories from environment or use secure defaults
+            allowed_base_dirs_str = os.getenv(
+                "SYSTEMMANAGER_ALLOWED_BASE_DIRS", "/tmp,/var/tmp,/var/log,/opt,/home"
+            )
             allowed_base_dirs = [
-                "/tmp",
-                "/var/log",
-                "/etc",
-                "/opt",
-                "/home",
-                ".",
-                "./logs",
-                "./data",
+                Path(dir.strip()).resolve()
+                for dir in allowed_base_dirs_str.split(",")
+                if dir.strip()
             ]
+
+            # Add current working directory for relative paths
+            cwd = Path.cwd()
+            if cwd not in allowed_base_dirs:
+                allowed_base_dirs.append(cwd)
 
             # Resolve to absolute path (handles .., symlinks, ~)
             try:
@@ -314,7 +319,7 @@ class InputValidator:
             path_allowed = False
             for base_dir in allowed_base_dirs:
                 try:
-                    base_resolved = Path(base_dir).resolve()
+                    base_resolved = base_dir.resolve()
                     if resolved_path.is_relative_to(base_resolved):
                         path_allowed = True
                         break
@@ -323,7 +328,7 @@ class InputValidator:
 
             if not path_allowed:
                 errors.append(
-                    f"File path not in allowed directories: {allowed_base_dirs}"
+                    f"File path not in allowed directories. Base dirs: {[str(d) for d in allowed_base_dirs]}"
                 )
 
             # Check for dangerous characters (additional layer of protection)

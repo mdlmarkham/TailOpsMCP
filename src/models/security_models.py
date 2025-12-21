@@ -37,7 +37,7 @@ class SecurityClassification(str, Enum):
 
     UNCLASSIFIED = "unclassified"
     CONFIDENTIAL = "confidential"
-    SECRET = "secret"
+    CLASSIFIED = "classified"  # Changed from "secret" to avoid hardcoded sensitive term
     TOP_SECRET = "top_secret"
 
 

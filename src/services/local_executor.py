@@ -6,7 +6,12 @@ import logging
 import subprocess
 import time
 
-from src.services.executor import Executor, ExecutionResult, ExecutionStatus
+from src.services.executor import (
+    Executor,
+    ExecutionResult,
+    ExecutionStatus,
+    ExecutorConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,17 +19,21 @@ logger = logging.getLogger(__name__)
 class LocalExecutor(Executor):
     """Local executor for local command execution."""
 
-    def __init__(
-        self, timeout: int = 30, retry_attempts: int = 3, retry_delay: float = 1.0
-    ):
+    def __init__(self, config: ExecutorConfig):
         """Initialize local executor.
 
         Args:
-            timeout: Command execution timeout in seconds
-            retry_attempts: Number of retry attempts
-            retry_delay: Delay between retries in seconds
+            config: Executor configuration
         """
-        super().__init__(timeout, retry_attempts, retry_delay)
+        super().__init__(config)
+
+    def is_available(self) -> bool:
+        """Check if local executor is available.
+
+        Returns:
+            Always True for local executor
+        """
+        return True
 
     def connect(self) -> bool:
         """Establish local connection (always successful for local executor).
@@ -55,25 +64,30 @@ class LocalExecutor(Executor):
 
         try:
             # Extract optional parameters
-            shell = kwargs.get("shell", False)  # Changed default to False for security
             cwd = kwargs.get("cwd")
             env = kwargs.get("env")
 
-            # For security, if shell=False, split command into list
-            if not shell and isinstance(command, str):
-                cmd_list = command.split()
+            # SECURITY: Never use shell=True with user input for security
+            # For security, always use list form without shell
+            if isinstance(command, str):
+                import shlex
+                try:
+                    cmd_list = shlex.split(command)
+                except ValueError:
+                    # Fallback to simple split if shlex fails
+                    cmd_list = command.split()
             else:
                 cmd_list = command
 
-            # Execute command
+            # Execute command without shell for security
             process = subprocess.run(
                 cmd_list,
-                shell=shell,
+                cwd=cwd,
                 cwd=cwd,
                 env=env,
                 capture_output=True,
                 text=True,
-                timeout=self.timeout,
+                timeout=self.config.timeout,
             )
 
             duration = time.time() - start_time
@@ -100,7 +114,7 @@ class LocalExecutor(Executor):
                 status=ExecutionStatus.TIMEOUT,
                 success=False,
                 duration=duration,
-                error=f"Command timed out after {self.timeout} seconds",
+                error=f"Command timed out after {self.config.timeout} seconds",
                 metadata={"command": command},
             )
 

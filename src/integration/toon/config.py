@@ -433,7 +433,6 @@ def apply_environment_preset(environment: str) -> None:
 try:
     import threading
 
-    global _config_manager
     _config_manager._config_lock = threading.Lock()
-except ImportError:
+except (ImportError, NameError, AttributeError):
     pass

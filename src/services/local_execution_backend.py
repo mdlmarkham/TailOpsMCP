@@ -33,18 +33,72 @@ class LocalExecutionBackend(RemoteExecutionBackend):
         """
         super().__init__(target_config)
 
-        # Local execution settings
-        self.working_directory = target_config.get(
-            "working_directory", "/tmp/systemmanager"
+        # Local execution settings with secure temporary directory
+        self.working_directory = self._get_secure_working_directory(
+            target_config.get("working_directory")
         )
         self.sudo_enabled = target_config.get("sudo_enabled", True)
         self.user = target_config.get("user", os.getenv("USER", "root"))
 
-        # Ensure working directory exists
-        Path(self.working_directory).mkdir(parents=True, exist_ok=True)
+        # Ensure working directory exists with proper permissions
+        self._setup_working_directory()
 
         # Capability mappings
         self._setup_capability_mappings()
+
+    def _get_secure_working_directory(self, config_dir: Optional[str]) -> str:
+        """Get a secure working directory, preferring user-specific temp dirs."""
+        import tempfile
+
+        if config_dir:
+            # If config provides a directory, validate it's secure
+            path = Path(config_dir).resolve()
+            if self._is_safe_working_directory(path):
+                return str(path)
+            else:
+                logger.warning(
+                    f"Configured working directory is not secure: {config_dir}"
+                )
+
+        # Default: use system temp directory with user-specific subdirectory
+        base_temp = tempfile.gettempdir()
+        secure_dir = Path(base_temp) / f"systemmanager_{os.getuid()}"
+        return str(secure_dir)
+
+    def _is_safe_working_directory(self, path: Path) -> bool:
+        """Check if a directory is safe for working files."""
+        try:
+            # Must be within /tmp or /var/tmp
+            temp_roots = [Path("/tmp"), Path("/var/tmp")]
+            if not any(path.is_relative_to(root) for root in temp_roots):
+                return False
+
+            # Must not be world-writable by others
+            stat = path.stat()
+            if (stat.st_mode & 0o002) != 0:  # Others write permission
+                return False
+
+            return True
+        except (OSError, ValueError):
+            return False
+
+    def _setup_working_directory(self):
+        """Create working directory with secure permissions."""
+        import stat
+
+        path = Path(self.working_directory)
+        path.mkdir(parents=True, exist_ok=True)
+
+        # Set permissions: user rwx, group rx only (if exists), no others access
+        try:
+            current_uid = os.getuid()
+            if os.path.exists(path):
+                os.chown(path, current_uid, -1)  # Set owner to current user
+                path.chmod(0o750)  # rwxr-x---
+        except OSError as e:
+            logger.warning(
+                f"Could not set secure permissions on working directory: {e}"
+            )
 
     def _setup_capability_mappings(self):
         """Setup capability to command mappings."""
@@ -325,17 +379,32 @@ class LocalExecutionBackend(RemoteExecutionBackend):
         if not stack_name:
             return self._create_error_result("Stack name is required")
 
-        # Write config to temporary file
-        config_file = Path(self.working_directory) / f"{stack_name}_config.json"
-        with open(config_file, "w") as f:
-            json.dump(config or {}, f)
+        # Write config to temporary file with secure permissions
+        import tempfile
+        import stat
 
-        cmd = ["docker", "stack", "deploy", "-c", str(config_file), stack_name]
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            prefix=f"{stack_name}_config_",
+            suffix=".json",
+            dir=self.working_directory,
+            delete=False,
+        ) as config_file:
+            json.dump(config or {}, config_file)
+            config_file_path = config_file.name
+
+            # Set secure permissions (user read/write only)
+            try:
+                os.chmod(config_file_path, 0o600)
+            except OSError as e:
+                logger.warning(f"Could not set secure permissions on config file: {e}")
+
+        cmd = ["docker", "stack", "deploy", "-c", config_file_path, stack_name]
         result = await self._execute_command(cmd, parameters.get("timeout", 300))
 
-        # Cleanup config file
+        # Cleanup config file securely
         try:
-            config_file.unlink(missing_ok=True)
+            os.remove(config_file_path)
         except Exception:
             pass
 
@@ -373,6 +442,37 @@ class LocalExecutionBackend(RemoteExecutionBackend):
         encoding = parameters.get("encoding", "utf-8")
         if not file_path:
             return self._create_error_result("File path is required")
+
+        # Validate file path for security
+        try:
+            from pathlib import Path
+
+            resolved_path = Path(file_path).resolve()
+
+            # Check for path traversal attempts
+            if ".." in str(resolved_path) and not str(resolved_path).startswith(
+                self.working_directory
+            ):
+                return self._create_error_result(
+                    "Access outside working directory not allowed"
+                )
+
+            # Only allow files within working directory or specific safe paths
+            safe_paths = [
+                Path(self.working_directory),
+                Path("/var/log"),
+                Path("/tmp"),
+                Path("/var/tmp"),
+            ]
+
+            if not any(
+                str(resolved_path).startswith(str(safe_path))
+                for safe_path in safe_paths
+            ):
+                return self._create_error_result("File path not in allowed directories")
+
+        except Exception as e:
+            return self._create_error_result(f"Invalid file path: {str(e)}")
 
         try:
             with open(file_path, "r", encoding=encoding) as f:
