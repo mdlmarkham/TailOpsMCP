@@ -11,6 +11,7 @@ from typing import Dict, List, Any
 from src.models.policy_models import OperationType
 from src.models.execution import ExecutionResult, ExecutionStatus, ExecutionSeverity
 from src.services.execution_factory import RemoteExecutionBackend
+from src.utils.path_config import PathConfig
 
 
 logger = logging.getLogger(__name__)
@@ -23,8 +24,10 @@ class DockerBackend(RemoteExecutionBackend):
         """Initialize Docker backend."""
         super().__init__(target_config)
 
-        # Docker-specific settings
-        self.socket_path = target_config.get("socket_path", "/var/run/docker.sock")
+        # Docker-specific settings - use PathConfig for configurability
+        self.socket_path = target_config.get(
+            "socket_path", str(PathConfig.get_docker_socket_path())
+        )
         self.host = target_config.get("host", "localhost")
         self.port = target_config.get("port", 2376)
 

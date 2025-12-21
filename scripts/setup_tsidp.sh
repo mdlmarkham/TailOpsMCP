@@ -21,7 +21,10 @@ echo "2. Register SystemManager as OIDC client in TSIDP:"
 echo "   - Open: $TSIDP_URL"
 echo "   - Go to 'Clients' or 'Add Client'"
 echo "   - Client Name: SystemManager MCP"
-echo "   - Redirect URI: http://dev1.tailf9480.ts.net:8080/auth/callback"
+
+# Add base URL environment variable support
+SYSTEMMANAGER_BASE_URL="${SYSTEMMANAGER_BASE_URL:-http://localhost:8080}"
+echo "   - Redirect URI: $SYSTEMMANAGER_BASE_URL/auth/callback"
 echo "   - Grant Types: authorization_code, refresh_token"
 echo "   - Scopes: openid, email, profile"
 echo ""
@@ -49,7 +52,7 @@ SYSTEMMANAGER_AUTH_MODE=oidc
 TSIDP_URL=$TSIDP_URL
 TSIDP_CLIENT_ID=$CLIENT_ID
 TSIDP_CLIENT_SECRET=$CLIENT_SECRET
-SYSTEMMANAGER_BASE_URL=http://dev1.tailf9480.ts.net:8080
+SYSTEMMANAGER_BASE_URL=$SYSTEMMANAGER_BASE_URL
 EOF
 
 echo "   ✓ Configuration saved to .env.oidc"
@@ -65,11 +68,11 @@ echo "  ./venv/bin/python -m src.mcp_server"
 echo ""
 echo "Your mcp.json should be:"
 echo ""
-cat << 'JSONEOF'
+cat << JSONEOF
 {
   "Dev1-SystemManager": {
     "type": "sse",
-    "url": "http://dev1.tailf9480.ts.net:8080/sse",
+    "url": "$SYSTEMMANAGER_BASE_URL/sse",
     "description": "SystemManager MCP Server with TSIDP OIDC"
   }
 }

@@ -13,14 +13,18 @@ from pathlib import Path
 from urllib.parse import urlparse
 import git
 
+from src.utils.path_config import PathConfig
+
 logger = logging.getLogger(__name__)
 
 
 class ComposeStackManager:
     """Manage Docker Compose stacks from Git repositories."""
 
-    def __init__(self, stacks_dir: str = "/opt/stacks"):
-        self.stacks_dir = Path(stacks_dir)
+    def __init__(self, stacks_dir: Optional[str] = None):
+        self.stacks_dir = (
+            Path(stacks_dir) if stacks_dir else PathConfig.get_stacks_dir()
+        )
         self.stacks_dir.mkdir(parents=True, exist_ok=True)
         self._validated_commands = self._validate_system_commands()
 

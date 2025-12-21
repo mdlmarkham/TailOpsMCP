@@ -14,6 +14,7 @@ from datetime import datetime
 from src.models.policy_models import OperationType
 from src.models.execution import ExecutionResult, ExecutionStatus, ExecutionSeverity
 from src.services.execution_factory import RemoteExecutionBackend
+from src.utils.path_config import PathConfig
 
 
 logger = logging.getLogger(__name__)
@@ -515,7 +516,8 @@ class SSHTailscaleBackend(RemoteExecutionBackend):
         if not backup_id:
             return None
 
-        return f"sudo qmrestore /var/lib/vz/dump/{shlex.quote(backup_id)}.vma.lzo"
+        dump_dir = str(PathConfig.get_proxmox_dump_dir())
+        return f"sudo qmrestore {dump_dir}/{shlex.quote(backup_id)}.vma.lzo"
 
     async def _command_backup_list(
         self, parameters: Dict[str, Any], target_info: Dict[str, Any]
@@ -531,7 +533,8 @@ class SSHTailscaleBackend(RemoteExecutionBackend):
         if not backup_id:
             return None
 
-        return f"sudo rm -f /var/lib/vz/dump/{shlex.quote(backup_id)}*"
+        dump_dir = str(PathConfig.get_proxmox_dump_dir())
+        return f"sudo rm -f {dump_dir}/{shlex.quote(backup_id)}*"
 
     async def _command_snapshot_create(
         self, parameters: Dict[str, Any], target_info: Dict[str, Any]

@@ -37,9 +37,31 @@ class ApplicationScanner:
         # Load static detection rules and apply path customization
         self.detection_rules = self._get_dynamic_detection_rules()
 
+    def _get_dynamic_detection_rules(self) -> Dict[str, Dict[str, Any]]:
+        """Get detection rules with hybrid path configuration."""
+        base_rules = self._get_base_detection_rules()
+
+        # Apply service-specific path overrides
+        dynamic_rules = {}
+        for app_name, rule in base_rules.items():
+            dynamic_rule = rule.copy()
+
+            # Apply hybrid path logic
+            config_paths, data_paths = PathConfig.get_service_paths(app_name)
+
+            if config_paths:
+                dynamic_rule["config"] = str(config_paths[0])
+            if data_paths:
+                dynamic_rule["data"] = str(data_paths[0])
+
+            dynamic_rules[app_name] = dynamic_rule
+
+        return dynamic_rules
+
     def _get_base_detection_rules(self) -> Dict[str, Dict[str, Any]]:
         """Base detection rules with default paths - will be dynamically hybridized."""
-        # Simplified for critical implementation - extends later
+        # For now, include the most common applications
+        # TODO: Complete all application rules in future iteration
         return {
             "jellyfin": {
                 "service": "jellyfin",
@@ -97,13 +119,6 @@ class ApplicationScanner:
                 "data": "/home/homeassistant/.homeassistant",
             },
         }
-
-    def __init__(self):
-        """Initialize scanner with hybrid path support."""
-        self.detected_apps: List[DetectedApp] = []
-        self._validated_commands = self._validate_system_commands()
-        # Load dynamic detection rules
-        self.detection_rules = self._get_dynamic_detection_rules()
             "postgresql": {
                 "service": "postgresql",
                 "process": "postgres",

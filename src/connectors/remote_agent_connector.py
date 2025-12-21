@@ -12,6 +12,7 @@ from typing import Dict, Optional, Any
 from datetime import datetime
 from contextlib import asynccontextmanager
 
+from src.utils.path_config import PathConfig
 from src.models.target_registry import TargetConnection
 from src.models.connection_types import (
     SSHConnection,
@@ -415,16 +416,21 @@ class RemoteAgentConnector(ABC):
         Returns:
             True if path access is allowed
         """
-        # This should be configured based on security policy
-        # For now, allow specific paths that are commonly needed
-        allowed_paths = [
-            "/etc/systemd/system/",
-            "/var/log/journal/",
-            "/tmp/",
-            "/var/tmp/",
-        ]
+        # Use PathConfig for configurable allowed base paths
+        from pathlib import Path
 
-        return any(path.startswith(allowed) for allowed in allowed_paths)
+        allowed_bases = PathConfig.get_allowed_base_dirs()
+
+        # Check if path is within allowed base directories
+        path_obj = Path(path)
+        for allowed_base in allowed_bases:
+            try:
+                if path_obj.resolve().is_relative_to(allowed_base):
+                    return True
+            except (OSError, ValueError):
+                continue
+
+        return False
 
     async def __aenter__(self):
         """Async context manager entry."""

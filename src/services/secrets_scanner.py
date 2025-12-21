@@ -14,6 +14,8 @@ import os
 from typing import Dict
 from pathlib import Path
 
+from src.utils.path_config import PathConfig
+
 
 class SecretsScanner:
     """Service for detecting secrets in files and configurations."""
@@ -288,10 +290,14 @@ class SecretsScanner:
 
         return await self.scan_file(str(docker_config_path))
 
-    async def scan_env_files(self, directory: str = "/opt/systemmanager") -> Dict:
+    async def scan_env_files(self, directory: str | None = None) -> Dict:
         """Scan for .env files that might contain secrets."""
+        if directory:
+            scan_dir = directory
+        else:
+            scan_dir = str(PathConfig.get_install_dir())
+        dir_path = Path(scan_dir)
         env_files = []
-        dir_path = Path(directory)
 
         if dir_path.exists():
             # Find all .env files

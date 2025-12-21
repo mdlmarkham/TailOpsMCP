@@ -10,3 +10,6 @@ scripts/*.sh text eol=lf
 *.yml text
 *.yaml text
 *.cfg text
+
+# Use bd merge for beads JSONL files
+.beads/issues.jsonl merge=beads

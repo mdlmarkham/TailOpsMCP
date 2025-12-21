@@ -6,6 +6,9 @@
 
 set -euo pipefail
 
+# Environment variable for installation path
+TAILOPSMCP_INSTALL_DIR="${TAILOPSMCP_INSTALL_DIR:-/opt/tailopsmcp}"
+
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -99,17 +102,17 @@ validate_tailopsmcp_installation() {
     log_info "Validating TailOpsMCP installation..."
 
     # Check installation directory
-    if ! pct exec "$CONTAINER_ID" -- test -d /opt/tailopsmcp; then
-        error_exit "TailOpsMCP not installed at /opt/tailopsmcp"
+    if ! pct exec "$CONTAINER_ID" -- test -d $TAILOPSMCP_INSTALL_DIR; then
+        error_exit "TailOpsMCP not installed at $TAILOPSMCP_INSTALL_DIR"
     fi
 
     # Check Python environment
-    if ! pct exec "$CONTAINER_ID" -- test -f /opt/tailopsmcp/venv/bin/python; then
+    if ! pct exec "$CONTAINER_ID" -- test -f $TAILOPSMCP_INSTALL_DIR/venv/bin/python; then
         error_exit "Python virtual environment not found"
     fi
 
     # Check requirements file
-    if ! pct exec "$CONTAINER_ID" -- test -f /opt/tailopsmcp/requirements.txt; then
+    if ! pct exec "$CONTAINER_ID" -- test -f $TAILOPSMCP_INSTALL_DIR/requirements.txt; then
         error_exit "requirements.txt not found"
     fi
 
@@ -163,11 +166,11 @@ validate_configuration() {
     log_info "Validating configuration..."
 
     # Check targets.yaml
-    if pct exec "$CONTAINER_ID" -- test -f /opt/tailopsmcp/targets.yaml; then
+    if pct exec "$CONTAINER_ID" -- test -f $TAILOPSMCP_INSTALL_DIR/targets.yaml; then
         log_success "targets.yaml configuration file found"
 
         # Validate YAML syntax (basic check)
-        if pct exec "$CONTAINER_ID" -- python -c "import yaml; yaml.safe_load(open('/opt/tailopsmcp/targets.yaml'))" 2>/dev/null; then
+        if pct exec "$CONTAINER_ID" -- python -c "import yaml; yaml.safe_load(open('$TAILOPSMCP_INSTALL_DIR/targets.yaml'))" 2>/dev/null; then
             log_success "targets.yaml syntax is valid"
         else
             log_warning "targets.yaml has syntax issues"
@@ -177,7 +180,7 @@ validate_configuration() {
     fi
 
     # Check .env file
-    if pct exec "$CONTAINER_ID" -- test -f /opt/tailopsmcp/.env; then
+    if pct exec "$CONTAINER_ID" -- test -f $TAILOPSMCP_INSTALL_DIR/.env; then
         log_success ".env configuration file found"
     else
         log_warning ".env configuration file not found"
@@ -211,9 +214,9 @@ run_comprehensive_test() {
     log_info "Running comprehensive TailOpsMCP functionality test..."
 
     # Test MCP server startup (basic check)
-    if pct exec "$CONTAINER_ID" -- timeout 10 /opt/tailopsmcp/venv/bin/python -c "
+    if pct exec "$CONTAINER_ID" -- timeout 10 $TAILOPSMCP_INSTALL_DIR/venv/bin/python -c "
 import sys
-sys.path.insert(0, '/opt/tailopsmcp')
+sys.path.insert(0, '$TAILOPSMCP_INSTALL_DIR')
 try:
     from src.mcp_server import main
     print('MCP server module loads successfully')
