@@ -24,6 +24,7 @@ import asyncio
 import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from datetime import timezone, timezone
 from enum import Enum
 from dataclasses import dataclass, field
 
@@ -109,7 +110,7 @@ class CapabilityOperation:
     timeout: int = 30
     dry_run: bool = False
     requested_by: str = "system"
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -541,7 +542,7 @@ class AuditLogger:
             result: Operation result
         """
         audit_entry = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "operation": operation.to_dict(),
             "result": result.to_dict(),
             "operation_id": result.operation_id,
@@ -614,7 +615,7 @@ class CapabilityExecutor:
         operation_id = f"op_{self._operation_counter}"
         self._operation_counter += 1
 
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         audit_trail = []
 
         try:
@@ -653,7 +654,7 @@ class CapabilityExecutor:
                         {
                             "event": "validation_failed",
                             "reason": validation_result.reason,
-                            "timestamp": datetime.utcnow().isoformat(),
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
                         }
                     ],
                 )
@@ -675,7 +676,7 @@ class CapabilityExecutor:
             execution_result = await self._execute_capability(capability, operation)
 
             # Calculate execution time
-            execution_time = (datetime.utcnow() - start_time).total_seconds()
+            execution_time = (datetime.now(timezone.utc) - start_time).total_seconds()
 
             # Create operation result
             result = OperationResult(
@@ -695,7 +696,7 @@ class CapabilityExecutor:
             return result
 
         except Exception as e:
-            execution_time = (datetime.utcnow() - start_time).total_seconds()
+            execution_time = (datetime.now(timezone.utc) - start_time).total_seconds()
 
             result = OperationResult(
                 success=False,
@@ -759,7 +760,7 @@ class CapabilityExecutor:
                 "memory_usage": "45%",
                 "disk_usage": "67%",
                 "services_running": 12,
-                "last_updated": datetime.utcnow().isoformat(),
+                "last_updated": datetime.now(timezone.utc).isoformat(),
             },
         }
 
@@ -779,7 +780,7 @@ class CapabilityExecutor:
             "result": {
                 "service_name": service_name,
                 "status": "restarted",
-                "restart_time": datetime.utcnow().isoformat(),
+                "restart_time": datetime.now(timezone.utc).isoformat(),
             },
         }
 
@@ -800,7 +801,7 @@ class CapabilityExecutor:
                 "service_name": service_name,
                 "status": "healthy",
                 "uptime": "7d 14h 32m",
-                "last_check": datetime.utcnow().isoformat(),
+                "last_check": datetime.now(timezone.utc).isoformat(),
             },
         }
 
@@ -854,7 +855,7 @@ class CapabilityExecutor:
             "result": {
                 "container_id": container_id,
                 "status": "started",
-                "start_time": datetime.utcnow().isoformat(),
+                "start_time": datetime.now(timezone.utc).isoformat(),
             },
         }
 
@@ -874,7 +875,7 @@ class CapabilityExecutor:
             "result": {
                 "container_id": container_id,
                 "status": "stopped",
-                "stop_time": datetime.utcnow().isoformat(),
+                "stop_time": datetime.now(timezone.utc).isoformat(),
             },
         }
 

@@ -6,6 +6,7 @@ import json
 import os
 import time
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Any, Dict, List
 
 from src.utils.audit import audit_logger, LogLevel
@@ -113,7 +114,7 @@ class ElasticsearchIntegration(MonitoringIntegration):
 
             for log in logs:
                 index_name = (
-                    f"{self.index_prefix}-{datetime.utcnow().strftime('%Y.%m.%d')}"
+                    f"{self.index_prefix}-{datetime.now(timezone.utc).strftime('%Y.%m.%d')}"
                 )
                 es.index(index=index_name, body=log)
 
@@ -282,7 +283,7 @@ class DashboardExporter:
     def export_metrics_for_dashboard(metrics: Dict[str, Any]) -> Dict[str, Any]:
         """Export metrics in a format suitable for dashboards."""
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "metrics": metrics,
             "summary": {
                 "total_metrics": len(metrics),
@@ -301,7 +302,7 @@ class DashboardExporter:
     ) -> Dict[str, Any]:
         """Export logs in a format suitable for dashboards."""
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "logs": logs[:limit],
             "summary": {
                 "total_logs": len(logs),
@@ -317,7 +318,7 @@ class DashboardExporter:
     def export_health_for_dashboard(health_data: Dict[str, Any]) -> Dict[str, Any]:
         """Export health data in a format suitable for dashboards."""
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "health": health_data,
             "status": health_data.get("overall_status", "unknown"),
         }

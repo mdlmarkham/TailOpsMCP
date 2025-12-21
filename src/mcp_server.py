@@ -53,9 +53,7 @@ if __name__ == "__main__":
     if auth_mode == "oidc":
         logger.info("OIDC authentication via TSIDP")
         logger.info("Users will authenticate with their Tailscale identity")
-        logger.info(
-            f"OIDC Issuer: {os.getenv('TSIDP_URL', 'https://tsidp.tailf9480.ts.net')}"
-        )
+        logger.info(f"OIDC Issuer: {os.getenv('TSIDP_URL')}")
     else:
         logger.info("Token-based authentication")
 

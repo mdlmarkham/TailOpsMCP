@@ -6,6 +6,7 @@ and compliance reporting capabilities.
 """
 
 from datetime import datetime
+from datetime import timezone, timezone
 from enum import Enum
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
@@ -63,7 +64,7 @@ class AuditEvent:
     """Individual audit event."""
 
     id: str = field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     event_type: AuditEventType = AuditEventType.OPERATION
     level: AuditLevel = AuditLevel.INFO
     message: str = ""

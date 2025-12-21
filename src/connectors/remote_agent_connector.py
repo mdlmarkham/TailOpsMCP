@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, Optional, Any
 from datetime import datetime
+from datetime import timezone, timezone
 from contextlib import asynccontextmanager
 
 from src.utils.path_config import PathConfig
@@ -174,7 +175,7 @@ class RemoteAgentConnector(ABC):
         Returns:
             Health status information
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         issues = []
 
         try:
@@ -197,13 +198,13 @@ class RemoteAgentConnector(ABC):
         except Exception as e:
             issues.append(f"Health check failed: {str(e)}")
 
-        response_time = (datetime.utcnow() - start_time).total_seconds()
+        response_time = (datetime.now(timezone.utc) - start_time).total_seconds()
 
         return HealthStatus(
             target=self.target.host or "unknown",
             healthy=len(issues) == 0,
             response_time=response_time,
-            last_check=datetime.utcnow(),
+            last_check=datetime.now(timezone.utc),
             issues=issues,
         )
 
@@ -220,7 +221,7 @@ class RemoteAgentConnector(ABC):
         Raises:
             OperationError: If command execution fails
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         try:
             result = await self.connection.execute_command(command, timeout)
@@ -230,8 +231,8 @@ class RemoteAgentConnector(ABC):
                 exit_code=result.exit_code,
                 stdout=result.stdout,
                 stderr=result.stderr,
-                execution_time=(datetime.utcnow() - start_time).total_seconds(),
-                timestamp=datetime.utcnow(),
+                execution_time=(datetime.now(timezone.utc) - start_time).total_seconds(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         except Exception as e:

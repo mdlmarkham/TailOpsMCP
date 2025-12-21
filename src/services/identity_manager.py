@@ -10,6 +10,7 @@ This module provides comprehensive identity and access management:
 """
 
 import datetime
+from datetime import timezone
 import hashlib
 import json
 import logging
@@ -34,6 +35,12 @@ from src.services.security_audit_logger import SecurityAuditLogger
 logger = logging.getLogger(__name__)
 
 
+# Helper function for timezone-aware datetime
+def utc_now():
+    """Get current UTC time with timezone awareness."""
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 class SessionToken:
     """Represents a secure session token."""
 
@@ -43,7 +50,7 @@ class SessionToken:
         self.token = token
         self.identity = identity
         self.expires_at = expires_at
-        self.created_at = datetime.datetime.utcnow()
+        self.created_at = utc_now()
         self.last_accessed = self.created_at
         self.revoked = False
         self.revoked_at: Optional[datetime.datetime] = None
@@ -51,7 +58,7 @@ class SessionToken:
 
     def is_expired(self) -> bool:
         """Check if token is expired."""
-        return datetime.datetime.utcnow() > self.expires_at
+        return utc_now() > self.expires_at
 
     def is_valid(self) -> bool:
         """Check if token is still valid."""
@@ -59,12 +66,12 @@ class SessionToken:
 
     def refresh(self) -> None:
         """Refresh the session token."""
-        self.last_accessed = datetime.datetime.utcnow()
+        self.last_accessed = utc_now()
 
     def revoke(self, reason: str = "manual") -> None:
         """Revoke the session token."""
         self.revoked = True
-        self.revoked_at = datetime.datetime.utcnow()
+        self.revoked_at = utc_now()
         self.revocation_reason = reason
 
 
@@ -295,7 +302,7 @@ class TailScaleOIDCIntegration:
 
             # Create session token
             session_token = self._generate_session_token()
-            expires_at = datetime.datetime.utcnow() + datetime.timedelta(
+            expires_at = utc_now() + datetime.timedelta(
                 hours=int(os.getenv("SESSION_TIMEOUT_HOURS", "1"))
             )
 
@@ -418,7 +425,7 @@ class TailScaleOIDCIntegration:
                     json.dumps(identity.permissions),
                     identity.authentication_method.value,
                     identity.risk_profile,
-                    datetime.datetime.utcnow().isoformat(),
+                    utc_now().isoformat(),
                 ),
             )
 
@@ -632,7 +639,7 @@ class IdentityManager:
 
                 # Check expiration
                 expires_at = datetime.datetime.fromisoformat(row["expires_at"])
-                if datetime.datetime.utcnow() > expires_at:
+                if utc_now() > expires_at:
                     return SessionValidationResult(
                         valid=False, error_message="Session expired"
                     )
@@ -756,7 +763,7 @@ class IdentityManager:
 
             # Create session
             session_token = self.oidc_integration._generate_session_token()
-            expires_at = datetime.datetime.utcnow() + (
+            expires_at = utc_now() + (
                 ttl or datetime.timedelta(hours=self.session_timeout_hours)
             )
 
@@ -794,7 +801,7 @@ class IdentityManager:
                     SET revoked_at = ?, revocation_reason = ?
                     WHERE session_token = ?
                 """,
-                    (datetime.datetime.utcnow().isoformat(), "manual", session_token),
+                    (utc_now().isoformat(), "manual", session_token),
                 )
 
             logger.info(f"Revoked session: {session_token}")
@@ -821,7 +828,7 @@ class IdentityManager:
                     return False
 
                 locked_until = datetime.datetime.fromisoformat(row["locked_until"])
-                return datetime.datetime.utcnow() < locked_until
+                return utc_now() < locked_until
 
         except Exception as e:
             logger.error(f"Failed to check account lock status: {e}")
@@ -838,7 +845,7 @@ class IdentityManager:
                         SET login_count = login_count + 1, last_login = ?, failed_login_attempts = 0
                         WHERE user_id = ?
                     """,
-                        (datetime.datetime.utcnow().isoformat(), user_id),
+                        (utc_now().isoformat(), user_id),
                     )
                 else:
                     conn.execute(
@@ -901,7 +908,7 @@ class IdentityManager:
                     SELECT COUNT(*) as count FROM user_sessions
                     WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?
                 """,
-                    (user_id, datetime.datetime.utcnow().isoformat()),
+                    (user_id, utc_now().isoformat()),
                 )
 
                 row = cursor.fetchone()
@@ -921,7 +928,7 @@ class IdentityManager:
                     WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?
                     ORDER BY created_at ASC LIMIT 1
                 """,
-                    (user_id, datetime.datetime.utcnow().isoformat()),
+                    (user_id, utc_now().isoformat()),
                 )
 
                 row = cursor.fetchone()

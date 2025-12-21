@@ -9,6 +9,7 @@ import logging
 import subprocess
 from typing import Dict, List, Any
 from datetime import datetime
+from datetime import timezone, timezone
 
 from src.models.fleet_inventory import (
     Node,
@@ -46,7 +47,7 @@ class NodeProbing:
         probe_result = {
             "node_id": node.id,
             "node_name": node.name,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             "connection_tests": {},
             "system_info": {},
             "services": [],

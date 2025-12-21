@@ -11,6 +11,7 @@ import asyncio
 import aiohttp
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from datetime import timezone, timezone
 from urllib.parse import urljoin
 
 from src.models.proxmox_models import (
@@ -1402,9 +1403,9 @@ class ProxmoxAPI:
             True if task completed successfully, False otherwise
         """
         try:
-            start_time = datetime.utcnow().timestamp()
+            start_time = datetime.now(timezone.utc).timestamp()
 
-            while datetime.utcnow().timestamp() - start_time < timeout:
+            while datetime.now(timezone.utc).timestamp() - start_time < timeout:
                 response = await self._make_request(
                     "GET", f"/nodes/{node}/tasks/{task_id}/status"
                 )

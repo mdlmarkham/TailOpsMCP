@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import datetime
+from datetime import timezone
 import hashlib
 import hmac
 import json

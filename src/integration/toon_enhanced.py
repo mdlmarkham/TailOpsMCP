@@ -7,6 +7,7 @@ This module provides enhanced TOON integration functionality.
 from typing import Any, Dict, Optional
 from dataclasses import dataclass
 from datetime import datetime
+from datetime import timezone, timezone
 
 
 @dataclass
@@ -47,7 +48,7 @@ class ToonEnhanced:
             id=doc_id,
             content=content,
             metadata=metadata or {},
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
 
 

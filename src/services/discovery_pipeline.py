@@ -7,7 +7,8 @@ Orchestrates Proxmox discovery and node probing to maintain fleet inventory.
 import logging
 import asyncio
 from typing import Dict, List, Any
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timezone, timezone, timezone, timedelta
 
 from src.models.fleet_inventory import FleetInventory, ProxmoxHost, Node, Service, Event
 from src.models.fleet_inventory_persistence import FleetInventoryPersistence
@@ -93,7 +94,7 @@ class DiscoveryPipeline:
             self.inventory.add_event(error_event)
             logger.error(f"Discovery cycle failed: {e}")
 
-        self.last_discovery = datetime.utcnow()
+        self.last_discovery = datetime.now(timezone.utc)
         return self.inventory
 
     async def _discover_proxmox_hosts(self) -> List[ProxmoxHost]:
@@ -115,7 +116,7 @@ class DiscoveryPipeline:
             if host.id in self.inventory.proxmox_hosts:
                 # Update existing host
                 existing_host = self.inventory.proxmox_hosts[host.id]
-                existing_host.last_seen = datetime.utcnow().isoformat() + "Z"
+                existing_host.last_seen = datetime.now(timezone.utc).isoformat() + "Z"
                 existing_host.is_active = True
             else:
                 # Add new host
@@ -156,7 +157,7 @@ class DiscoveryPipeline:
                 if node.id in self.inventory.nodes:
                     # Update existing node
                     existing_node = self.inventory.nodes[node.id]
-                    existing_node.last_updated = datetime.utcnow().isoformat() + "Z"
+                    existing_node.last_updated = datetime.now(timezone.utc).isoformat() + "Z"
                     existing_node.status = node.status
                     existing_node.ip_address = (
                         node.ip_address or existing_node.ip_address
@@ -248,7 +249,7 @@ class DiscoveryPipeline:
 
     def _get_nodes_for_probing(self) -> List[Node]:
         """Get nodes that need probing based on last update time."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         nodes_to_probe = []
 
         for node in self.inventory.nodes.values():
@@ -334,7 +335,7 @@ class DiscoveryPipeline:
 
     def _cleanup_stale_entries(self) -> None:
         """Clean up stale hosts and nodes."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         stale_threshold = timedelta(hours=24)  # 24 hours
 
         # Clean up stale hosts
@@ -390,7 +391,7 @@ class DiscoveryPipeline:
         self.inventory.total_hosts = len(self.inventory.proxmox_hosts)
         self.inventory.total_nodes = len(self.inventory.nodes)
         self.inventory.total_services = len(self.inventory.services)
-        self.inventory.last_updated = datetime.utcnow().isoformat() + "Z"
+        self.inventory.last_updated = datetime.now(timezone.utc).isoformat() + "Z"
 
     def _create_discovery_event(
         self,
@@ -412,7 +413,7 @@ class DiscoveryPipeline:
             message=message,
             details={
                 "action": action,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             },
         )
 
@@ -421,7 +422,7 @@ class DiscoveryPipeline:
         if not self.last_discovery:
             return True
 
-        time_since_last = datetime.utcnow() - self.last_discovery
+        time_since_last = datetime.now(timezone.utc) - self.last_discovery
         return time_since_last.total_seconds() >= self.discovery_interval
 
     def get_discovery_status(self) -> Dict[str, Any]:

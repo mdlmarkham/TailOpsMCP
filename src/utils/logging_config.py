@@ -4,6 +4,7 @@ Secure logging configuration with sensitive data redaction and production harden
 
 import logging
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Any, Dict, Optional
 
 from src.utils.audit import LogLevel, audit_logger
@@ -72,14 +73,14 @@ class MetricsCollector:
 
     def start_timer(self, operation: str) -> None:
         """Start timing an operation."""
-        self._start_times[operation] = datetime.utcnow()
+        self._start_times[operation] = datetime.now(timezone.utc)
 
     def stop_timer(self, operation: str) -> float:
         """Stop timing an operation and return duration."""
         if operation not in self._start_times:
             return 0.0
 
-        duration = (datetime.utcnow() - self._start_times[operation]).total_seconds()
+        duration = (datetime.now(timezone.utc) - self._start_times[operation]).total_seconds()
         self._record_metric(f"{operation}_duration", duration)
         return duration
 
@@ -129,7 +130,7 @@ class HealthChecker:
             return {
                 "status": "error",
                 "message": f"Health check '{name}' not found",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         check = self.checks[name]
@@ -137,7 +138,7 @@ class HealthChecker:
             result = check["function"]()
             check["last_status"] = result.get("status", "unknown")
             check["last_error"] = None
-            check["last_run"] = datetime.utcnow()
+            check["last_run"] = datetime.now(timezone.utc)
 
             self.logger.info(
                 f"Health check '{name}' completed with status: {result.get('status')}"
@@ -147,13 +148,13 @@ class HealthChecker:
         except Exception as e:
             check["last_status"] = "error"
             check["last_error"] = str(e)
-            check["last_run"] = datetime.utcnow()
+            check["last_run"] = datetime.now(timezone.utc)
 
             self.logger.error(f"Health check '{name}' failed: {e}")
             return {
                 "status": "error",
                 "message": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def run_all_checks(self) -> Dict[str, Dict[str, Any]]:
@@ -167,7 +168,7 @@ class HealthChecker:
     def get_status_report(self) -> Dict[str, Any]:
         """Get a comprehensive status report."""
         report = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "checks": {},
             "overall_status": "healthy",
             "summary": {
@@ -227,13 +228,13 @@ def setup_health_checks() -> None:
             return {
                 "status": "healthy",
                 "message": "Audit logging is functioning",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
             return {
                 "status": "error",
                 "message": f"Audit logging error: {e}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def check_disk_space() -> Dict[str, Any]:
@@ -249,20 +250,20 @@ def setup_health_checks() -> None:
                     "status": "unhealthy",
                     "message": f"Low disk space: {free_gb:.2f}GB free",
                     "free_space_gb": free_gb,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
             else:
                 return {
                     "status": "healthy",
                     "message": f"Adequate disk space: {free_gb:.2f}GB free",
                     "free_space_gb": free_gb,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
         except Exception as e:
             return {
                 "status": "error",
                 "message": f"Disk space check error: {e}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     # Register default health checks

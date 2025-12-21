@@ -7,6 +7,7 @@ This module provides a web-based dashboard for visualizing events, trends, and s
 import asyncio
 import json
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Any, Dict
 from pathlib import Path
 
@@ -291,7 +292,7 @@ class EventDashboard:
                         "type": "initial_data",
                         "statistics": stats.to_dict(),
                         "active_alerts": len(alerts),
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                     }
                 )
             )
@@ -344,7 +345,7 @@ class EventDashboard:
 
             return {
                 "system_name": "TailOpsMCP Observability Dashboard",
-                "last_updated": datetime.utcnow().isoformat(),
+                "last_updated": datetime.now(timezone.utc).isoformat(),
                 "statistics": {
                     "total_events_24h": stats.total_events,
                     "critical_events_24h": stats.critical_events,
@@ -378,7 +379,7 @@ class EventDashboard:
 
         except Exception as e:
             self.logger.error(f"Error getting dashboard data: {e}")
-            return {"error": str(e), "last_updated": datetime.utcnow().isoformat()}
+            return {"error": str(e), "last_updated": datetime.now(timezone.utc).isoformat()}
 
     async def broadcast_update(self, data: Dict[str, Any]) -> None:
         """Broadcast update to all connected WebSocket clients."""

@@ -12,6 +12,7 @@ Provides comprehensive inventory management services with:
 from __future__ import annotations
 
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Dict, List, Optional, Any
 
 from src.models.enhanced_fleet_inventory import (
@@ -229,7 +230,7 @@ class InventoryService:
                 else:
                     target.resource_usage.status = ResourceStatus.HEALTHY
 
-                target.resource_usage.measured_at = datetime.utcnow().isoformat() + "Z"
+                target.resource_usage.measured_at = datetime.now(timezone.utc).isoformat() + "Z"
 
         except Exception as e:
             self.logger.warning(f"Resource usage update failed for {target.name}: {e}")
@@ -431,7 +432,7 @@ class InventoryService:
             target.health_score = health_score
 
             # Update last health check timestamp
-            target.last_health_check = datetime.utcnow().isoformat() + "Z"
+            target.last_health_check = datetime.now(timezone.utc).isoformat() + "Z"
 
         self.operation_counts["health_checks"] += 1
 
@@ -459,7 +460,7 @@ class InventoryService:
         # Deduct for stale data
         if target.last_seen:
             last_seen = datetime.fromisoformat(target.last_seen.replace("Z", "+00:00"))
-            hours_since_seen = (datetime.utcnow() - last_seen).total_seconds() / 3600
+            hours_since_seen = (datetime.now(timezone.utc) - last_seen).total_seconds() / 3600
             if hours_since_seen > 24:
                 score -= 0.5
             elif hours_since_seen > 12:
@@ -473,7 +474,7 @@ class InventoryService:
         """Create automatic snapshot."""
         try:
             snapshot_name = (
-                f"Auto-{reason}-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}"
+                f"Auto-{reason}-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
             )
 
             self.snapshot_manager.create_snapshot(
@@ -571,7 +572,7 @@ class InventoryService:
         """Run comprehensive health check."""
         try:
             health_results = {
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
                 "total_targets": self.current_inventory.total_targets,
                 "healthy_targets": self.current_inventory.healthy_targets,
                 "unhealthy_targets": self.current_inventory.unhealthy_targets,
@@ -598,7 +599,7 @@ class InventoryService:
                         target.last_seen.replace("Z", "+00:00")
                     )
                     hours_since_seen = (
-                        datetime.utcnow() - last_seen
+                        datetime.now(timezone.utc) - last_seen
                     ).total_seconds() / 3600
 
                     if hours_since_seen > 48:
@@ -612,7 +613,7 @@ class InventoryService:
                             }
                         )
 
-            self.last_health_check = datetime.utcnow()
+            self.last_health_check = datetime.now(timezone.utc)
             self.logger.info(
                 f"Health check completed: {len(health_results['issues'])} issues found"
             )

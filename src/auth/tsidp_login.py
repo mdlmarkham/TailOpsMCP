@@ -9,7 +9,8 @@ import os
 import secrets
 import threading
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timezone, timezone, timezone, timedelta, timezone
 from typing import Dict, Optional
 from urllib.parse import urlencode
 
@@ -27,7 +28,9 @@ class PendingLogin:
     created_at: datetime
 
     def is_expired(self, ttl_seconds: int = 600) -> bool:
-        return datetime.utcnow() >= self.created_at + timedelta(seconds=ttl_seconds)
+        return datetime.now(timezone.utc) >= self.created_at + timedelta(
+            seconds=ttl_seconds
+        )
 
 
 class TSIDPLoginController:
@@ -44,9 +47,7 @@ class TSIDPLoginController:
         auth_service: Optional[GoFastMCPAuthService] = None,
         http_session: Optional[requests.Session] = None,
     ) -> None:
-        self.tsidp_url = tsidp_url or os.getenv(
-            "TSIDP_URL", "https://tsidp.tailf9480.ts.net"
-        )
+        self.tsidp_url = tsidp_url or os.getenv("TSIDP_URL")
         self.client_id = client_id or os.getenv("TSIDP_CLIENT_ID")
         self.client_secret = client_secret or os.getenv("TSIDP_CLIENT_SECRET")
         self.redirect_uri = redirect_uri or os.getenv(
@@ -110,7 +111,7 @@ class TSIDPLoginController:
             self._pending[state_value] = PendingLogin(
                 state=state_value,
                 code_verifier=pkce["code_verifier"],
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
             )
 
         logger.debug("Prepared TSIDP login", extra={"state": state_value})
@@ -119,7 +120,9 @@ class TSIDPLoginController:
             "state": state_value,
             "code_verifier": pkce["code_verifier"],
             "code_challenge": pkce["code_challenge"],
-            "expires_at": (datetime.utcnow() + timedelta(minutes=10)).isoformat(),
+            "expires_at": (
+                datetime.now(timezone.utc) + timedelta(minutes=10)
+            ).isoformat(),
         }
 
     def _pop_pending(self, state: str) -> PendingLogin:

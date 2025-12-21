@@ -11,6 +11,7 @@ import time
 import uuid
 from typing import Dict, Optional, Any
 from datetime import datetime
+from datetime import timezone, timezone
 
 try:
     import paramiko
@@ -46,8 +47,8 @@ class ConnectionPool:
         self.max_connections = max_connections
         self.connections: Dict[str, SSHConnectionImpl] = {}
         self.in_use: Dict[str, bool] = {}
-        self.created_at = datetime.utcnow()
-        self.last_used = datetime.utcnow()
+        self.created_at = datetime.now(timezone.utc)
+        self.last_used = datetime.now(timezone.utc)
         self.logger = logging.getLogger(f"{__name__}.ConnectionPool.{target_id}")
 
     async def get_connection(self, timeout: int = 30) -> SSHConnection:
@@ -69,7 +70,7 @@ class ConnectionPool:
             for conn_id, conn in self.connections.items():
                 if not self.in_use.get(conn_id, False) and await conn.is_connected():
                     self.in_use[conn_id] = True
-                    self.last_used = datetime.utcnow()
+                    self.last_used = datetime.now(timezone.utc)
                     return conn
 
             # Create new connection if under limit
@@ -79,7 +80,7 @@ class ConnectionPool:
                     conn = await self._create_connection(conn_id)
                     self.connections[conn_id] = conn
                     self.in_use[conn_id] = True
-                    self.last_used = datetime.utcnow()
+                    self.last_used = datetime.now(timezone.utc)
                     return conn
                 except Exception as e:
                     self.logger.error(
@@ -132,7 +133,7 @@ class ConnectionPool:
             target=self.target_id,
             healthy=len(issues) == 0 or healthy_connections > 0,
             response_time=response_time,
-            last_check=datetime.utcnow(),
+            last_check=datetime.now(timezone.utc),
             issues=issues if healthy_connections == 0 else None,
         )
 
@@ -175,7 +176,7 @@ class SSHConnectionImpl:
         self.client = None
         self.sftp_client = None
         self.connected = False
-        self.last_activity = datetime.utcnow()
+        self.last_activity = datetime.now(timezone.utc)
         self.logger = logging.getLogger(f"{__name__}.SSHConnection.{connection_id}")
         self._lock = asyncio.Lock()
 
@@ -228,7 +229,7 @@ class SSHConnectionImpl:
             self.sftp_client = self.client.open_sftp()
 
             self.connected = True
-            self.last_activity = datetime.utcnow()
+            self.last_activity = datetime.now(timezone.utc)
             self.logger.info(f"SSH connection established to {self.target.host}")
 
             return True
@@ -271,7 +272,7 @@ class SSHConnectionImpl:
                 raise ConnectionError("SSH connection not available")
 
             start_time = time.time()
-            self.last_activity = datetime.utcnow()
+            self.last_activity = datetime.now(timezone.utc)
 
             try:
                 stdin, stdout, stderr = self.client.exec_command(
@@ -290,7 +291,7 @@ class SSHConnectionImpl:
                     stdout=stdout_data,
                     stderr=stderr_data,
                     execution_time=execution_time,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
             except Exception as e:
@@ -554,7 +555,7 @@ class RemoteConnectionManager:
                 target=target_id,
                 healthy=False,
                 response_time=0,
-                last_check=datetime.utcnow(),
+                last_check=datetime.now(timezone.utc),
                 issues=["No connection pool found"],
             )
 
@@ -591,7 +592,7 @@ class RemoteConnectionManager:
                     target=target_id,
                     healthy=False,
                     response_time=0,
-                    last_check=datetime.utcnow(),
+                    last_check=datetime.now(timezone.utc),
                     issues=[f"Health check failed: {str(e)}"],
                 )
 
@@ -653,7 +654,7 @@ class RemoteConnectionManager:
 
     async def _cleanup_idle_connections(self):
         """Cleanup idle connections."""
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         targets_to_cleanup = []
 
         for target_id, pool in self.connection_pools.items():

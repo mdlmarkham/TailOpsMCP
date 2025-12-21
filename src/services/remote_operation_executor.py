@@ -9,6 +9,7 @@ import asyncio
 import logging
 from typing import Callable, Any, Optional, Dict, List
 from datetime import datetime
+from datetime import timezone, timezone
 from functools import wraps
 from dataclasses import dataclass, field
 from enum import Enum
@@ -116,7 +117,7 @@ class CircuitBreaker:
     def record_failure(self):
         """Record failed operation."""
         self.failure_count += 1
-        self.last_failure_time = datetime.utcnow()
+        self.last_failure_time = datetime.now(timezone.utc)
 
         if self.failure_count >= self.threshold:
             self.state = "OPEN"
@@ -134,7 +135,7 @@ class CircuitBreaker:
             return True
 
         time_since_failure = (
-            datetime.utcnow() - self.last_failure_time
+            datetime.now(timezone.utc) - self.last_failure_time
         ).total_seconds()
         return time_since_failure >= self.timeout
 
@@ -183,21 +184,21 @@ class ResilientRemoteOperation:
         metrics = OperationMetrics(
             operation_name=operation_name,
             operation_type=config.operation_type,
-            start_time=datetime.utcnow(),
+            start_time=datetime.now(timezone.utc),
         )
 
         try:
             result = await self._execute_with_retry_internal(operation, config, metrics)
 
             metrics.success = True
-            metrics.end_time = datetime.utcnow()
+            metrics.end_time = datetime.now(timezone.utc)
             metrics.duration = (metrics.end_time - metrics.start_time).total_seconds()
 
             return result
 
         except Exception as e:
             metrics.success = False
-            metrics.end_time = datetime.utcnow()
+            metrics.end_time = datetime.now(timezone.utc)
             metrics.duration = (metrics.end_time - metrics.start_time).total_seconds()
             metrics.error_message = str(e)
             metrics.error_type = type(e).__name__
@@ -212,7 +213,7 @@ class ResilientRemoteOperation:
                 success=False,
                 error=str(e),
                 execution_time=metrics.duration or 0.0,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         finally:
@@ -238,12 +239,12 @@ class ResilientRemoteOperation:
         Returns:
             Operation result
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         try:
             result = await asyncio.wait_for(operation(), timeout=timeout)
 
-            duration = (datetime.utcnow() - start_time).total_seconds()
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
 
             return OperationResult(
                 operation=operation_name,
@@ -251,11 +252,11 @@ class ResilientRemoteOperation:
                 success=True,
                 result=result,
                 execution_time=duration,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         except asyncio.TimeoutError:
-            duration = (datetime.utcnow() - start_time).total_seconds()
+            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
             error_msg = f"Operation {operation_name} timed out after {timeout}s"
 
             self.logger.error(error_msg)
@@ -266,7 +267,7 @@ class ResilientRemoteOperation:
                 success=False,
                 error=error_msg,
                 execution_time=duration,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     async def handle_connection_errors(
@@ -401,7 +402,7 @@ class ResilientRemoteOperation:
                     success=True,
                     result=result,
                     execution_time=0.0,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
             except Exception as e:

@@ -18,6 +18,7 @@ ENHANCED: This file now contains all audit functionality including:
 
 from __future__ import annotations
 from datetime import datetime
+from datetime import timezone, timezone
 import json
 import os
 import subprocess
@@ -168,7 +169,7 @@ class AuditLogger:
         - Logs approval status for high-risk operations
         """
         rec: Dict[str, Any] = {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             "tool": tool,
             "subject": subject,
             "args": self._sanitize_args(args),
@@ -283,7 +284,7 @@ class StructuredAuditLogger:
 
         # Convert simple log format to structured format
         entry = AuditLogEntry(
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(timezone.utc).isoformat() + "Z",
             event_type=AuditEventType.TOOL_INVOCATION,
             actor=subject or "unknown",
             target="local",
@@ -313,7 +314,7 @@ class StructuredAuditLogger:
         """Log a remote operation with full audit details."""
 
         entry = AuditLogEntry(
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(timezone.utc).isoformat() + "Z",
             event_type=AuditEventType.REMOTE_OPERATION,
             actor=actor,
             target=target,
@@ -341,7 +342,7 @@ class StructuredAuditLogger:
         """Log a policy decision."""
 
         entry = AuditLogEntry(
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(timezone.utc).isoformat() + "Z",
             event_type=AuditEventType.POLICY_DECISION,
             actor=actor,
             target=target,
@@ -362,7 +363,7 @@ class StructuredAuditLogger:
         """Log target access events."""
 
         entry = AuditLogEntry(
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(timezone.utc).isoformat() + "Z",
             event_type=AuditEventType.TARGET_ACCESS,
             actor=actor,
             target=target,

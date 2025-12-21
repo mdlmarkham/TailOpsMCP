@@ -8,6 +8,7 @@ Provides comprehensive remote management capabilities without requiring agent in
 import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from datetime import timezone, timezone
 
 from src.connectors.journald_connector import JournaldConnector
 from src.connectors.service_connector import ServiceConnector
@@ -156,7 +157,7 @@ class RemoteAgentTools:
                 "service": service,
                 "log_count": len(log_dicts),
                 "logs": log_dicts,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -181,7 +182,7 @@ class RemoteAgentTools:
                 "success": False,
                 "error": str(e),
                 "target": target,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     async def follow_service_logs(
@@ -212,7 +213,7 @@ class RemoteAgentTools:
                 "message": f"Log following initiated for {service} on {target}",
                 "timeout": timeout,
                 "stream_type": "async_iterator",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -224,7 +225,7 @@ class RemoteAgentTools:
                 "error": str(e),
                 "target": target,
                 "service": service,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     # Service Management Tools
@@ -263,7 +264,7 @@ class RemoteAgentTools:
                 "result": result.result,
                 "error": result.error,
                 "execution_time": result.execution_time,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -283,7 +284,7 @@ class RemoteAgentTools:
                 "error": str(e),
                 "target": target,
                 "service": service,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     async def get_service_status(self, target: str, service: str) -> Dict[str, Any]:
@@ -325,7 +326,7 @@ class RemoteAgentTools:
                     "restart_count": status.restart_count,
                     "description": status.description,
                 },
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -345,7 +346,7 @@ class RemoteAgentTools:
                 "error": str(e),
                 "target": target,
                 "service": service,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     async def list_remote_services(
@@ -400,7 +401,7 @@ class RemoteAgentTools:
                 "filter_state": filter_state,
                 "service_count": len(service_list),
                 "services": service_list,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -417,7 +418,7 @@ class RemoteAgentTools:
                 "success": False,
                 "error": str(e),
                 "target": target,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     # Docker Tools
@@ -469,7 +470,7 @@ class RemoteAgentTools:
                 "all_containers": all_containers,
                 "container_count": len(container_list),
                 "containers": container_list,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -488,7 +489,7 @@ class RemoteAgentTools:
                 "success": False,
                 "error": str(e),
                 "target": target,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     async def get_container_logs_remote(
@@ -535,7 +536,7 @@ class RemoteAgentTools:
                 "container_id": container_id,
                 "log_length": len(logs),
                 "logs": logs,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -559,7 +560,7 @@ class RemoteAgentTools:
                 "error": str(e),
                 "target": target,
                 "container_id": container_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     async def restart_remote_container(
@@ -596,7 +597,7 @@ class RemoteAgentTools:
                 "result": result.result,
                 "error": result.error,
                 "execution_time": result.execution_time,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -616,7 +617,7 @@ class RemoteAgentTools:
                 "error": str(e),
                 "target": target,
                 "container_id": container_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     # File Operations Tools
@@ -654,7 +655,7 @@ class RemoteAgentTools:
                 "path": path,
                 "content": content,
                 "content_length": len(content),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -672,7 +673,7 @@ class RemoteAgentTools:
                 "error": str(e),
                 "target": target,
                 "path": path,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     async def write_remote_file(
@@ -714,7 +715,7 @@ class RemoteAgentTools:
                 "result": result.result,
                 "error": result.error,
                 "execution_time": result.execution_time,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -736,7 +737,7 @@ class RemoteAgentTools:
                 "error": str(e),
                 "target": target,
                 "path": path,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     async def list_remote_directory(
@@ -789,7 +790,7 @@ class RemoteAgentTools:
                 "include_hidden": include_hidden,
                 "file_count": len(file_list),
                 "files": file_list,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -807,7 +808,7 @@ class RemoteAgentTools:
                 "error": str(e),
                 "target": target,
                 "path": path,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     # System Status Tools
@@ -875,7 +876,7 @@ class RemoteAgentTools:
                     "issues": health_status.issues,
                 },
                 "system_info": system_info,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -892,7 +893,7 @@ class RemoteAgentTools:
                 "success": False,
                 "error": str(e),
                 "target": target,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     # Fleet Operations
@@ -981,7 +982,7 @@ class RemoteAgentTools:
             return {
                 "success": True,
                 "analysis": analysis,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -989,7 +990,7 @@ class RemoteAgentTools:
             return {
                 "success": False,
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     async def check_fleet_service_health(
@@ -1065,7 +1066,7 @@ class RemoteAgentTools:
                 "success": True,
                 "summary": summary,
                 "health_report": health_report,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -1073,7 +1074,7 @@ class RemoteAgentTools:
             return {
                 "success": False,
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
 

@@ -10,6 +10,7 @@ This module provides comprehensive MCP tools for inventory management including:
 import logging
 from typing import Optional, Literal
 from datetime import datetime
+from datetime import timezone, timezone
 from fastmcp import FastMCP
 
 from src.auth.middleware import secure_tool
@@ -280,7 +281,7 @@ def register_tools(mcp: FastMCP):
                     "unhealthy_targets": 0,
                     "average_health_score": 0.0,
                 },
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "run_fleet_discovery")
@@ -313,7 +314,7 @@ def register_tools(mcp: FastMCP):
                 "services_by_type": services_by_type,
                 "health_issues": {"unhealthy_targets": 0, "stale_targets": 0},
                 "recent_activity": {"last_discovery": None, "last_health_check": None},
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "get_fleet_overview")
@@ -332,7 +333,7 @@ def register_tools(mcp: FastMCP):
                 "success": True,
                 "production_targets": [],
                 "count": 0,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "get_production_targets")
@@ -355,7 +356,7 @@ def register_tools(mcp: FastMCP):
                 "runtime": runtime,
                 "services": [],
                 "count": 0,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "get_services_by_runtime")
@@ -378,7 +379,7 @@ def register_tools(mcp: FastMCP):
                 "stale_threshold_hours": hours,
                 "stale_targets": [],
                 "count": 0,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "find_stale_targets")
@@ -401,7 +402,7 @@ def register_tools(mcp: FastMCP):
                 "health_threshold": threshold,
                 "unhealthy_targets": [],
                 "count": 0,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "get_unhealthy_targets")
@@ -431,7 +432,7 @@ def register_tools(mcp: FastMCP):
                 "entity_type": entity_type,
                 "results": [],
                 "total_results": 0,
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "search_fleet")
@@ -468,7 +469,7 @@ def register_tools(mcp: FastMCP):
                     "name": name,
                     "description": description,
                     "snapshot_type": snapshot_type,
-                    "created_at": datetime.utcnow().isoformat() + "Z",
+                    "created_at": datetime.now(timezone.utc).isoformat() + "Z",
                     "tags": tag_list,
                     "total_targets": 0,
                     "total_services": 0,
@@ -477,7 +478,7 @@ def register_tools(mcp: FastMCP):
                     "average_health_score": 0.0,
                     "size_bytes": 0,
                 },
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "create_inventory_snapshot")
@@ -501,14 +502,14 @@ def register_tools(mcp: FastMCP):
                 "comparison": {
                     "snapshot_a_id": snapshot_a_id,
                     "snapshot_b_id": snapshot_b_id,
-                    "comparison_timestamp": datetime.utcnow().isoformat() + "Z",
+                    "comparison_timestamp": datetime.now(timezone.utc).isoformat() + "Z",
                     "changes_summary": {},
                     "health_impact": {},
                     "target_changes": [],
                     "service_changes": [],
                     "stack_changes": [],
                 },
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "compare_snapshots")
@@ -534,7 +535,7 @@ def register_tools(mcp: FastMCP):
                 "snapshots": [],
                 "count": 0,
                 "filters": {"snapshot_type": snapshot_type, "limit": limit},
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "list_snapshots")
@@ -599,7 +600,7 @@ def register_tools(mcp: FastMCP):
                     "warning_targets": 0,
                     "vulnerable_targets": 0,
                 },
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "run_comprehensive_health_check")
@@ -642,7 +643,7 @@ def register_tools(mcp: FastMCP):
                     "failed": 0,
                     "unknown": 0,
                 },
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             }
         except Exception as e:
             return format_error(e, "get_inventory_statistics")
@@ -664,7 +665,7 @@ async def _generate_summary_report() -> dict:
         "role_distribution": {role.value: 0 for role in NodeRole},
         "service_distribution": {},
         "stack_distribution": {},
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
     }
 
 
@@ -681,7 +682,7 @@ async def _generate_health_report() -> dict:
             "average_health_score": 0.0,
         },
         "health_issues": {"unhealthy_targets": [], "stale_targets": []},
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
     }
 
 
@@ -694,7 +695,7 @@ async def _generate_security_report() -> dict:
         "report_type": "security",
         "security_summary": security_summary,
         "security_issues": [],
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
     }
 
 
@@ -714,7 +715,7 @@ async def _generate_resource_report() -> dict:
         "report_type": "resources",
         "resource_summary": resource_summary,
         "resource_intensive": [],
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
     }
 
 
@@ -725,5 +726,5 @@ async def _generate_dependency_report() -> dict:
         "report_type": "dependencies",
         "dependency_map": {},
         "total_services_with_dependencies": 0,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
     }

@@ -10,6 +10,7 @@ This module provides comprehensive compliance capabilities:
 """
 
 import datetime
+from datetime import timezone
 import logging
 import os
 from typing import Any, Dict, List, Optional, Tuple
@@ -285,11 +286,11 @@ class ComplianceFramework:
             )
 
             # Calculate next assessment date (quarterly for most standards)
-            next_assessment = datetime.datetime.utcnow() + datetime.timedelta(days=90)
+            next_assessment = datetime.datetime.now(timezone.utc) + datetime.timedelta(days=90)
 
             report = ComplianceReport(
                 standard=compliance_standard,
-                assessment_date=datetime.datetime.utcnow(),
+                assessment_date=datetime.datetime.now(timezone.utc),
                 compliance_score=compliance_score,
                 violations=violations,
                 recommendations=recommendations,
@@ -326,7 +327,7 @@ class ComplianceFramework:
                 "compliant": True,  # Default to compliant
                 "evidence": [],
                 "gaps": [],
-                "last_tested": datetime.datetime.utcnow().isoformat(),
+                "last_tested": datetime.datetime.now(timezone.utc).isoformat(),
             }
 
             # Check audit logging requirements
@@ -396,7 +397,7 @@ class ComplianceFramework:
                 "compliant": False,
                 "evidence": [],
                 "gaps": [f"Assessment failed: {str(e)}"],
-                "last_tested": datetime.datetime.utcnow().isoformat(),
+                "last_tested": datetime.datetime.now(timezone.utc).isoformat(),
             }
 
     def _generate_compliance_recommendations(
@@ -536,7 +537,7 @@ class ComplianceFramework:
                 access_records=access_evidence,
                 security_incidents=incident_evidence,
                 configuration_documentation=config_evidence,
-                collection_timestamp=datetime.datetime.utcnow(),
+                collection_timestamp=datetime.datetime.now(timezone.utc),
             )
 
             logger.info(
@@ -562,7 +563,7 @@ class ComplianceFramework:
         try:
             validation_result = DataHandlingValidation(
                 operation_id=operation.operation_id,
-                validation_timestamp=datetime.datetime.utcnow(),
+                validation_timestamp=datetime.datetime.now(timezone.utc),
                 compliant=True,
                 violations=[],
                 recommendations=[],
@@ -613,7 +614,7 @@ class ComplianceFramework:
             logger.error(f"Data handling validation failed: {e}")
             return DataHandlingValidation(
                 operation_id=operation.operation_id,
-                validation_timestamp=datetime.datetime.utcnow(),
+                validation_timestamp=datetime.datetime.now(timezone.utc),
                 compliant=False,
                 violations=[f"Validation failed: {str(e)}"],
                 recommendations=["Manual review required"],
@@ -644,13 +645,13 @@ class ComplianceFramework:
             )
 
             # Calculate cutoff dates
-            datetime.datetime.utcnow() - datetime.timedelta(
+            datetime.datetime.now(timezone.utc) - datetime.timedelta(
                 days=audit_log_retention_days
             )
-            datetime.datetime.utcnow() - datetime.timedelta(
+            datetime.datetime.now(timezone.utc) - datetime.timedelta(
                 days=security_event_retention_days
             )
-            datetime.datetime.utcnow() - datetime.timedelta(
+            datetime.datetime.now(timezone.utc) - datetime.timedelta(
                 days=user_session_retention_days
             )
 
@@ -684,8 +685,8 @@ class ComplianceFramework:
             return RetentionActionResult(
                 actions_taken=actions_taken,
                 errors=errors,
-                timestamp=datetime.datetime.utcnow(),
-                next_execution=datetime.datetime.utcnow()
+                timestamp=datetime.datetime.now(timezone.utc),
+                next_execution=datetime.datetime.now(timezone.utc)
                 + datetime.timedelta(days=30),  # Monthly
             )
 
@@ -694,8 +695,8 @@ class ComplianceFramework:
             return RetentionActionResult(
                 actions_taken=[],
                 errors=[f"Enforcement failed: {str(e)}"],
-                timestamp=datetime.datetime.utcnow(),
-                next_execution=datetime.datetime.utcnow() + datetime.timedelta(days=1),
+                timestamp=datetime.datetime.now(timezone.utc),
+                next_execution=datetime.datetime.now(timezone.utc) + datetime.timedelta(days=1),
             )
 
     async def _collect_audit_evidence(
@@ -741,7 +742,7 @@ class ComplianceFramework:
             "security_policies": "up_to_date",
             "access_controls": "configured",
             "monitoring_systems": "operational",
-            "last_assessment": datetime.datetime.utcnow().isoformat(),
+            "last_assessment": datetime.datetime.now(timezone.utc).isoformat(),
         }
 
 
@@ -780,7 +781,7 @@ class GovernanceEngine:
         try:
             decision = GovernanceDecision(
                 operation_id=operation.operation_id,
-                timestamp=datetime.datetime.utcnow(),
+                timestamp=datetime.datetime.now(timezone.utc),
                 compliant=True,
                 violations=[],
                 required_approvals=[],
@@ -823,7 +824,7 @@ class GovernanceEngine:
             logger.error(f"Governance evaluation failed: {e}")
             return GovernanceDecision(
                 operation_id=operation.operation_id,
-                timestamp=datetime.datetime.utcnow(),
+                timestamp=datetime.datetime.now(timezone.utc),
                 compliant=False,
                 violations=[f"Governance evaluation failed: {str(e)}"],
                 required_approvals=[],
@@ -994,7 +995,7 @@ class GovernanceEngine:
             # Check if approval is recent (within 24 hours)
             approval_time = approval_context.approval_timestamp
             if (
-                datetime.datetime.utcnow() - approval_time
+                datetime.datetime.now(timezone.utc) - approval_time
             ).total_seconds() > 86400:  # 24 hours
                 return False
 
@@ -1022,7 +1023,7 @@ class GovernanceEngine:
 
         try:
             # Check for off-hours operations on critical systems
-            current_hour = datetime.datetime.utcnow().hour
+            current_hour = datetime.datetime.now(timezone.utc).hour
             if current_hour < 6 or current_hour > 22:  # Outside 6 AM - 10 PM
                 if operation.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
                     violations.append(

@@ -10,6 +10,7 @@ import json
 import websockets
 from collections import deque
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Any, Dict, List, Optional, Set, AsyncIterator, Callable
 from dataclasses import dataclass, field
 
@@ -31,7 +32,7 @@ class EventBatch:
     """A batch of events for processing."""
 
     events: List[SystemEvent]
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     batch_id: str = field(default="")
     size: int = 0
 
@@ -575,7 +576,7 @@ class EventWebSocket:
         message = {
             "type": "event",
             "data": event.to_dict(),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         # Send to all clients

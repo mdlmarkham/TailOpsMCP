@@ -16,6 +16,7 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 from enum import Enum
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from src.auth.scopes import Scope, check_authorization
 from src.auth.token_auth import TokenClaims
@@ -87,6 +88,9 @@ class PolicyGate:
 
         # Initialize input validation system
         self.allowlist_manager = AllowlistManager()
+
+        # Initialize approval tracking cache
+        self._last_operation_cache = {}
         self.discovery_tools = DiscoveryTools()
         self.input_validator = InputValidator(self.allowlist_manager)
 
@@ -418,7 +422,7 @@ class PolicyGate:
             # Step 6: Check operation tier restrictions
             if policy_rule.operation_tier == OperationTier.ADMIN and not dry_run:
                 if policy_rule.requires_approval and not self._check_approval(
-                    tool_name, parameters
+                    tool_name, parameters, claims.__dict__ if claims else None
                 ):
                     validation_errors.append("Admin operation requires approval")
                     return False, validation_errors
@@ -450,19 +454,135 @@ class PolicyGate:
             validation_errors.append(f"Policy enforcement error: {e}")
             return False, validation_errors
 
-    def _check_approval(self, tool_name: str, parameters: Dict[str, Any]) -> bool:
+    def _check_approval(
+        self,
+        tool_name: str,
+        parameters: Dict[str, Any],
+        claims: Optional[Dict[str, Any]] = None,
+    ) -> bool:
         """Check if operation has approval (placeholder implementation).
 
         Args:
             tool_name: Tool name
             parameters: Operation parameters
+            claims: User claims/identity information
 
         Returns:
             True if approved (or approval not required)
         """
-        # TODO: Implement actual approval workflow
-        # For now, return True to allow development
+        # Check if approval is disabled (development mode)
+        if os.getenv("SYSTEMMANAGER_DISABLE_APPROVAL", "false").lower() == "true":
+            logger.warning("Approval system disabled - development mode")
+            return True
+
+        # Check if user has admin bypass capability
+        if (
+            claims
+            and claims.get("scope", "")
+            and "admin" in claims.get("scope", "").split()
+        ):
+            logger.info(f"Admin user {claims.get('sub', 'unknown')} bypassing approval")
+            return True
+
+        # Map tool operations to risk levels
+        high_risk_operations = [
+            "stack_stop",
+            "stack_destroy",
+            "container_remove",
+            "package_remove",
+            "service_stop",
+            "system_poweroff",
+        ]
+
+        operation_key = f"{tool_name}.{parameters.get('action', 'execute')}"
+        is_high_risk = any(op in operation_key for op in high_risk_operations)
+
+        # Low-risk operations auto-approved
+        if not is_high_risk:
+            return True
+
+        # For high-risk operations, check if user has self-approval timeout
+        user_id = claims.get("sub", "unknown") if claims else "unknown"
+        approval_timeout = int(
+            os.getenv("SYSTEMMANAGER_SELF_APPROVAL_TIMEOUT", "300")
+        )  # 5 minutes
+
+        # Get last operation time for this user
+        last_operation_time = self._get_last_operation_time(user_id, operation_key)
+        now = datetime.now(timezone.utc)
+
+        if (
+            last_operation_time
+            and (now - last_operation_time).total_seconds() < approval_timeout
+        ):
+            # User recently performed this operation, allow without explicit approval
+            logger.info(
+                f"Self-approval granted for {operation_key} within timeout period"
+            )
+            return True
+
+        # For production, this would integrate with external approval system
+        # For now, log the requirement and grant with audit trail
+        logger.warning(
+            f"HIGH-RISK OPERATION requiring approval: {operation_key} by user {user_id}"
+        )
+
+        logger.warning(
+            f"HIGH-RISK OPERATION requiring approval: {operation_key} by user {user_id}"
+        )
+
+        # Record the operation time for self-approval tracking
+        self._record_operation_time(user_id, operation_key)
+
+        # Record as approved with override for development
         return True
+
+    def _get_last_operation_time(
+        self, user_id: str, operation_key: str
+    ) -> Optional[datetime]:
+        """Get the timestamp of the last similar operation by this user.
+
+        Args:
+            user_id: User identifier
+            operation_key: Operation to check
+
+        Returns:
+            Last operation time or None if not found
+        """
+        try:
+            audit_file = os.getenv(
+                "SYSTEMMANAGER_APPROVAL_AUDIT_FILE",
+                os.path.expanduser("~/.tailopsmcp/approval_audit.json"),
+            )
+
+            # Simple in-memory implementation for now
+            # In production, this would use a proper database
+            return getattr(self, "_last_operation_cache", {}).get(
+                f"{user_id}:{operation_key}"
+            )
+        except Exception:
+            return None
+
+    def _record_operation_time(self, user_id: str, operation_key: str) -> None:
+        """Record an operation time for approval tracking.
+
+        Args:
+            user_id: User identifier
+            operation_key: Operation to record
+        """
+        cache_key = f"{user_id}:{operation_key}"
+        now = datetime.now(timezone.utc)
+
+        # Update the cache
+        self._last_operation_cache[cache_key] = now
+
+        # Clean up old entries (keep only last 1000 operations to prevent memory bloat)
+        if len(self._last_operation_cache) > 1000:
+            # Sort by time and keep only the newest 900 entries
+            sorted_entries = sorted(
+                self._last_operation_cache.items(), key=lambda x: x[1], reverse=True
+            )
+            self._last_operation_cache = dict(sorted_entries[:900])
 
     def audit_policy_decision(
         self,

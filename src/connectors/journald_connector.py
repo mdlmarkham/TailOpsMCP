@@ -11,6 +11,7 @@ import re
 import logging
 from typing import Dict, List, Optional, Any, AsyncIterator
 from datetime import datetime
+from datetime import timezone, timezone
 from dataclasses import dataclass
 
 from src.connectors.remote_agent_connector import RemoteAgentConnector, LogEntry
@@ -232,11 +233,11 @@ class JournaldConnector(RemoteAgentConnector):
                 stderr=asyncio.subprocess.PIPE,
             )
 
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
 
             while True:
                 # Check timeout
-                if (datetime.utcnow() - start_time).total_seconds() > timeout:
+                if (datetime.now(timezone.utc) - start_time).total_seconds() > timeout:
                     break
 
                 # Read line with timeout
@@ -511,7 +512,7 @@ class JournaldConnector(RemoteAgentConnector):
                         timestamp_str.replace("Z", "+00:00")
                     )
             else:
-                timestamp = datetime.utcnow()
+                timestamp = datetime.now(timezone.utc)
 
             # Extract priority and level
             priority = int(data.get("PRIORITY", 6))  # Default to info
@@ -559,7 +560,7 @@ class JournaldConnector(RemoteAgentConnector):
                         timestamp_str.replace("Z", "+00:00")
                     )
             else:
-                timestamp = datetime.utcnow()
+                timestamp = datetime.now(timezone.utc)
 
             # Extract priority
             priority = int(data.get("PRIORITY", 6))
@@ -635,7 +636,7 @@ class JournaldConnector(RemoteAgentConnector):
                     timestamp_str, hostname, service, pid, message = match.groups()
 
                     # Convert timestamp
-                    current_year = datetime.utcnow().year
+                    current_year = datetime.now(timezone.utc).year
                     timestamp_str = f"{current_year} {timestamp_str}"
                     timestamp = datetime.strptime(timestamp_str, "%Y %b %d %H:%M:%S")
 

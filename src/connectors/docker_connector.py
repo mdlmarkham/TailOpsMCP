@@ -10,6 +10,7 @@ import json
 import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from datetime import timezone, timezone
 from dataclasses import dataclass
 
 from src.connectors.remote_agent_connector import (
@@ -353,7 +354,7 @@ class DockerConnector(RemoteAgentConnector):
                     target=container_id,
                     success=True,
                     result="Container restarted successfully",
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -361,7 +362,7 @@ class DockerConnector(RemoteAgentConnector):
                     target=container_id,
                     success=False,
                     error=result.stderr,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -370,7 +371,7 @@ class DockerConnector(RemoteAgentConnector):
                 target=container_id,
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     @resilient_operation(
@@ -403,7 +404,7 @@ class DockerConnector(RemoteAgentConnector):
                     target=container_id,
                     success=True,
                     result="Container started successfully",
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -411,7 +412,7 @@ class DockerConnector(RemoteAgentConnector):
                     target=container_id,
                     success=False,
                     error=result.stderr,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -420,7 +421,7 @@ class DockerConnector(RemoteAgentConnector):
                 target=container_id,
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     @resilient_operation(
@@ -453,7 +454,7 @@ class DockerConnector(RemoteAgentConnector):
                     target=container_id,
                     success=True,
                     result="Container stopped successfully",
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -461,7 +462,7 @@ class DockerConnector(RemoteAgentConnector):
                     target=container_id,
                     success=False,
                     error=result.stderr,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -470,7 +471,7 @@ class DockerConnector(RemoteAgentConnector):
                 target=container_id,
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     @resilient_operation(
@@ -668,7 +669,7 @@ class DockerConnector(RemoteAgentConnector):
                 block_read_bytes=block_read_bytes,
                 block_write_bytes=block_write_bytes,
                 pid=int(stats_data.get("pid", 0)),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         except Exception as e:

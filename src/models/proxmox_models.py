@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from datetime import timezone, timezone
 from enum import Enum
 from typing import Dict, List, Optional, Any
 
@@ -399,7 +400,7 @@ class ProxmoxContainer:
 
     # Discovery metadata
     discovered_at: str = field(
-        default_factory=lambda: datetime.utcnow().isoformat() + "Z"
+        default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z"
     )
     last_seen: Optional[str] = None
     tags: List[str] = field(default_factory=list)
@@ -461,7 +462,7 @@ class ProxmoxVM:
 
     # Discovery metadata
     discovered_at: str = field(
-        default_factory=lambda: datetime.utcnow().isoformat() + "Z"
+        default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z"
     )
     last_seen: Optional[str] = None
     tags: List[str] = field(default_factory=list)

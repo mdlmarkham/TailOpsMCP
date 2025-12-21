@@ -11,6 +11,7 @@ import logging
 import os
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from datetime import timezone, timezone
 from dataclasses import dataclass
 
 from src.connectors.remote_agent_connector import (
@@ -354,12 +355,12 @@ class FileConnector(RemoteAgentConnector):
             # Create backup if file exists
             backup_path = None
             if create_backup:
-                backup_path = f"{validated_path}.backup.{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+                backup_path = f"{validated_path}.backup.{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
                 await self._create_backup(validated_path, backup_path)
 
             # Write content via temporary file and move
             temp_path = (
-                f"{validated_path}.tmp.{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+                f"{validated_path}.tmp.{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
             )
 
             # Create temporary file
@@ -393,7 +394,7 @@ class FileConnector(RemoteAgentConnector):
                 target=validated_path,
                 success=True,
                 result=f"File written successfully{' (backup created)' if backup_path else ''}",
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         except Exception as e:
@@ -403,7 +404,7 @@ class FileConnector(RemoteAgentConnector):
                 target=validated_path,
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     async def list_directory(
@@ -739,7 +740,7 @@ class FileConnector(RemoteAgentConnector):
                     if ":" in parts[7]:
                         # Recent file with time
                         modified = datetime.strptime(
-                            f"{datetime.utcnow().year} {date_str}", "%Y %b %d %H:%M"
+                            f"{datetime.now(timezone.utc).year} {date_str}", "%Y %b %d %H:%M"
                         )
                     else:
                         # Older file with year
@@ -799,7 +800,7 @@ class FileConnector(RemoteAgentConnector):
                     # Parse date
                     if ":" in parts[7]:
                         modified = datetime.strptime(
-                            f"{datetime.utcnow().year} {date_str}", "%Y %b %d %H:%M"
+                            f"{datetime.now(timezone.utc).year} {date_str}", "%Y %b %d %H:%M"
                         )
                     else:
                         modified = datetime.strptime(date_str, "%b %d %Y")
@@ -849,7 +850,7 @@ class FileConnector(RemoteAgentConnector):
             size=0,
             children=[],
             permissions="drwxr-xr-x",
-            modified=datetime.utcnow(),
+            modified=datetime.now(timezone.utc),
         )
 
         for file_info in files:
@@ -884,7 +885,7 @@ class FileConnector(RemoteAgentConnector):
             **kwargs: Additional context
         """
         log_entry = {
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "operation": operation,
             "path": path,
             "success": success,

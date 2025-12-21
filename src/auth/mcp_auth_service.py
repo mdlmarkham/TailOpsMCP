@@ -6,7 +6,8 @@ import logging
 import os
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timezone, timezone, timezone, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import requests
@@ -25,13 +26,15 @@ class MCPTokenSession:
     refresh_token: Optional[str] = None
     token_type: str = "Bearer"
     scope: Optional[str] = None
-    issued_at: datetime = field(default_factory=datetime.utcnow)
+    issued_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     raw_response: Dict[str, Any] = field(default_factory=dict)
 
     def is_expired(self, skew_seconds: int = 30) -> bool:
         """Return True if the token is expired or about to expire."""
 
-        return datetime.utcnow() >= (self.expires_at - timedelta(seconds=skew_seconds))
+        return datetime.now(timezone.utc) >= (
+            self.expires_at - timedelta(seconds=skew_seconds)
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize the session for storage/logging."""
@@ -95,7 +98,7 @@ class GoFastMCPAuthService:
         self, session_id: str, token_payload: Dict[str, Any]
     ) -> MCPTokenSession:
         expires_in = token_payload.get("expires_in", 3600)
-        expires_at = datetime.utcnow() + timedelta(seconds=int(expires_in))
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=int(expires_in))
         session = MCPTokenSession(
             access_token=token_payload["access_token"],
             refresh_token=token_payload.get("refresh_token"),

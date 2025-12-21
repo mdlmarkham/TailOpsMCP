@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from datetime import timezone, timezone
 from enum import Enum
 from typing import Dict, List, Optional, Any
 from uuid import uuid4
@@ -48,7 +49,7 @@ class EntityChange(BaseModel):
     field_changes: Dict[str, Any] = Field(default_factory=dict)
     old_value: Optional[Any] = None
     new_value: Optional[Any] = None
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
 
 
 class SnapshotDiff(BaseModel):
@@ -56,7 +57,7 @@ class SnapshotDiff(BaseModel):
 
     snapshot_a_id: str
     snapshot_b_id: str
-    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
 
     # Change summaries
     target_changes: List[EntityChange] = Field(default_factory=list)
@@ -144,7 +145,7 @@ class InventorySnapshot:
     snapshot_type: SnapshotType = SnapshotType.MANUAL
 
     # Snapshot metadata
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
     created_by: Optional[str] = None
     tags: List[str] = field(default_factory=list)
 
@@ -570,8 +571,9 @@ class SnapshotManager:
             Number of snapshots cleaned up
         """
         from datetime import datetime
+from datetime import timezone, timezone
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expired_ids = []
 
         for snapshot_id, snapshot in self.snapshots.items():

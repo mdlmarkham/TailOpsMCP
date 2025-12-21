@@ -8,6 +8,7 @@ inventory service functionality for easier integration with other system compone
 import logging
 from typing import Any, Dict
 from datetime import datetime
+from datetime import timezone, timezone
 
 from src.server.dependencies import deps
 from src.models.enhanced_fleet_inventory import EnhancedFleetInventory

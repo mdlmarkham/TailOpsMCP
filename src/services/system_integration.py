@@ -7,6 +7,7 @@ remote agents, and discovery pipelines.
 """
 
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Any, Dict, List
 
 from src.models.event_models import (
@@ -163,7 +164,7 @@ class FleetInventoryIntegration:
                 .details(
                     {
                         "update_type": "inventory_sync",
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                     }
                 )
             )
@@ -209,7 +210,7 @@ class PolicyEngineIntegration:
                         "policy_name": violation.policy_name,
                         "violation_type": violation.violation_type,
                         "target": violation.target,
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                     },
                 )
 
@@ -495,7 +496,7 @@ class DiscoveryPipelineIntegration:
                         {
                             "pipeline_id": status.get("pipeline_id"),
                             "discovery_type": status.get("discovery_type"),
-                            "timestamp": datetime.utcnow().isoformat(),
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
                         },
                     ).category(EventCategory.DISCOVERY)
                     events.append(event.build())
@@ -854,7 +855,7 @@ class SystemIntegrationManager:
                 ),
                 "total_integrations": len(self.integration_status),
                 "integration_status": self.integration_status.copy(),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
         except Exception as e:
@@ -862,7 +863,7 @@ class SystemIntegrationManager:
             return {
                 "success": False,
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
     def get_integration_status(self) -> Dict[str, Any]:

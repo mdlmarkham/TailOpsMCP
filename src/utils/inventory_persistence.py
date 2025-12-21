@@ -16,7 +16,8 @@ import os
 import sqlite3
 import gzip
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timezone, timezone, timezone, timedelta
 from typing import Dict, List, Optional, Any, Iterator
 
 from src.models.enhanced_fleet_inventory import (
@@ -744,7 +745,7 @@ class EnhancedInventoryPersistence:
     def get_stale_targets(self, hours: int = 24) -> List[EnhancedTarget]:
         """Get targets not seen within specified hours."""
 
-        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
 
         if self.use_sqlite:
             with self._get_connection() as conn:
@@ -904,7 +905,7 @@ class EnhancedInventoryPersistence:
     def archive_old_snapshots(self, days: int = 30) -> int:
         """Archive snapshots older than specified days."""
 
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         archived_count = 0
 
         with self._get_connection() as conn:
@@ -936,7 +937,7 @@ class EnhancedInventoryPersistence:
     def cleanup_expired_snapshots(self) -> int:
         """Remove expired snapshots."""
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         cleaned_count = 0
 
         with self._get_connection() as conn:

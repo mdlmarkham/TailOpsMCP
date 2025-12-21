@@ -8,7 +8,8 @@ health monitoring, and change detection for Proxmox environments.
 
 import logging
 from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timezone, timezone, timezone, timedelta
 
 from src.models.fleet_inventory import (
     ProxmoxHost,
@@ -107,7 +108,7 @@ class ProxmoxDiscoveryEnhanced:
 
         # Update discovery timestamp
         for host in discovered_hosts:
-            self._last_discovery[host.hostname] = datetime.utcnow()
+            self._last_discovery[host.hostname] = datetime.now(timezone.utc)
 
         logger.info(f"Discovered {len(discovered_hosts)} Proxmox hosts")
         return discovered_hosts
@@ -130,7 +131,7 @@ class ProxmoxDiscoveryEnhanced:
         if (
             not force_refresh
             and host_key in self._last_discovery
-            and datetime.utcnow() - self._last_discovery[host_key]
+            and datetime.now(timezone.utc) - self._last_discovery[host_key]
             < timedelta(minutes=5)
         ):
             return self._discovered_hosts.get(host_key)
@@ -225,7 +226,7 @@ class ProxmoxDiscoveryEnhanced:
         if (
             not force_refresh
             and host_key in self._last_discovery
-            and datetime.utcnow() - self._last_discovery[host_key]
+            and datetime.now(timezone.utc) - self._last_discovery[host_key]
             < timedelta(minutes=5)
         ):
             return self._discovered_hosts.get(host_key)
@@ -299,7 +300,7 @@ class ProxmoxDiscoveryEnhanced:
         if (
             not force_refresh
             and host_key in self._last_discovery
-            and datetime.utcnow() - self._last_discovery[host_key]
+            and datetime.now(timezone.utc) - self._last_discovery[host_key]
             < timedelta(minutes=2)
         ):
             return self._discovered_nodes.get(host_key, [])
@@ -317,7 +318,7 @@ class ProxmoxDiscoveryEnhanced:
 
             # Update discovery cache
             self._discovered_nodes[host_key] = discovered_containers
-            self._last_discovery[host_key] = datetime.utcnow()
+            self._last_discovery[host_key] = datetime.now(timezone.utc)
 
             # Update inventory if available
             if self.inventory_service and discovered_containers:
@@ -883,7 +884,7 @@ class ProxmoxDiscoveryEnhanced:
             target_type=target_type,
             message=message,
             details=details or {},
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(timezone.utc).isoformat() + "Z",
         )
 
     def _extract_disk_size(self, rootfs_config: str) -> int:

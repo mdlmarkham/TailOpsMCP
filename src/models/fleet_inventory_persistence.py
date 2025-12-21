@@ -7,6 +7,7 @@ This module provides persistence capabilities for fleet inventory data.
 import json
 import os
 from datetime import datetime
+from datetime import timezone, timezone
 
 from src.models.fleet_inventory import FleetInventory
 

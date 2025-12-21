@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from datetime import timezone, timezone
 from enum import Enum
 from typing import Dict, List, Optional, Any
 
@@ -105,7 +106,7 @@ class TargetMetadata:
     constraints: TargetConstraints
     metadata: Dict[str, Any]
     discovered_at: str = field(
-        default_factory=lambda: datetime.utcnow().isoformat() + "Z"
+        default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z"
     )
     last_verified: Optional[str] = None
 
@@ -162,7 +163,7 @@ class TargetMetadata:
             constraints=TargetConstraints(**data["constraints"]),
             metadata=data["metadata"],
             discovered_at=data.get(
-                "discovered_at", datetime.utcnow().isoformat() + "Z"
+                "discovered_at", datetime.now(timezone.utc).isoformat() + "Z"
             ),
             last_verified=data.get("last_verified"),
         )

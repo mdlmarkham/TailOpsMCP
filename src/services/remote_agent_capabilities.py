@@ -8,6 +8,7 @@ Provides comprehensive agent-like operations via SSH/Tailscale without requiring
 import logging
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
+from datetime import timezone, timezone
 
 from src.models.policy_models import OperationType
 from src.services.remote_operation_executor import ResilientRemoteOperation
@@ -78,7 +79,7 @@ class RemoteAgentCapabilities:
                     target=target.host,
                     success=True,
                     result=result,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -86,7 +87,7 @@ class RemoteAgentCapabilities:
                     target=target.host,
                     success=False,
                     error=result["error"],
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -96,7 +97,7 @@ class RemoteAgentCapabilities:
                 target=target.host if target else "unknown",
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     @staticmethod
@@ -145,7 +146,7 @@ class RemoteAgentCapabilities:
                     target=target.host,
                     success=True,
                     result=result,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -153,7 +154,7 @@ class RemoteAgentCapabilities:
                     target=target.host,
                     success=False,
                     error=result["error"],
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -163,7 +164,7 @@ class RemoteAgentCapabilities:
                 target=target.host if target else "unknown",
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     @staticmethod
@@ -226,7 +227,7 @@ class RemoteAgentCapabilities:
                     target=target.host,
                     success=True,
                     result=result,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -234,7 +235,7 @@ class RemoteAgentCapabilities:
                     target=target.host,
                     success=False,
                     error=result["error"],
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -244,7 +245,7 @@ class RemoteAgentCapabilities:
                 target=target.host if target else "unknown",
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     @staticmethod
@@ -301,7 +302,7 @@ class RemoteAgentCapabilities:
                     target=target.host,
                     success=True,
                     result=result,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -309,7 +310,7 @@ class RemoteAgentCapabilities:
                     target=target.host,
                     success=False,
                     error=result["error"],
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -319,7 +320,7 @@ class RemoteAgentCapabilities:
                 target=target.host if target else "unknown",
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     @staticmethod
@@ -347,7 +348,7 @@ class RemoteAgentCapabilities:
                     target=target.host,
                     success=True,
                     result=result,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -355,7 +356,7 @@ class RemoteAgentCapabilities:
                     target=target.host,
                     success=False,
                     error=result["error"],
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -365,7 +366,7 @@ class RemoteAgentCapabilities:
                 target=target.host if target else "unknown",
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     @staticmethod
@@ -413,7 +414,7 @@ class RemoteAgentCapabilities:
                     target="multiple",
                     success=True,
                     result=result,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -421,7 +422,7 @@ class RemoteAgentCapabilities:
                     target="multiple",
                     success=False,
                     error=result["error"],
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -431,7 +432,7 @@ class RemoteAgentCapabilities:
                 target="multiple",
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
 

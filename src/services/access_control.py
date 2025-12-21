@@ -10,6 +10,7 @@ This module provides fine-grained access control capabilities:
 """
 
 import datetime
+from datetime import timezone
 import logging
 import os
 from typing import Any, Dict, List, Optional, Set
@@ -106,7 +107,7 @@ class AccessRule:
 
     def _check_time_restrictions(self, restrictions: Dict[str, Any]) -> bool:
         """Check if current time meets restrictions."""
-        current_time = datetime.datetime.utcnow()
+        current_time = datetime.datetime.now(timezone.utc)
         current_hour = current_time.hour
 
         allowed_hours = restrictions.get("allowed_hours", [])
@@ -324,7 +325,7 @@ class RiskAssessor:
         factors = {}
 
         # Time-based risk
-        current_time = datetime.datetime.utcnow()
+        current_time = datetime.datetime.now(timezone.utc)
         current_hour = current_time.hour
 
         # Off-hours access (outside 8 AM - 6 PM)
@@ -872,7 +873,7 @@ class AdvancedAccessControl:
     ) -> AccessDecisionResult:
         """Apply contextual access controls."""
         # Time-based restrictions
-        current_time = datetime.datetime.utcnow()
+        current_time = datetime.datetime.now(timezone.utc)
         current_hour = current_time.hour
 
         # Check if action requires business hours

@@ -7,7 +7,8 @@ escalation policies, notification channels, and alert management.
 
 import smtplib
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timezone, timezone, timezone, timedelta
 from email.mime.text import MimeText
 from email.mime.multipart import MimeMultipart
 from typing import Any, Dict, List, Optional
@@ -167,8 +168,8 @@ class Alert:
     description: str
     severity: EventSeverity
     status: AlertStatus = AlertStatus.ACTIVE
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Event information
     triggering_events: List[SystemEvent] = field(default_factory=list)
@@ -199,25 +200,25 @@ class Alert:
     def acknowledge(self, user_id: str, note: Optional[str] = None) -> None:
         """Acknowledge the alert."""
         self.status = AlertStatus.ACKNOWLEDGED
-        self.acknowledged_at = datetime.utcnow()
+        self.acknowledged_at = datetime.now(timezone.utc)
         self.acknowledged_by = user_id
         self.acknowledgment_note = note
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def resolve(self, user_id: str, note: Optional[str] = None) -> None:
         """Resolve the alert."""
         self.status = AlertStatus.RESOLVED
-        self.resolved_at = datetime.utcnow()
+        self.resolved_at = datetime.now(timezone.utc)
         self.resolved_by = user_id
         self.resolution_note = note
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def suppress(self, duration_minutes: int, reason: str) -> None:
         """Suppress the alert."""
         self.status = AlertStatus.SUPPRESSED
-        self.suppressed_until = datetime.utcnow() + timedelta(minutes=duration_minutes)
+        self.suppressed_until = datetime.now(timezone.utc) + timedelta(minutes=duration_minutes)
         self.suppression_reason = reason
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def escalate(
         self,
@@ -231,17 +232,17 @@ class Alert:
         self.status = AlertStatus.ESCALATED
 
         escalation_record = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": level,
             "new_severity": new_severity.value,
             "additional_info": additional_info or {},
         }
         self.escalation_history.append(escalation_record)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
 
     def is_expired(self) -> bool:
         """Check if alert is expired."""
-        return self.suppressed_until and datetime.utcnow() > self.suppressed_until
+        return self.suppressed_until and datetime.now(timezone.utc) > self.suppressed_until
 
     def needs_escalation(self) -> bool:
         """Check if alert needs escalation."""
@@ -487,7 +488,7 @@ class NotificationService:
                 return False
 
             message = self._format_alert_message(alert)
-            timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
             with open(self.config.alert_log_file, "a") as f:
                 f.write(f"[{timestamp}] ALERT: {message}\n")
@@ -660,7 +661,7 @@ class EventAlerting:
         for escalation_rule in rule.escalation_rules:
             if (
                 alert.created_at + timedelta(minutes=escalation_rule.delay_minutes)
-                <= datetime.utcnow()
+                <= datetime.now(timezone.utc)
             ):
                 # Time to escalate
                 alert.escalate(

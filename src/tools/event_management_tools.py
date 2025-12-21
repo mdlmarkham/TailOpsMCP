@@ -5,7 +5,8 @@ This module provides high-level MCP tools for event management, monitoring,
 alerting, and reporting functionality.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timezone, timezone, timezone, timedelta
 from typing import Any, Dict
 
 from src.models.event_models import (
@@ -51,7 +52,7 @@ class EventManagementTools:
         """Get recent events from the last N hours."""
         try:
             # Calculate time range
-            end_time = datetime.utcnow()
+            end_time = datetime.now(timezone.utc)
             start_time = end_time - timedelta(hours=hours)
 
             # Build filters
@@ -126,9 +127,9 @@ class EventManagementTools:
                 "time_range": {
                     "hours": hours,
                     "start_time": (
-                        datetime.utcnow() - timedelta(hours=hours)
+                        datetime.now(timezone.utc) - timedelta(hours=hours)
                     ).isoformat(),
-                    "end_time": datetime.utcnow().isoformat(),
+                    "end_time": datetime.now(timezone.utc).isoformat(),
                 },
             }
 
@@ -178,9 +179,9 @@ class EventManagementTools:
                 "time_range": {
                     "hours": hours,
                     "start_time": (
-                        datetime.utcnow() - timedelta(hours=hours)
+                        datetime.now(timezone.utc) - timedelta(hours=hours)
                     ).isoformat(),
-                    "end_time": datetime.utcnow().isoformat(),
+                    "end_time": datetime.now(timezone.utc).isoformat(),
                 },
             }
 
@@ -249,7 +250,7 @@ class EventManagementTools:
         """Get error summary for the system."""
         try:
             # Calculate time range
-            end_time = datetime.utcnow()
+            end_time = datetime.now(timezone.utc)
             start_time = end_time - timedelta(hours=hours)
 
             # Get error events
@@ -555,9 +556,9 @@ class EventManagementTools:
                 "time_range": {
                     "hours": hours,
                     "start_time": (
-                        datetime.utcnow() - timedelta(hours=hours)
+                        datetime.now(timezone.utc) - timedelta(hours=hours)
                     ).isoformat(),
-                    "end_time": datetime.utcnow().isoformat(),
+                    "end_time": datetime.now(timezone.utc).isoformat(),
                 },
             }
 

@@ -10,6 +10,7 @@ import logging
 import asyncio
 import time
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -161,7 +162,7 @@ class ProxmoxHealthChecker:
                     component=f"proxmox_host_{host}",
                     status=HealthStatus.UNKNOWN,
                     message=f"No API credentials found for host {host}",
-                    timestamp=datetime.utcnow().isoformat() + "Z",
+                    timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                     response_time_ms=(time.time() - start_time) * 1000,
                 )
 
@@ -175,7 +176,7 @@ class ProxmoxHealthChecker:
                         component=f"proxmox_host_{host}",
                         status=HealthStatus.UNHEALTHY,
                         message=f"API connection failed: {connection_result.message}",
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         response_time_ms=(time.time() - start_time) * 1000,
                         details={"connection_error": connection_result.message},
                     )
@@ -187,7 +188,7 @@ class ProxmoxHealthChecker:
                         component=f"proxmox_host_{host}",
                         status=HealthStatus.DEGRADED,
                         message="No nodes found in cluster",
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         response_time_ms=(time.time() - start_time) * 1000,
                     )
 
@@ -218,7 +219,7 @@ class ProxmoxHealthChecker:
                     component=f"proxmox_host_{host}",
                     status=status,
                     message=message,
-                    timestamp=datetime.utcnow().isoformat() + "Z",
+                    timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                     response_time_ms=response_time,
                     details={
                         "total_nodes": total_nodes,
@@ -236,7 +237,7 @@ class ProxmoxHealthChecker:
                 component=f"proxmox_host_{host}",
                 status=HealthStatus.CRITICAL,
                 message=f"Health check failed: {str(e)}",
-                timestamp=datetime.utcnow().isoformat() + "Z",
+                timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                 response_time_ms=(time.time() - start_time) * 1000,
                 details={"error": str(e)},
             )
@@ -266,7 +267,7 @@ class ProxmoxHealthChecker:
                     component=f"proxmox_container_{vmid}",
                     status=HealthStatus.UNKNOWN,
                     message=f"No API credentials found for host {host}",
-                    timestamp=datetime.utcnow().isoformat() + "Z",
+                    timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                     response_time_ms=(time.time() - start_time) * 1000,
                 )
 
@@ -279,7 +280,7 @@ class ProxmoxHealthChecker:
                         component=f"proxmox_container_{vmid}",
                         status=HealthStatus.UNHEALTHY,
                         message="Container not found",
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         response_time_ms=(time.time() - start_time) * 1000,
                     )
 
@@ -304,7 +305,7 @@ class ProxmoxHealthChecker:
                     component=f"proxmox_container_{vmid}",
                     status=status,
                     message=message,
-                    timestamp=datetime.utcnow().isoformat() + "Z",
+                    timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                     response_time_ms=response_time,
                     details=status_info,
                 )
@@ -315,7 +316,7 @@ class ProxmoxHealthChecker:
                 component=f"proxmox_container_{vmid}",
                 status=HealthStatus.CRITICAL,
                 message=f"Health check failed: {str(e)}",
-                timestamp=datetime.utcnow().isoformat() + "Z",
+                timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                 response_time_ms=(time.time() - start_time) * 1000,
                 details={"error": str(e)},
             )
@@ -345,7 +346,7 @@ class ProxmoxHealthChecker:
                     component=f"proxmox_host_{credentials.host}",
                     status=HealthStatus.CRITICAL,
                     message=f"Health check exception: {str(result)}",
-                    timestamp=datetime.utcnow().isoformat() + "Z",
+                    timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                     response_time_ms=0,
                     details={"exception": str(result)},
                 )
@@ -354,7 +355,7 @@ class ProxmoxHealthChecker:
 
                 # Store in history
                 self.health_history[credentials.host].append(result)
-                self.last_check[credentials.host] = datetime.utcnow()
+                self.last_check[credentials.host] = datetime.now(timezone.utc)
 
         return results
 
@@ -461,7 +462,7 @@ class ProxmoxMetricsCollector:
                             name="proxmox_host_up",
                             value=0,
                             labels={"host": host},
-                            timestamp=datetime.utcnow().isoformat() + "Z",
+                            timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                             metric_type="gauge",
                             help_text="Whether the Proxmox host is reachable (1=up, 0=down)",
                         )
@@ -474,7 +475,7 @@ class ProxmoxMetricsCollector:
                     name="proxmox_host_up",
                     value=1,
                     labels={"host": host},
-                    timestamp=datetime.utcnow().isoformat() + "Z",
+                    timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                     metric_type="gauge",
                     help_text="Whether the Proxmox host is reachable (1=up, 0=down)",
                 )
@@ -489,7 +490,7 @@ class ProxmoxMetricsCollector:
                         name="proxmox_cluster_nodes_total",
                         value=len(nodes),
                         labels={"host": host},
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         metric_type="gauge",
                         help_text="Total number of nodes in the cluster",
                     )
@@ -502,7 +503,7 @@ class ProxmoxMetricsCollector:
                         name="proxmox_cluster_nodes_online",
                         value=online_nodes,
                         labels={"host": host},
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         metric_type="gauge",
                         help_text="Number of online nodes in the cluster",
                     )
@@ -518,7 +519,7 @@ class ProxmoxMetricsCollector:
                                 name="proxmox_node_cpu_usage_percent",
                                 value=node.cpu * 100,
                                 labels=node_labels,
-                                timestamp=datetime.utcnow().isoformat() + "Z",
+                                timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                                 metric_type="gauge",
                                 help_text="CPU usage percentage for the node",
                             )
@@ -535,7 +536,7 @@ class ProxmoxMetricsCollector:
                                 name="proxmox_node_memory_usage_percent",
                                 value=memory_percent,
                                 labels=node_labels,
-                                timestamp=datetime.utcnow().isoformat() + "Z",
+                                timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                                 metric_type="gauge",
                                 help_text="Memory usage percentage for the node",
                             )
@@ -551,7 +552,7 @@ class ProxmoxMetricsCollector:
                         name="proxmox_containers_total",
                         value=len(containers),
                         labels={"host": host},
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         metric_type="gauge",
                         help_text="Total number of containers",
                     )
@@ -566,7 +567,7 @@ class ProxmoxMetricsCollector:
                         name="proxmox_containers_running",
                         value=running_containers,
                         labels={"host": host},
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         metric_type="gauge",
                         help_text="Number of running containers",
                     )
@@ -578,7 +579,7 @@ class ProxmoxMetricsCollector:
                         name="proxmox_vms_total",
                         value=len(vms),
                         labels={"host": host},
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         metric_type="gauge",
                         help_text="Total number of VMs",
                     )
@@ -591,7 +592,7 @@ class ProxmoxMetricsCollector:
                         name="proxmox_vms_running",
                         value=running_vms,
                         labels={"host": host},
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         metric_type="gauge",
                         help_text="Number of running VMs",
                     )
@@ -605,7 +606,7 @@ class ProxmoxMetricsCollector:
                         name="proxmox_storage_pools_total",
                         value=len(storage_pools),
                         labels={"host": host},
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         metric_type="gauge",
                         help_text="Total number of storage pools",
                     )
@@ -620,7 +621,7 @@ class ProxmoxMetricsCollector:
                     name="proxmox_metrics_collection_errors_total",
                     value=1,
                     labels={"host": host, "error_type": "collection_failed"},
-                    timestamp=datetime.utcnow().isoformat() + "Z",
+                    timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                     metric_type="counter",
                     help_text="Total number of metrics collection errors",
                 )
@@ -656,7 +657,7 @@ class ProxmoxMetricsCollector:
                         name="proxmox_host_metrics_error",
                         value=1,
                         labels={"host": credentials.host},
-                        timestamp=datetime.utcnow().isoformat() + "Z",
+                        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
                         metric_type="counter",
                         help_text="Whether metrics collection failed for the host",
                     )
@@ -901,7 +902,7 @@ class ProxmoxAlertManager:
             "labels": rule.labels.copy(),
             "annotations": rule.annotations.copy(),
             "status": "firing",
-            "active_at": datetime.utcnow().isoformat() + "Z",
+            "active_at": datetime.now(timezone.utc).isoformat() + "Z",
             "affected_host": affected_host,
         }
 
@@ -945,7 +946,7 @@ class ProxmoxAlertManager:
         for key in resolved_keys:
             alert = self.active_alerts[key]
             alert["status"] = "resolved"
-            alert["resolved_at"] = datetime.utcnow().isoformat() + "Z"
+            alert["resolved_at"] = datetime.now(timezone.utc).isoformat() + "Z"
 
             # Move to history
             self.alert_history.append(alert)
@@ -1127,7 +1128,7 @@ class ProxmoxMonitoringService:
         health_results = await self.health_checker.check_all_hosts()
 
         return {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             "results": {
                 host: asdict(result) for host, result in health_results.items()
             },
@@ -1143,7 +1144,7 @@ class ProxmoxMonitoringService:
         metrics = await self.metrics_collector.collect_all_metrics()
 
         return {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
             "metrics_count": len(metrics),
             "metrics": [asdict(metric) for metric in metrics],
             "prometheus_format": self.metrics_collector.get_metrics_as_prometheus(),

@@ -27,6 +27,7 @@ import hashlib
 import logging
 import time
 from datetime import datetime
+from datetime import timezone, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
@@ -107,7 +108,7 @@ class ExecutionResult:
     output: Optional[str] = None
     error: Optional[str] = None
     duration: float = 0.0
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Additional information
     command: Optional[str] = None
@@ -413,10 +414,10 @@ class Executor(abc.ABC):
             state: New connection state
         """
         self._connection_info.connection_state = state
-        self._connection_info.last_activity = datetime.utcnow()
+        self._connection_info.last_activity = datetime.now(timezone.utc)
 
         if state == ConnectionState.CONNECTED:
-            self._connection_info.connected_at = datetime.utcnow()
+            self._connection_info.connected_at = datetime.now(timezone.utc)
             self._connected = True
         elif state == ConnectionState.DISCONNECTED:
             self._connected = False

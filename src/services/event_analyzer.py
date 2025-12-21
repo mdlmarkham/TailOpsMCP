@@ -9,6 +9,7 @@ import statistics
 from collections import defaultdict, Counter
 from dataclasses import dataclass
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Any, Dict, List, Tuple
 
 from src.models.event_models import SystemEvent, EventType, EventSeverity, EventSource
@@ -723,7 +724,7 @@ class EventAnalyzer:
                     supporting_evidence=[
                         f"{failed} failed operations out of {total} total"
                     ],
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                     related_events=[e.event_id for e in operation_events],
                 )
                 insights.append(insight)
@@ -759,7 +760,7 @@ class EventAnalyzer:
                     supporting_evidence=[
                         f"{len(security_events)} total security events"
                     ],
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                     related_events=[e.event_id for e in security_events],
                 )
                 insights.append(insight)
@@ -800,7 +801,7 @@ class EventAnalyzer:
                             supporting_evidence=[
                                 f"CPU usage: {event.resource_usage.cpu_percent}%"
                             ],
-                            timestamp=datetime.utcnow(),
+                            timestamp=datetime.now(timezone.utc),
                             related_events=[event.event_id],
                         )
                         insights.append(insight)
@@ -823,7 +824,7 @@ class EventAnalyzer:
                             supporting_evidence=[
                                 f"Memory usage: {event.resource_usage.memory_percent}%"
                             ],
-                            timestamp=datetime.utcnow(),
+                            timestamp=datetime.now(timezone.utc),
                             related_events=[event.event_id],
                         )
                         insights.append(insight)
@@ -860,7 +861,7 @@ class EventAnalyzer:
                     supporting_evidence=[
                         f"Systems with health score < 50: {len(low_health_events)}"
                     ],
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                     related_events=[e.event_id for e in low_health_events],
                 )
                 insights.append(insight)
@@ -1131,6 +1132,6 @@ async def analyze_events_comprehensive(events: List[SystemEvent]) -> Dict[str, A
         "patterns": [pattern.__dict__ for pattern in patterns],
         "insights": [insight.__dict__ for insight in insights],
         "predictions": [prediction.__dict__ for prediction in predictions],
-        "analysis_timestamp": datetime.utcnow().isoformat(),
+        "analysis_timestamp": datetime.now(timezone.utc).isoformat(),
         "total_events_analyzed": len(events),
     }

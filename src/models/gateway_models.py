@@ -10,6 +10,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
+from datetime import timezone, timezone
 from enum import Enum
 from typing import Dict, List, Optional, Any
 
@@ -178,7 +179,7 @@ class FleetState:
     """Consolidated state for a fleet of targets."""
 
     gateway_id: str
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
 
     # Target states
     target_states: Dict[str, Dict[str, Any]] = field(default_factory=dict)
@@ -267,7 +268,7 @@ class FleetState:
         """Create FleetState from dictionary."""
         fleet_state = cls(
             gateway_id=data["gateway_id"],
-            timestamp=data.get("timestamp", datetime.utcnow().isoformat() + "Z"),
+            timestamp=data.get("timestamp", datetime.now(timezone.utc).isoformat() + "Z"),
         )
 
         # Update target states

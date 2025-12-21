@@ -7,6 +7,7 @@ including fleet inventory, policy engine, security audit, remote agents, and mor
 
 import asyncio
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Any, Dict, List, Set, Tuple
 
 from src.models.event_models import (
@@ -634,7 +635,7 @@ class EventAggregator:
             "events_by_source": events_by_source,
             "health_statistics": health_stats,
             "resource_usage": resource_usage,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     async def generate_health_score(self, events: List[SystemEvent]) -> float:

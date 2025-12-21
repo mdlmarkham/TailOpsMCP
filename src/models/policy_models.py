@@ -7,6 +7,7 @@ deny-by-default security posture, role-based access control, and policy versioni
 
 import json
 from datetime import datetime
+from datetime import timezone, timezone
 from enum import Enum
 from typing import Dict, List, Optional, Any, Union
 from uuid import uuid4
@@ -223,7 +224,7 @@ class PolicyRule(BaseModel):
 
     # Metadata
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Rule creation timestamp"
+        default_factory=lambda: datetime.now(timezone.utc), description="Rule creation timestamp"
     )
     updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
     created_by: Optional[str] = Field(None, description="Rule creator")
@@ -288,7 +289,7 @@ class PolicyConfig(BaseModel):
 
     # Policy lifecycle
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Configuration creation timestamp"
+        default_factory=lambda: datetime.now(timezone.utc), description="Configuration creation timestamp"
     )
     updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
     created_by: Optional[str] = Field(None, description="Configuration creator")
@@ -330,7 +331,7 @@ class PolicyEvaluation(BaseModel):
         default_factory=dict, description="Audit context"
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Evaluation timestamp"
+        default_factory=lambda: datetime.now(timezone.utc), description="Evaluation timestamp"
     )
 
 
@@ -349,7 +350,7 @@ class PolicyHistory(BaseModel):
     )
     changed_by: str = Field(..., description="User who made the change")
     changed_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Change timestamp"
+        default_factory=lambda: datetime.now(timezone.utc), description="Change timestamp"
     )
     change_reason: Optional[str] = Field(None, description="Reason for the change")
     rollback_data: Optional[Dict[str, Any]] = Field(
@@ -396,7 +397,7 @@ class CapabilityOperation(BaseModel):
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Operation creation timestamp"
+        default_factory=lambda: datetime.now(timezone.utc), description="Operation creation timestamp"
     )
     scheduled_at: Optional[datetime] = Field(
         None, description="Scheduled execution time"
@@ -465,7 +466,7 @@ class PolicyContext(BaseModel):
 
     # Time context
     current_time: datetime = Field(
-        default_factory=datetime.utcnow, description="Current time for evaluation"
+        default_factory=lambda: datetime.now(timezone.utc), description="Current time for evaluation"
     )
 
     class Config:
@@ -503,7 +504,7 @@ class PolicyStatus(BaseModel):
 
     # Timing information
     started_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Execution start time"
+        default_factory=lambda: datetime.now(timezone.utc), description="Execution start time"
     )
     completed_at: Optional[datetime] = Field(
         None, description="Execution completion time"

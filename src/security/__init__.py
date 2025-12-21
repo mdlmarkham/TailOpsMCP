@@ -39,6 +39,7 @@ from __future__ import annotations
 import logging
 import json
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import List, Optional, Dict, Any
 
 # Core imports from scanner

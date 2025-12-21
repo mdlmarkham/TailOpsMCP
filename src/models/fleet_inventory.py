@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from datetime import timezone, timezone
 from enum import Enum
 from typing import Dict, List, Optional, Any
 from uuid import uuid4
@@ -147,7 +148,7 @@ class ProxmoxHost:
     version: Optional[str] = None
     tags: List[str] = field(default_factory=list)
     discovered_at: str = field(
-        default_factory=lambda: datetime.utcnow().isoformat() + "Z"
+        default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z"
     )
     last_seen: Optional[str] = None
     is_active: bool = True
@@ -201,7 +202,7 @@ class Node:
     ip_address: Optional[str] = None
     mac_address: Optional[str] = None
     tags: List[str] = field(default_factory=list)
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
     last_updated: Optional[str] = None
     is_managed: bool = False
 
@@ -247,7 +248,7 @@ class Service:
     data_path: Optional[str] = None
     health_endpoint: Optional[str] = None
     tags: List[str] = field(default_factory=list)
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
     last_checked: Optional[str] = None
     is_monitored: bool = True
 
@@ -283,7 +284,7 @@ class Snapshot:
     id: str = field(default_factory=lambda: str(uuid4()))
     size_mb: Optional[int] = None
     storage_path: Optional[str] = None
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
     expires_at: Optional[str] = None
     tags: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -323,7 +324,7 @@ class Event:
     target_id: Optional[str] = None  # Reference to Node.id, Service.id, etc.
     target_type: Optional[str] = None
     details: Dict[str, Any] = field(default_factory=dict)
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
     user: Optional[str] = None
     correlation_id: Optional[str] = None
 
@@ -371,7 +372,7 @@ class ResourceUsage(BaseModel):
     network_tx_bytes: int = 0
     status: ResourceStatus = ResourceStatus.UNKNOWN
     measured_at: str = Field(
-        default_factory=lambda: datetime.utcnow().isoformat() + "Z"
+        default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z"
     )
 
 
@@ -461,7 +462,7 @@ class EnhancedTarget:
     health_score: float = 0.0
 
     # Lifecycle
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
     last_updated: Optional[str] = None
     is_managed: bool = False
     is_active: bool = True
@@ -622,7 +623,7 @@ class EnhancedService:
     security_context: Dict[str, Any] = Field(default_factory=dict)
 
     # Lifecycle
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
     last_checked: Optional[str] = None
     last_updated: Optional[str] = None
     is_monitored: bool = True
@@ -738,9 +739,9 @@ class FleetInventory(BaseModel):
     enhanced_services: Dict[str, EnhancedService] = Field(default_factory=dict)
 
     # Metadata
-    created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
     last_updated: str = Field(
-        default_factory=lambda: datetime.utcnow().isoformat() + "Z"
+        default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z"
     )
     version: str = "1.0.0"
 
@@ -760,42 +761,42 @@ class FleetInventory(BaseModel):
         """Add a Proxmox host to the inventory."""
         self.proxmox_hosts[host.id] = host
         self.total_hosts = len(self.proxmox_hosts)
-        self.last_updated = datetime.utcnow().isoformat() + "Z"
+        self.last_updated = datetime.now(timezone.utc).isoformat() + "Z"
 
     def add_node(self, node: Node) -> None:
         """Add a node to the inventory."""
         self.nodes[node.id] = node
         self.total_nodes = len(self.nodes)
-        self.last_updated = datetime.utcnow().isoformat() + "Z"
+        self.last_updated = datetime.now(timezone.utc).isoformat() + "Z"
 
     def add_service(self, service: Service) -> None:
         """Add a service to the inventory."""
         self.services[service.id] = service
         self.total_services = len(self.services)
-        self.last_updated = datetime.utcnow().isoformat() + "Z"
+        self.last_updated = datetime.now(timezone.utc).isoformat() + "Z"
 
     def add_snapshot(self, snapshot: Snapshot) -> None:
         """Add a snapshot to the inventory."""
         self.snapshots[snapshot.id] = snapshot
         self.total_snapshots = len(self.snapshots)
-        self.last_updated = datetime.utcnow().isoformat() + "Z"
+        self.last_updated = datetime.now(timezone.utc).isoformat() + "Z"
 
     def add_event(self, event: Event) -> None:
         """Add an event to the inventory."""
         self.events[event.id] = event
-        self.last_updated = datetime.utcnow().isoformat() + "Z"
+        self.last_updated = datetime.now(timezone.utc).isoformat() + "Z"
 
     def add_enhanced_target(self, target: EnhancedTarget) -> None:
         """Add an enhanced target to the inventory."""
         self.enhanced_targets[target.id] = target
         self.total_enhanced_targets = len(self.enhanced_targets)
-        self.last_updated = datetime.utcnow().isoformat() + "Z"
+        self.last_updated = datetime.now(timezone.utc).isoformat() + "Z"
 
     def add_enhanced_service(self, service: EnhancedService) -> None:
         """Add an enhanced service to the inventory."""
         self.enhanced_services[service.id] = service
         self.total_enhanced_services = len(self.enhanced_services)
-        self.last_updated = datetime.utcnow().isoformat() + "Z"
+        self.last_updated = datetime.now(timezone.utc).isoformat() + "Z"
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert entire inventory to dictionary for serialization."""

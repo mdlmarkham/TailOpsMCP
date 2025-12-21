@@ -8,6 +8,7 @@ including health checks, operations, security events, and lifecycle events.
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from datetime import timezone, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -180,7 +181,7 @@ class SystemEvent:
 
     # Core event information
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     event_type: EventType = EventType.INFO
     severity: EventSeverity = EventSeverity.INFO
     source: EventSource = EventSource.SYSTEM
@@ -292,7 +293,7 @@ class SystemEvent:
 
     def get_age_minutes(self) -> float:
         """Get age of event in minutes."""
-        return (datetime.utcnow() - self.timestamp).total_seconds() / 60.0
+        return (datetime.now(timezone.utc) - self.timestamp).total_seconds() / 60.0
 
 
 # Event filtering and querying models

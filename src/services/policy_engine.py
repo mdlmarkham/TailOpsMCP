@@ -8,7 +8,8 @@ role-based access control, time-based restrictions, and policy inheritance.
 import logging
 import re
 from typing import Dict, List, Optional, Any
-from datetime import datetime, timezone, time
+from datetime import datetime
+from datetime import timezone, timezone, timezone, timezone, time
 from pathlib import Path
 
 try:
@@ -74,7 +75,7 @@ class PolicyEvaluationContext:
         self.system_state = system_state or {}
         self.environment = environment
         self.compliance_mode = compliance_mode
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(timezone.utc)
 
 
 class PolicyEngine:

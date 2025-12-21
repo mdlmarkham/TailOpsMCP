@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Any, Callable, Dict, Optional
 
 
@@ -34,7 +35,7 @@ class Snapshotter:
         while self._running:
             try:
                 snap = self.snapshot_fn()
-                ts = datetime.utcnow().isoformat() + "Z"
+                ts = datetime.now(timezone.utc).isoformat() + "Z"
                 path = os.path.join(self.out_dir, f"snapshot-{ts}.json")
                 # sanitize filename
                 path = path.replace(":", "-")

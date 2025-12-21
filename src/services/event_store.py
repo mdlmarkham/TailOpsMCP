@@ -10,7 +10,8 @@ import os
 import sqlite3
 import threading
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timezone, timezone, timezone, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.models.event_models import (
@@ -412,7 +413,7 @@ class EventStore:
         self, source: str, hours: int = 24, limit: Optional[int] = None
     ) -> List[SystemEvent]:
         """Get events from a specific source within time range."""
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(hours=hours)
 
         filters = EventFilters(
@@ -427,7 +428,7 @@ class EventStore:
         self, target: str, hours: int = 24, limit: Optional[int] = None
     ) -> List[SystemEvent]:
         """Get events for a specific target within time range."""
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(hours=hours)
 
         filters = EventFilters(
@@ -439,7 +440,7 @@ class EventStore:
         self, query: str, hours: int = 24, limit: Optional[int] = None
     ) -> List[SystemEvent]:
         """Search events using full-text search."""
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(hours=hours)
 
         filters = EventFilters(
@@ -473,7 +474,7 @@ class EventStore:
 
     async def get_statistics(self, hours: int = 24) -> EventStatistics:
         """Get event statistics for the specified time range."""
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(hours=hours)
 
         try:
@@ -620,7 +621,7 @@ class EventStore:
 
         try:
             # Delete old events
-            cutoff_date = datetime.utcnow() - timedelta(days=retention_days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
             results["deleted_old_events"] = await self.delete_old_events(cutoff_date)
 
             # Vacuum database

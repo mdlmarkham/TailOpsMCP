@@ -7,7 +7,8 @@ security reports, operational reports, and customizable dashboards.
 
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timezone, timezone, timezone, timedelta
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field, asdict
 
@@ -38,14 +39,14 @@ class TimeRange:
     @classmethod
     def from_hours(cls, hours: int) -> "TimeRange":
         """Create time range from hours ago."""
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(hours=hours)
         return cls(start_time, end_time)
 
     @classmethod
     def from_days(cls, days: int) -> "TimeRange":
         """Create time range from days ago."""
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(days=days)
         return cls(start_time, end_time)
 
@@ -74,7 +75,7 @@ class TimeRange:
 class HealthReport:
     """Health report containing system health information."""
 
-    generated_at: datetime = field(default_factory=datetime.utcnow)
+    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     time_range: TimeRange = field(default_factory=TimeRange.last_24_hours)
 
     # Overall health
@@ -119,7 +120,7 @@ class HealthReport:
 class SecurityReport:
     """Security report containing security-related information."""
 
-    generated_at: datetime = field(default_factory=datetime.utcnow)
+    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     time_range: TimeRange = field(default_factory=TimeRange.last_24_hours)
 
     # Security overview
@@ -169,7 +170,7 @@ class SecurityReport:
 class OperationalReport:
     """Operational report containing operational metrics and insights."""
 
-    generated_at: datetime = field(default_factory=datetime.utcnow)
+    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     time_range: TimeRange = field(default_factory=TimeRange.last_24_hours)
 
     # Operational overview
@@ -218,7 +219,7 @@ class OperationalReport:
 class ComplianceReport:
     """Compliance report containing compliance and audit information."""
 
-    generated_at: datetime = field(default_factory=datetime.utcnow)
+    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     time_range: TimeRange = field(default_factory=TimeRange.last_24_hours)
 
     # Compliance overview
@@ -270,8 +271,8 @@ class Dashboard:
 
     name: str
     description: str = ""
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Dashboard widgets
     widgets: List[Dict[str, Any]] = field(default_factory=list)
@@ -740,7 +741,7 @@ class EventReporting:
         data = {
             "dashboard_info": dashboard.to_dict(),
             "widgets_data": {},
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
         }
 
         # Generate data for each widget
@@ -827,7 +828,7 @@ class EventReporting:
     ) -> str:
         """Export report to file."""
         if not output_path:
-            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             report_type = type(report).__name__.lower().replace("report", "")
             output_path = f"./reports/{report_type}_report_{timestamp}.{format}"
 
@@ -921,7 +922,7 @@ async def generate_comprehensive_report(time_range: TimeRange) -> Dict[str, Any]
         "operational_report": operational_report.to_dict(),
         "compliance_report": compliance_report.to_dict(),
         "dashboard_data": dashboard_data,
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "time_range": {
             "start_time": time_range.start_time.isoformat(),
             "end_time": time_range.end_time.isoformat(),

@@ -10,6 +10,7 @@ import re
 import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from datetime import timezone, timezone
 from dataclasses import dataclass
 
 from src.connectors.remote_agent_connector import (
@@ -230,7 +231,7 @@ class ServiceConnector(RemoteAgentConnector):
                     target=service,
                     success=True,
                     result="Service restarted successfully",
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -238,7 +239,7 @@ class ServiceConnector(RemoteAgentConnector):
                     target=service,
                     success=False,
                     error=result.stderr,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -247,7 +248,7 @@ class ServiceConnector(RemoteAgentConnector):
                 target=service,
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     @resilient_service_operation(operation_name="start_service")
@@ -272,7 +273,7 @@ class ServiceConnector(RemoteAgentConnector):
                     target=service,
                     success=True,
                     result="Service started successfully",
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -280,7 +281,7 @@ class ServiceConnector(RemoteAgentConnector):
                     target=service,
                     success=False,
                     error=result.stderr,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -289,7 +290,7 @@ class ServiceConnector(RemoteAgentConnector):
                 target=service,
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     @resilient_service_operation(operation_name="stop_service")
@@ -314,7 +315,7 @@ class ServiceConnector(RemoteAgentConnector):
                     target=service,
                     success=True,
                     result="Service stopped successfully",
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
             else:
                 return OperationResult(
@@ -322,7 +323,7 @@ class ServiceConnector(RemoteAgentConnector):
                     target=service,
                     success=False,
                     error=result.stderr,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                 )
 
         except Exception as e:
@@ -331,7 +332,7 @@ class ServiceConnector(RemoteAgentConnector):
                 target=service,
                 success=False,
                 error=str(e),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     async def get_service_logs(self, service: str, lines: int = 100) -> List[LogEntry]:
@@ -368,7 +369,7 @@ class ServiceConnector(RemoteAgentConnector):
                             timestamp_str.replace("Z", "+00:00")
                         )
                     else:
-                        timestamp = datetime.utcnow()
+                        timestamp = datetime.now(timezone.utc)
 
                     logs.append(
                         LogEntry(
@@ -428,7 +429,7 @@ class ServiceConnector(RemoteAgentConnector):
                     if unit.get("activeEnterTimestampMonotonic"):
                         try:
                             # This is simplified - real implementation would need boot time
-                            active_since = datetime.utcnow()
+                            active_since = datetime.now(timezone.utc)
                         except Exception:
                             pass
 
@@ -550,7 +551,7 @@ class ServiceConnector(RemoteAgentConnector):
                 "service": service,
                 "status": status.state,
                 "healthy": status.state in ["active"],
-                "last_check": datetime.utcnow(),
+                "last_check": datetime.now(timezone.utc),
                 "active_since": status.active_since,
                 "memory_usage_mb": status.memory_usage / (1024 * 1024)
                 if status.memory_usage
@@ -578,7 +579,7 @@ class ServiceConnector(RemoteAgentConnector):
                 "service": service,
                 "status": "unknown",
                 "healthy": False,
-                "last_check": datetime.utcnow(),
+                "last_check": datetime.now(timezone.utc),
                 "error": str(e),
             }
 

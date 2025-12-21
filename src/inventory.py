@@ -4,6 +4,7 @@ import json
 import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+from datetime import timezone, timezone
 from typing import Dict, List, Optional, Any
 
 
@@ -38,7 +39,7 @@ class ApplicationMetadata:
     data_path: Optional[str] = None
     auto_detected: bool = False
     notes: Optional[str] = None
-    added_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    added_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
 
 
 @dataclass
@@ -46,7 +47,7 @@ class HostMetadata:
     hostname: str
     platform: str
     tags: List[str] = field(default_factory=list)
-    added_at: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    added_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
 
 
 @dataclass

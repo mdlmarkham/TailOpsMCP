@@ -9,6 +9,7 @@ import subprocess
 import json
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from datetime import timezone, timezone
 
 from src.models.fleet_inventory import (
     ProxmoxHost,
@@ -450,5 +451,5 @@ class ProxmoxDiscovery:
             target_id=target_id,
             target_type=target_type,
             message=message,
-            details={"timestamp": datetime.utcnow().isoformat() + "Z"},
+            details={"timestamp": datetime.now(timezone.utc).isoformat() + "Z"},
         )
