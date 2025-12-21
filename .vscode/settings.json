@@ -1,6 +1,6 @@
 {
     // Python Interpreter Configuration
-    "python.defaultInterpreterPath": "c:/Users/mdlma/Documents/Projects/TailOpsMCP/venv/Scripts/python.exe",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
     "python.terminal.activateEnvironment": true,
 
     // Testing Configuration
@@ -13,12 +13,12 @@
 
     // Terminal Configuration
     "terminal.integrated.env.windows": {
-        "VIRTUAL_ENV": "c:/Users/mdlma/Documents/Projects/TailOpsMCP/venv",
-        "PATH": "c:/Users/mdlma/Documents/Projects/TailOpsMCP/venv/Scripts;${env:PATH}"
+        "VIRTUAL_ENV": "${workspaceFolder}/.venv",
+        "PATH": "${workspaceFolder}/.venv/Scripts;${env:PATH}"
     },
     "terminal.integrated.shellArgs.windows": [
         "/K",
-        "c:/Users/mdlma/Documents/Projects/TailOpsMCP/venv/Scripts/activate.bat"
+        "${workspaceFolder}/.venv/Scripts/activate.bat"
     ],
 
     // Python Path Configuration
