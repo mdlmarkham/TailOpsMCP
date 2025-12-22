@@ -77,8 +77,8 @@ class GoFastMCPAuthService:
 
         headers = {"Content-Type": "application/json"}
         logger.debug(
-            "Sending payload to GoFast auth server",
-            extra={"payload_keys": list(payload.keys())},
+            "Sending POST request to GoFast auth server",
+            extra={"url": self.base_url},
         )
         response = self._http.post(
             self.base_url, json=payload, timeout=30, headers=headers
