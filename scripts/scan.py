@@ -57,6 +57,46 @@ class SecurityScanCLI:
         self.scanner = SecurityScanner()
         self.config = SecurityScanConfig()
 
+    def _describe_scan_types(self, scan_types: Optional[Set[ScanType]]) -> str:
+        """Return a human-readable, non-sensitive description of the scan types."""
+        effective_types = scan_types or self.config.scan_types
+
+        # Known combinations used by CLI / interactive mode
+        all_types = {
+            ScanType.VULNERABILITY,
+            ScanType.SECRETS,
+            ScanType.COMPLIANCE,
+            ScanType.POLICY,
+            ScanType.INFRASTRUCTURE,
+            ScanType.CONTAINER,
+            ScanType.NETWORK,
+        }
+
+        if effective_types is None:
+            return "Default scan"
+
+        if effective_types == {ScanType.SECRETS, ScanType.VULNERABILITY}:
+            return "Quick scan (vulnerabilities + secrets)"
+
+        if effective_types == all_types:
+            return "Full scan (all types)"
+
+        if effective_types == {ScanType.SECRETS}:
+            return "Secrets only"
+
+        if effective_types == {ScanType.VULNERABILITY}:
+            return "Vulnerabilities only"
+
+        if effective_types == {ScanType.COMPLIANCE}:
+            return "Compliance only"
+
+        # Fallback: list type names without exposing raw enum representations
+        try:
+            names = sorted(t.name.lower() for t in effective_types)
+            return "Custom scan (" + ", ".join(names) + ")"
+        except Exception:
+            return "Custom scan"
+
     def run_scan(
         self,
         target_path: str = ".",
@@ -74,7 +114,7 @@ class SecurityScanCLI:
 
         if verbose:
             print(f"🔍 Starting security scan of: {target_path}")
-            print(f"📋 Scan types: {scan_types or self.config.scan_types}")
+            print(f"📋 Scan types: {self._describe_scan_types(scan_types)}")
             print(f"💾 Output format: {output_format}")
             print("-" * 60)
 
