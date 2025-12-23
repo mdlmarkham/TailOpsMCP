@@ -19,6 +19,7 @@ from src.services.event_reporting import get_event_reporting, TimeRange
 from src.services.event_store import get_event_store
 from src.services.event_alerting import get_event_alerting
 from src.services.event_analyzer import get_event_analyzer
+from src.utils.error_sanitizer import sanitize_error_message, create_safe_error_response
 from src.utils.logging_config import get_logger
 
 
@@ -77,8 +78,14 @@ class EventDashboard:
                 "dashboard.html", request, dashboard_data
             )
         except Exception as e:
-            self.logger.error(f"Error rendering dashboard: {e}")
-            return web.Response(text=f"Dashboard error: {e}", status=500)
+            # Log full error internally for debugging
+            self.logger.error(f"Error rendering dashboard: {e}", exc_info=True)
+
+            # Return generic error to user (no stack traces)
+            return web.Response(
+                text="Dashboard temporarily unavailable. Please try again later.",
+                status=500,
+            )
 
     async def events_api_handler(self, request) -> web.Response:
         """Handle events API endpoint."""
@@ -114,8 +121,13 @@ class EventDashboard:
             )
 
         except Exception as e:
-            self.logger.error(f"Events API error: {e}")
-            return web.json_response({"success": False, "error": str(e)}, status=500)
+            # Log full error internally for debugging
+            self.logger.error(f"Events API error: {e}", exc_info=True)
+
+            # Return safe error response
+            return web.json_response(
+                create_safe_error_response(e, include_type=False), status=500
+            )
 
     async def health_api_handler(self, request) -> web.Response:
         """Handle health API endpoint."""
@@ -131,8 +143,13 @@ class EventDashboard:
             )
 
         except Exception as e:
-            self.logger.error(f"Health API error: {e}")
-            return web.json_response({"success": False, "error": str(e)}, status=500)
+            # Log full error internally for debugging
+            self.logger.error(f"Health API error: {e}", exc_info=True)
+
+            # Return safe error response
+            return web.json_response(
+                create_safe_error_response(e, include_type=False), status=500
+            )
 
     async def security_api_handler(self, request) -> web.Response:
         """Handle security API endpoint."""
@@ -148,8 +165,13 @@ class EventDashboard:
             )
 
         except Exception as e:
-            self.logger.error(f"Security API error: {e}")
-            return web.json_response({"success": False, "error": str(e)}, status=500)
+            # Log full error internally for debugging
+            self.logger.error(f"Security API error: {e}", exc_info=True)
+
+            # Return safe error response
+            return web.json_response(
+                create_safe_error_response(e, include_type=False), status=500
+            )
 
     async def alerts_api_handler(self, request) -> web.Response:
         """Handle alerts API endpoint."""
@@ -178,8 +200,13 @@ class EventDashboard:
             )
 
         except Exception as e:
-            self.logger.error(f"Alerts API error: {e}")
-            return web.json_response({"success": False, "error": str(e)}, status=500)
+            # Log full error internally for debugging
+            self.logger.error(f"Alerts API error: {e}", exc_info=True)
+
+            # Return safe error response
+            return web.json_response(
+                create_safe_error_response(e, include_type=False), status=500
+            )
 
     async def trends_api_handler(self, request) -> web.Response:
         """Handle trends API endpoint."""
@@ -215,8 +242,13 @@ class EventDashboard:
             )
 
         except Exception as e:
-            self.logger.error(f"Trends API error: {e}")
-            return web.json_response({"success": False, "error": str(e)}, status=500)
+            # Log full error internally for debugging
+            self.logger.error(f"Trends API error: {e}", exc_info=True)
+
+            # Return safe error response
+            return web.json_response(
+                create_safe_error_response(e, include_type=False), status=500
+            )
 
     async def statistics_api_handler(self, request) -> web.Response:
         """Handle statistics API endpoint."""
@@ -227,8 +259,13 @@ class EventDashboard:
             return web.json_response({"success": True, "statistics": stats.to_dict()})
 
         except Exception as e:
-            self.logger.error(f"Statistics API error: {e}")
-            return web.json_response({"success": False, "error": str(e)}, status=500)
+            # Log full error internally for debugging
+            self.logger.error(f"Statistics API error: {e}", exc_info=True)
+
+            # Return safe error response
+            return web.json_response(
+                create_safe_error_response(e, include_type=False), status=500
+            )
 
     async def websocket_handler(self, request) -> web.WebSocketResponse:
         """Handle WebSocket connections for real-time updates."""
@@ -378,8 +415,14 @@ class EventDashboard:
             }
 
         except Exception as e:
-            self.logger.error(f"Error getting dashboard data: {e}")
-            return {"error": str(e), "last_updated": datetime.now(timezone.utc).isoformat()}
+            # Log full error internally for debugging
+            self.logger.error(f"Error getting dashboard data: {e}", exc_info=True)
+
+            # Return safe error data (no stack traces)
+            return {
+                "error": "Dashboard data temporarily unavailable",
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+            }
 
     async def broadcast_update(self, data: Dict[str, Any]) -> None:
         """Broadcast update to all connected WebSocket clients."""

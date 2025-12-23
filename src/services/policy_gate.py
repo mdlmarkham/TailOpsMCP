@@ -62,8 +62,8 @@ class PolicyConfig:
     rules: List[PolicyRule]
     default_validation_mode: ValidationMode = ValidationMode.STRICT
     enable_dry_run: bool = True
-    maintenance_windows: List[Dict[str, str]] = None
-    lockout_periods: List[Dict[str, str]] = None
+    maintenance_windows: Optional[List[Dict[str, str]]] = None
+    lockout_periods: Optional[List[Dict[str, str]]] = None
 
 
 class PolicyGate:
@@ -123,7 +123,11 @@ class PolicyGate:
                 allowed_operations=["start", "stop", "restart", "inspect"],
                 required_capabilities=[Scope.CONTAINER_WRITE.value],
                 parameter_constraints={
-                    "container_name": {"type": "string", "max_length": 256},
+                    "container_name": {
+                        "type": "string",
+                        "max_length": 256,
+                        "pattern": r"^[a-zA-Z0-9][a-zA-Z0-9_.-]*$",
+                    },
                     "timeout": {"type": "int", "min": 1, "max": 300},
                 },
                 operation_tier=OperationTier.CONTROL,
@@ -135,8 +139,16 @@ class PolicyGate:
                 allowed_operations=["pull", "list", "remove"],
                 required_capabilities=[Scope.DOCKER_ADMIN.value],
                 parameter_constraints={
-                    "image_name": {"type": "string", "max_length": 512},
-                    "tag": {"type": "string", "max_length": 128},
+                    "image_name": {
+                        "type": "string",
+                        "max_length": 512,
+                        "pattern": r"^[a-zA-Z0-9][a-zA-Z0-9_./:-]*$",
+                    },
+                    "tag": {
+                        "type": "string",
+                        "max_length": 128,
+                        "pattern": r"^[a-zA-Z0-9][a-zA-Z0-9_.-]*$",
+                    },
                 },
                 operation_tier=OperationTier.ADMIN,
                 requires_approval=True,
@@ -158,7 +170,11 @@ class PolicyGate:
                 required_capabilities=[Scope.NETWORK_READ.value],
                 parameter_constraints={
                     "port": {"type": "int", "min": 1, "max": 65535},
-                    "host": {"type": "string", "max_length": 253},
+                    "host": {
+                        "type": "string",
+                        "max_length": 253,
+                        "pattern": r"^[a-zA-Z0-9.-]+$",
+                    },
                 },
                 operation_tier=OperationTier.OBSERVE,
             ),
@@ -215,7 +231,7 @@ class PolicyGate:
         constraints: Dict[str, Any],
         target: Optional[str] = None,
     ) -> List[str]:
-        """Validate operation parameters against constraints with enhanced validation.
+        """Validate operation parameters against constraints with enhanced security.
 
         Args:
             operation: Operation name
@@ -247,65 +263,141 @@ class PolicyGate:
                 )
                 errors.extend(validation_errors)
             else:
-                # Fallback to basic validation
+                # Fallback to basic validation with security checks
                 errors.extend(
                     self._basic_parameter_validation(param_name, value, constraint)
                 )
 
         return errors
 
-    def _get_parameter_type_mapping(self, operation: str) -> Dict[str, ParameterType]:
-        """Map parameter names to validation types based on operation."""
-        # Define parameter type mappings for common operations
-        mappings = {
-            "start_container": {
-                "container": ParameterType.CONTAINER_NAME,
-                "timeout": ParameterType.TIMEOUT,
-            },
-            "stop_container": {
-                "container": ParameterType.CONTAINER_NAME,
-                "timeout": ParameterType.TIMEOUT,
-            },
-            "restart_container": {
-                "container": ParameterType.CONTAINER_NAME,
-                "timeout": ParameterType.TIMEOUT,
-            },
-            "inspect_container": {"container": ParameterType.CONTAINER_NAME},
-            "deploy_stack": {
-                "stack": ParameterType.STACK_NAME,
-                "timeout": ParameterType.TIMEOUT,
-            },
-            "pull_stack": {
-                "stack": ParameterType.STACK_NAME,
-                "timeout": ParameterType.TIMEOUT,
-            },
-            "restart_stack": {
-                "stack": ParameterType.STACK_NAME,
-                "timeout": ParameterType.TIMEOUT,
-            },
-            "restart_service": {
-                "service": ParameterType.SERVICE_NAME,
-                "timeout": ParameterType.TIMEOUT,
-            },
-            "read_file": {"path": ParameterType.FILE_PATH},
-            "list_directory": {"path": ParameterType.FILE_PATH},
-            "test_connectivity": {
-                "host": ParameterType.HOSTNAME,
-                "port": ParameterType.PORT_NUMBER,
-            },
-            "scan_ports": {
-                "host": ParameterType.HOSTNAME,
-                "port_range": ParameterType.PORT_NUMBER,
-            },
-        }
+    def _validate_input_security(self, value: Any, param_name: str) -> List[str]:
+        """Comprehensive input validation with extensive security checks."""
+        errors = []
 
-        return mappings.get(operation, {})
+        if not isinstance(value, str):
+        return errors
+    
+    def _validate_parameter_structure(self, value: Any, param_name: str) -> List[str]:
+        """Validate parameter structure and content for security."""
+        errors = []
+        
+        if isinstance(value, list):
+            # Validate list items recursively
+            for i, item in enumerate(value):
+                item_errors = self._validate_input_security(item, f"{param_name}[{i}]")
+                item_errors.extend(self._validate_parameter_structure(item, f"{param_name}[{i}]"))
+                errors.extend(item_errors)
+                
+        elif isinstance(value, dict):
+            # Validate dict values recursively
+            for key, val in value.items():
+                key_errors = self._validate_input_security(key, f"{param_name}.{key}")
+                val_errors = self._validate_input_security(val, f"{param_name}.{key}")
+                val_errors.extend(self._validate_parameter_structure(val, f"{param_name}.{key}"))
+                errors.extend(key_errors)
+                errors.extend(val_errors)
+                
+        else:
+            errors.extend(self._validate_input_security(value, param_name))
+            
+        return errors
+
+    def _safe_regex_compile(self, pattern: str) -> Optional[re.Pattern]:
+        """Safely compile regex patterns with injection protection."""
+        # Validate pattern safety - prevent ReDoS attacks
+        if len(pattern) > 1000:  # Prevent excessively long patterns
+            logger.warning(f"Regex pattern too long: {len(pattern)} characters")
+            return None
+        
+        # Check for nested quantifiers that can cause ReDoS
+        if re.search(r'\*.*\*|\+.*\+|\{.*\}.*[\*\+\{]', pattern):
+            logger.warning(f"Potentially dangerous regex pattern: {pattern}")
+            return None
+        
+        try:
+            compiled_pattern = re.compile(pattern)
+            return compiled_pattern
+        except re.error as e:
+            logger.error(f"Invalid regex pattern '{pattern}': {e}")
+            return None
+
+    def _validate_input_security(self, value: Any, param_name: str) -> List[str]:
+        """Comprehensive input validation with extensive security checks."""
+        errors = []
+        
+        if not isinstance(value, str):
+            return errors
+            
+        # Enhanced injection detection patterns
+        dangerous_patterns = [
+            (r';.*\b', 'Command injection detected'), 
+            (r'\$\(', 'Command substitution detected'),
+            (r'(?:\.\.[\\/]|[\\/]\.\.[\\/]|[\\/]\.\.)', 'Path traversal detected'),
+            (r'<script.*?>.*?</script>', 'XSS attempt detected'),
+            (r'&&', 'Command chaining detected'),
+            (r'\|\|', 'Command chaining detected'),
+            (r'`[^`]*`', 'Backtick execution detected'),
+            (r'\$\{[^}]*\}', 'Parameter expansion detected'),
+            (r'\x00', 'Null byte injection detected'),
+            (r'[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]', 'Control character detected'),
+        ]
+        
+        for pattern, description in dangerous_patterns:
+            if re.search(pattern, value, re.IGNORECASE | re.DOTALL):
+                errors.append(f"{description} in {param_name}")
+                break  # Stop after first detection
+
+        return errors
+
+    def _validate_parameter_structure(self, value: Any, param_name: str) -> List[str]:
+        """Validate parameter structure and content for security."""
+        errors = []
+        
+        if isinstance(value, list):
+            # Validate list items recursively
+            for i, item in enumerate(value):
+                item_errors = self._validate_input_security(item, f"{param_name}[{i}]")
+                item_errors.extend(self._validate_parameter_structure(item, f"{param_name}[{i}]"))
+                errors.extend(item_errors)
+                
+        elif isinstance(value, dict):
+            # Validate dict values recursively
+            for key, val in value.items():
+                key_errors = self._validate_input_security(key, f"{param_name}.{key}")
+                val_errors = self._validate_input_security(val, f"{param_name}.{key}")
+                val_errors.extend(self._validate_parameter_structure(val, f"{param_name}.{key}"))
+                errors.extend(key_errors)
+                errors.extend(val_errors)
+                
+        else:
+            errors.extend(self._validate_input_security(value, param_name))
+            
+        return errors
 
     def _basic_parameter_validation(
         self, param_name: str, value: Any, constraint: Dict[str, Any]
     ) -> List[str]:
-        """Basic parameter validation as fallback."""
+        """Comprehensive parameter validation with security checks."""
         errors = []
+
+        # Security validation first - check for injection patterns
+        if isinstance(value, str):
+            dangerous_patterns = [
+                r";.*\b",  # Command injection
+                r"\$\(",  # Command substitution
+                r"\.\.[/\\]",  # Path traversal
+                r"<script.*?>.*?</script>",  # XSS
+                r"&&",  # Command chaining
+                r"\|\|",  # Command chaining
+                r"`[^`]*`",  # Backtick execution
+            ]
+
+            for pattern in dangerous_patterns:
+                if re.search(pattern, value, re.IGNORECASE | re.DOTALL):
+                    errors.append(
+                        f"Potentially dangerous input detected in {param_name}"
+                    )
+                    break
 
         # Type validation
         if constraint.get("type") == "string":
@@ -315,6 +407,14 @@ class PolicyGate:
                 errors.append(
                     f"Parameter {param_name} exceeds max length {constraint['max_length']}"
                 )
+            elif "pattern" in constraint:
+                safe_pattern = self._safe_regex_compile(constraint["pattern"])
+                if safe_pattern is None:
+                    errors.append(f"Unsafe regex pattern for {param_name}")
+                elif not safe_pattern.match(value):
+                    errors.append(
+                        f"Parameter {param_name} does not match required pattern"
+                    )
 
         elif constraint.get("type") == "int":
             if not isinstance(value, int):
@@ -336,6 +436,20 @@ class PolicyGate:
                 errors.append(
                     f"Parameter {param_name} exceeds max items {constraint['max_items']}"
                 )
+
+            # Validate list items for security
+            for item in value:
+                if isinstance(item, str) and any(
+                    dangerous in item.lower()
+                    for dangerous in ["&&", "||", ";rm ", "$(", "<script"]
+                ):
+                    errors.append(
+                        f"Potentially dangerous item detected in {param_name}"
+                    )
+
+        elif constraint.get("type") == "dict":
+            if not isinstance(value, dict):
+                errors.append(f"Parameter {param_name} must be dict")
 
         return errors
 
@@ -390,8 +504,8 @@ class PolicyGate:
         validation_errors = []
 
         try:
-            # Step 1: Validate target existence (fixed async method)
-            target = await self.validate_target_existence(target_id)
+            # Step 1: Validate target existence
+            target = self.validate_target_existence(target_id)
 
             # Step 2: Find matching policy rule
             policy_rule = self.get_matching_policy_rule(tool_name, target_id, operation)
@@ -407,11 +521,11 @@ class PolicyGate:
                 validation_errors.append(f"User authorization failed: {reason}")
                 return False, validation_errors
 
-            # Step 4: Validate target capabilities (fixed async method)
-            cap_errors = await self.validate_capabilities(
-                target, policy_rule.required_capabilities
-            )
-            validation_errors.extend(cap_errors)
+            # Step 4: Validate target capabilities
+            try:
+                self.validate_capabilities(target, policy_rule.required_capabilities)
+            except SystemManagerError as e:
+                validation_errors.append(str(e))
 
             # Step 5: Validate parameters (properly awaited)
             param_errors = await self.validate_parameters(

@@ -103,11 +103,19 @@ class SecurityScanCLI:
             return self._get_exit_code(results)
 
         except Exception as e:
-            print(f"❌ Error during scan: {e}")
+            # Log error without exposing potentially sensitive exception details
+            print("❌ Error during scan: An internal error occurred")
             if verbose:
                 import traceback
 
-                traceback.print_exc()
+                # Log full stack trace to file instead of stdout
+                try:
+                    with open("/tmp/scan_debug.log", "a") as f:
+                        f.write(f"\n--- Scan Error {datetime.now().isoformat()} ---\n")
+                        traceback.print_exc(file=f)
+                        f.write("--- End Error ---\n")
+                except Exception:
+                    pass  # If logging fails, don't expose the error
             return 1
 
     def _generate_report(

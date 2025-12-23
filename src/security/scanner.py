@@ -75,6 +75,12 @@ class ScanType(Enum):
     INFRASTRUCTURE = "infrastructure"
     CONTAINER = "container"
     NETWORK = "network"
+    RUNTIME = "runtime"
+    API_SECURITY = "api_security"
+    DATABASE_SECURITY = "database_security"
+    FILESYSTEM_SECURITY = "filesystem_security"
+    MALWARE = "malware"
+    THREAT_INTELLIGENCE = "threat_intelligence"
 
 
 class SeverityLevel(Enum):
@@ -321,6 +327,18 @@ class SecurityScanner:
                 self._scan_containers(target_path, result)
             elif scan_type == ScanType.NETWORK:
                 self._scan_network(target_path, result)
+            elif scan_type == ScanType.RUNTIME:
+                self._scan_runtime(target_path, result)
+            elif scan_type == ScanType.API_SECURITY:
+                self._scan_api_security(target_path, result)
+            elif scan_type == ScanType.DATABASE_SECURITY:
+                self._scan_database_security(target_path, result)
+            elif scan_type == ScanType.FILESYSTEM_SECURITY:
+                self._scan_filesystem_security(target_path, result)
+            elif scan_type == ScanType.MALWARE:
+                self._scan_malware(target_path, result)
+            elif scan_type == ScanType.THREAT_INTELLIGENCE:
+                self._scan_threat_intelligence(target_path, result)
             else:
                 raise ValueError(f"Unknown scan type: {scan_type}")
 

@@ -88,7 +88,13 @@ class GoFastMCPAuthService:
         except requests.HTTPError as exc:  # pragma: no cover - network failures in CI
             logger.error(
                 "GoFast auth server returned error",
-                extra={"status": response.status_code, "body": response.text},
+                extra={
+                    "status": response.status_code,
+                    "error_hint": "authentication_failed"
+                    if 400 <= response.status_code < 500
+                    else "server_error",
+                    # Do NOT log response.body as it may contain sensitive tokens
+                },
             )
             raise RuntimeError(f"GoFast MCP auth request failed: {exc}") from exc
 

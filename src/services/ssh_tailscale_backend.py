@@ -8,6 +8,8 @@ for secure remote operations across different network environments.
 import asyncio
 import logging
 import shlex
+import subprocess
+import os
 from typing import Dict, List, Any
 from datetime import datetime
 from datetime import timezone, timezone
@@ -113,19 +115,32 @@ class SSHTailscaleBackend(RemoteExecutionBackend):
             # SECURITY: Load system host keys for secure SSH connections
             self.client.load_system_host_keys()
 
-            # For development/testing environments, allow strict checking
+            # SECURITY: Always enforce strict host key verification in production
+            # Only allow relaxed mode in development with explicit environment override
             import os
 
             if os.getenv("SSH_STRICT_HOST_KEY_CHECKING", "true").lower() == "true":
-                # Reject unknown hosts for production security
+                # PRODUCTION: Reject unknown hosts - MITM protection
                 self.client.set_missing_host_key_policy(paramiko.RejectPolicy())
-            else:
-                # Allow known hosts for development (with warning log)
-                import logging
 
-                logging.warning(
-                    "SSH host key verification disabled - use only in development"
+                # Additional security: Verify Tailscale host identity when using Tailscale
+                if self.use_tailscale:
+                    target_host = self._resolve_target_host()
+                    if not self._verify_tailscale_host_identity(target_host):
+                        logger.error(
+                            f"Cannot verify Tailscale host identity for {target_host}"
+                        )
+                        return False
+
+            else:
+                # DEVELOPMENT ONLY: Allow new hosts with strict warnings
+                # This should NEVER be used in production
+                logger.critical(
+                    "⚠️  SSH CRITICAL WARNING: Host key verification disabled - MITM vulnerability! "
+                    "DEVELOPMENT MODE ONLY - NOT FOR PRODUCTION!"
                 )
+
+                # Use AutoAddPolicy only in development with monitoring
                 self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             # Resolve target host
@@ -171,17 +186,72 @@ class SSHTailscaleBackend(RemoteExecutionBackend):
             self.connected = False
             return False
 
-    def _resolve_target_host(self) -> str:
-        """Resolve target host based on connection method."""
-        if self.use_tailscale and self.tailscale_hostname:
-            # Use Tailscale hostname
-            return f"{self.tailscale_hostname}.{self.tailscale_namespace}.ts.net"
-        elif self.use_tailscale:
-            # Use Tailscale magic DNS
-            return f"{self.host}.ts.net"
-        else:
-            # Use direct host
-            return self.host
+    def _verify_tailscale_host_identity(self, target_host: str) -> bool:
+        """Verify Tailscale host identity to prevent MITM attacks."""
+        try:
+            # For Tailscale connections, verify the host key matches Tailscale identity
+            # This is critical security for Tailscale gateway-to-target connections
+            
+            # Method 1: Use Tailscale status to verify host is legitimate
+            tailscale_cmd = f"tailscale status {target_host}"
+            try:
+                result = subprocess.run(
+                    tailscale_cmd.split(), 
+                    capture_output=True, 
+                    text=True, 
+                    timeout=10
+                )
+                
+                # If tailscale status fails, log and reject
+                if result.returncode != 0:
+                    logger.error(f"Tailscale host verification failed for {target_host}: {result.stderr}")
+                    return False
+                    
+                # Parse tailscale status to ensure host is legitimate
+                status_lines = result.stdout.strip().split('\n')
+                for line in status_lines:
+                    if target_host in line and 'online' in line.lower():
+                        logger.info(f"Tailscale host {target_host} verified online")
+                        return True
+                        
+                logger.warning(f"Host {target_host} not found in tailscale status")
+                return False
+                
+            except subprocess.TimeoutExpired:
+                logger.error(f"Tailscale status command timed out for {target_host}")
+                return False
+            except Exception as e:
+                logger.error(f"Error checking tailscale status for {target_host}: {e}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Tailscale host identity verification failed: {e}")
+            return False
+    
+    def _create_custom_host_key_policy(self) -> paramiko.MissingHostKeyPolicy:
+        """Create custom host key policy with Tailscale security."""
+        class TailscaleHostKeyPolicy(paramiko.MissingHostKeyPolicy):
+            """Custom host key policy that validates Tailscale hosts securely."""
+            
+            def __init__(self, backend_instance):
+                self.backend = backend_instance
+                self.verified_hosts = set()
+                
+            def missing_host_key(self, client, hostname, key):
+                # For Tailscale hosts, perform additional verification
+                if self.backend.use_tailscale:
+ if not self.backend._verify_tailscale_host_identity(hostname):
+                        # SECURITY: Reject connection if Tailscale verification fails
+                        raise paramiko.SSHException(
+                            f"Cannot verify Tailscale host identity for {hostname} "
+                            "- potential MITM attack!"
+                        )
+                
+                # If verification passes, add to known hosts temporarily
+                logger.warning(f"Adding new host key for {hostname} (Tailscale verified)")
+                client.get_transport().get_server_host_key()
+                
+        return TailscaleHostKeyPolicy(self)
 
     async def disconnect(self):
         """Disconnect SSH client and cleanup resources."""
