@@ -80,3 +80,14 @@ Activate with: `source .venv/bin/activate` on Unix or `.venv\Scripts\activate` o
 - If push fails, resolve and retry until it succeeds
 - Use 'bd' for task tracking
 - Use Context7 to research documentation
+
+## Issue Tracking
+
+Use the `bd` command for all issue tracking instead of markdown TODOs:
+
+- Create issues: `bd create "Task description" -p 1 --json`
+- Find work: `bd ready --json`
+- Update status: `bd update <id> --status in_progress --json`
+- View details: `bd show <id> --json`
+
+Use `--json` flags for programmatic parsing.
