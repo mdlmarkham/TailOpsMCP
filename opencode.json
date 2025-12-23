@@ -2,5 +2,23 @@
   "plugin": [
     "opencode-beads"
   ],
-  "$schema": "https://opencode.ai/config.json"
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "gh_grep": {
+      "type": "remote",
+      "url": "https://mcp.grep.app"
+    },
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "serena": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "serena",
+        "start-mcp-server"
+      ]
+    }
+  }
 }
