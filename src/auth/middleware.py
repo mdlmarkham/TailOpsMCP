@@ -21,6 +21,9 @@ from src.services.policy_gate import PolicyGate
 from src.services.target_registry import TargetRegistry
 from src.utils.audit import AuditLogger
 from src.utils.errors import ErrorCategory, SystemManagerError
+from src.security.validation_framework import SecurityValidationFramework
+from src.models.validation_models import ValidationContext, SecurityPosture
+from src.utils.rate_limiter import get_rate_limiter
 
 
 logger = logging.getLogger(__name__)
@@ -43,6 +46,18 @@ class SecurityMiddleware:
         # Initialize Policy Gate for comprehensive security controls
         self.target_registry = TargetRegistry()
         self.policy_gate = PolicyGate(self.target_registry, self.audit_logger)
+
+        # Initialize Security Validation Framework
+        self.validation_framework = SecurityValidationFramework(
+            policy_gate=self.policy_gate,
+            audit_logger=self.audit_logger,
+        )
+
+        # Initialize Rate Limiter
+        self.rate_limiter = get_rate_limiter()
+        self.enable_rate_limiting = (
+            os.getenv("SYSTEMMANAGER_ENABLE_RATE_LIMITING", "true").lower() == "true"
+        )
 
     def get_claims_from_context(self, **kwargs) -> Optional[TokenClaims]:
         """Extract and verify token from kwargs or HTTP request.
@@ -185,6 +200,108 @@ class SecurityMiddleware:
             category=ErrorCategory.FORBIDDEN,
         )
 
+    def _apply_validation_framework(
+        self, tool_name: str, kwargs: Dict[str, Any], claims: TokenClaims
+    ) -> None:
+        """Apply Security Validation Framework before tool execution.
+
+        Args:
+            tool_name: Tool name being invoked
+            kwargs: Tool arguments
+            claims: User token claims
+
+        Raises:
+            SystemManagerError: If validation framework blocks execution
+        """
+        try:
+            # Create validation context
+            context = ValidationContext(
+                tool_name=tool_name,
+                operation=kwargs.get("operation", tool_name.split("_")[-1]),
+                target_id=kwargs.get("target_id", "local"),
+                user_agent=claims.agent or "unknown",
+                user_scopes=claims.scopes or [],
+                parameters=kwargs,
+                session_id=kwargs.get("session_id"),
+            )
+
+            # Perform pre-execution validation
+            validation_summary = self.validation_framework.validate_pre_execution_only(
+                context, claims
+            )
+
+            # Check if operation is allowed to proceed
+            if not validation_summary.allowed_to_proceed:
+                error_message = f"Security validation blocked operation: {validation_summary.recommendation}"
+                if validation_summary.critical_findings > 0:
+                    error_message += (
+                        f" (Critical findings: {validation_summary.critical_findings})"
+                    )
+                raise SystemManagerError(
+                    error_message, category=ErrorCategory.FORBIDDEN
+                )
+
+            # Log successful validation
+            logger.info(
+                f"Security validation passed for {tool_name}: "
+                f"posture={validation_summary.overall_posture.value}, "
+                f"findings={validation_summary.total_findings}"
+            )
+
+        except SystemManagerError:
+            raise  # Re-raise security blocking errors
+        except Exception as e:
+            # Log validation errors but don't block the operation unless in strict mode
+            logger.error(f"Security validation framework error: {e}")
+            validation_mode = os.getenv("SYSTEMMANAGER_VALIDATION_MODE", "warn").lower()
+            if validation_mode == "strict":
+                raise SystemManagerError(
+                    f"Security validation error: {e}", category=ErrorCategory.FORBIDDEN
+                )
+
+    def _check_rate_limit(
+        self, tool_name: str, kwargs: Dict[str, Any], claims: TokenClaims
+    ) -> None:
+        """Check rate limits before tool execution.
+
+        Args:
+            tool_name: Tool name being invoked
+            kwargs: Tool arguments
+            claims: User token claims
+
+        Raises:
+            SystemManagerError: If rate limit exceeded
+        """
+        try:
+            if not self.enable_rate_limiting:
+                return  # Rate limiting disabled
+
+            # Check rate limit for this tool and user
+            if not self.rate_limiter.check_rate_limit(tool_name, claims):
+                config = self.rate_limiter.get_rate_limit_config(tool_name)
+                error_message = (
+                    f"Rate limit exceeded for {tool_name}. "
+                    f"Allowed: {config.requests_per_minute} requests per {config.window_seconds} seconds. "
+                    f"Risk level: {config.risk_level.value}."
+                )
+                raise SystemManagerError(
+                    error_message, category=ErrorCategory.FORBIDDEN
+                )
+
+            # Log successful rate limit check
+            logger.info(f"Rate limit check passed for {tool_name}")
+
+        except SystemManagerError:
+            raise  # Re-raise rate limit errors
+        except Exception as e:
+            # Log rate limiter errors but don't block the operation
+            logger.error(f"Rate limit check error: {e}")
+            rate_limit_mode = os.getenv("SYSTEMMANAGER_RATE_LIMIT_MODE", "warn").lower()
+            if rate_limit_mode == "strict":
+                raise SystemManagerError(
+                    f"Rate limiting error: {e}", category=ErrorCategory.FORBIDDEN
+                )
+
     def wrap_tool(self, tool_name: str, func: Callable) -> Callable:
         """Wrap a tool function with security checks and audit logging.
 
@@ -235,6 +352,36 @@ class SecurityMiddleware:
             # Check authorization
             try:
                 self.check_authorization(tool_name, claims)
+            except SystemManagerError as e:
+                result = {"success": False, "error": str(e)}
+                self.audit_logger.log(
+                    tool=tool_name,
+                    args=kwargs,
+                    result=result,
+                    subject=claims.agent,
+                    scopes=claims.scopes,
+                    risk_level=get_tool_risk_level(tool_name),
+                )
+                return result
+
+            # Apply Rate Limiting (first check - lightweight)
+            try:
+                self._check_rate_limit(tool_name, kwargs, claims)
+            except SystemManagerError as e:
+                result = {"success": False, "error": str(e)}
+                self.audit_logger.log(
+                    tool=tool_name,
+                    args=kwargs,
+                    result=result,
+                    subject=claims.agent,
+                    scopes=claims.scopes,
+                    risk_level=get_tool_risk_level(tool_name),
+                )
+                return result
+
+            # Apply Security Validation Framework (comprehensive validation)
+            try:
+                self._apply_validation_framework(tool_name, kwargs, claims)
             except SystemManagerError as e:
                 result = {"success": False, "error": str(e)}
                 self.audit_logger.log(
