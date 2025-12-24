@@ -11,14 +11,35 @@
     "context7": {
       "type": "remote",
       "url": "https://mcp.context7.com/mcp"
-    },
-    "serena": {
+    }
+  },
+  "agents": {
+    "security-research": {
+      "description": "Research security vulnerabilities and provide remediation guidance for TailOpsMCP security implementations",
       "type": "local",
       "command": [
-        "uvx",
-        "serena",
-        "start-mcp-server"
-      ]
+        "opencode-agent",
+        "security-research"
+      ],
+      "autoStart": false
+    },
+    "performance-benchmark": {
+      "description": "Run automated performance tests, benchmarks, and regression detection for TailOpsMCP operations",
+      "type": "local",
+      "command": [
+        "opencode-agent",
+        "performance-benchmark"
+      ],
+      "autoStart": false
+    },
+    "beads-backlog-manager": {
+      "description": "Automated backlog management, task tracking, dependency monitoring, and phase completion validation for TailOpsMCP development",
+      "type": "local",
+      "command": [
+        "opencode-agent",
+        "beads-manage"
+      ],
+      "autoStart": false
     }
   }
 }
