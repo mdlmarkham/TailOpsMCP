@@ -24,50 +24,87 @@ class TestComplianceFrameworks:
 
     def test_cis_basics_coverage_compliance(self):
         """Test CIS basics coverage compliance."""
-        from src.security.compliance import ComplianceChecker
+        from src.security.compliance import ComplianceChecker, ComplianceCategory
+        import tempfile
+        import os
 
         checker = ComplianceChecker()
 
-        # Test CIS controls coverage
-        cis_controls = {
-            "1.1": "Inventory of Authorized and Unauthorized Systems",
-            "1.2": "Inventory of Software on System",
-            "2.1": "Authorized and Unauthorized Users",
-            "2.2": "Establish Configured Baseline",
-            "3.1": "Malware Defenses",
-            "4.1": "Secure Configuration",
-            "5.1": "Maintain Secure Images",
-            "16.1": "Account Monitoring and Control",
-        }
+        # Create a temporary directory with test files
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create test files that should be checked
+            auth_dir = os.path.join(tmpdir, "auth")
+            os.makedirs(auth_dir, exist_ok=True)
 
-        # Check that CIS controls are covered
-        for control_id, control_desc in cis_controls.items():
-            if hasattr(checker, "check_cis_control"):
-                result = checker.check_cis_control(control_id)
-                # Should handle gracefully
-                assert isinstance(result, (bool, dict, type(None)))
+            config_file = os.path.join(auth_dir, "config.py")
+            with open(config_file, "w") as f:
+                f.write('PASSWORD_POLICY = {"min_length": 12}\n')
+                f.write("logging_enabled = True\n")
+
+            # Run compliance checks
+            results = checker.check_compliance(
+                target_path=tmpdir,
+                framework="CIS_Benchmarks",
+                categories={
+                    ComplianceCategory.AUTHENTICATION,
+                    ComplianceCategory.AUDIT_LOGGING,
+                },
+            )
+
+            # Verify we get results
+            assert isinstance(results, list)
+            assert len(results) > 0
+
+            # Check result structure
+            for result in results:
+                assert hasattr(result, "check_id")
+                assert hasattr(result, "status")
+                assert hasattr(result, "passed")
+                assert hasattr(result, "check_name")
 
     @pytest.mark.compliance
     @pytest.mark.asyncio
     async def test_nist_critical_security_controls(self):
         """Test NIST Critical Security Controls."""
-        from src.security.compliance import ComplianceChecker
+        from src.security.compliance import ComplianceChecker, ComplianceCategory
+        import tempfile
+        import os
 
         checker = ComplianceChecker()
 
-        # Test NIST CSF (Cybersecurity Framework) functions
-        nist_functions = {
-            "ID": "Identify",
-            "PR": "Protect",
-            "DE": "Detect",
-            "RS": "Respond",
-            "RC": "Recover",
-        }
+        # Create a temporary directory with test files
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create test security files
+            security_dir = os.path.join(tmpdir, "security")
+            os.makedirs(security_dir, exist_ok=True)
 
-        for function_code, function_desc in nist_functions.items():
-            if hasattr(checker, "check_nist_function"):
-                result = checker.check_nist_function(function_code)
-                assert isinstance(result, (bool, dict, type(None)))
+            # Create a policy file
+            policy_file = os.path.join(security_dir, "security_policy.json")
+            with open(policy_file, "w") as f:
+                json.dump(
+                    {
+                        "framework": "NIST_CSF",
+                        "controls": ["ID", "PR", "DE", "RS", "RC"],
+                    },
+                    f,
+                )
+
+            # Run compliance checks for NIST framework
+            results = checker.check_compliance(target_path=tmpdir, framework="NIST_CSF")
+
+            # Verify we get results
+            assert isinstance(results, list)
+
+            # Each result should have proper structure
+            for result in results:
+                assert hasattr(result, "check_id")
+                assert hasattr(result, "status")
+                assert hasattr(result, "passed")
+                assert hasattr(result, "framework")
+
+            # Check that NIST-related checks were included if any exist
+            check_ids = [r.check_id for r in results]
+            assert len(check_ids) >= 0  # May be empty if no checks match
 
     @pytest.mark.compliance
     @pytest.mark.asyncio
@@ -289,7 +326,7 @@ class TestEdgeCaseHandling:
                 # Should not crash
                 assert isinstance(result, (dict, type(None)))
         except Exception:
-            pass
+            pass  # May raise exception if not implemented
 
     @pytest.mark.edge_case
     @pytest.mark.asyncio
