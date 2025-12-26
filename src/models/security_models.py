@@ -6,9 +6,8 @@ Defines comprehensive security models for access control, compliance, and monito
 
 from enum import Enum
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
-from datetime import datetime
-from datetime import timezone, timezone
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 
 class SensitivityLevel(str, Enum):
@@ -60,16 +59,84 @@ class AlertSeverity(str, Enum):
     CRITICAL = "critical"
 
 
+class AuthenticationMethod(str, Enum):
+    """Authentication methods."""
+
+    OIDC = "oidc"
+    TAILSCALE_OIDC = "tailscale_oidc"
+    TOKEN = "token"
+    PASSWORD = "password"
+    ANONYMOUS = "anonymous"
+
+
+class RiskProfile(str, Enum):
+    """Risk profiles for users."""
+
+    LOW_RISK = "low_risk"
+    STANDARD = "standard"
+    MEDIUM_RISK = "medium_risk"
+    HIGH_RISK = "high_risk"
+
+
+class AlertType(str, Enum):
+    """Types of security alerts."""
+
+    AUTHENTICATION_FAILURE = "authentication_failure"
+    UNAUTHORIZED_ACCESS = "unauthorized_access"
+    POLICY_VIOLATION = "policy_violation"
+    SUSPICIOUS_ACTIVITY = "suspicious_activity"
+    DATA_BREACH = "data_breach"
+
+
+class InitiatorType(str, Enum):
+    """Types of operation initiators."""
+
+    HUMAN = "human"
+    SYSTEM = "system"
+    AUTOMATED = "automated"
+
+
 @dataclass
 class IdentityContext:
     """Context information about an identity/user."""
 
     user_id: str
+    username: str
+    email: str
     roles: List[str]
     groups: List[str]
-    attributes: Dict[str, Any]
+    permissions: List[str]
     authentication_method: str
-    authentication_time: datetime
+    session_id: Optional[str] = None
+    authentication_time: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    tailscale_node: Optional[str] = None
+    source_ip: Optional[str] = None
+    user_agent: Optional[str] = None
+    risk_profile: str = "standard"
+    attributes: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "user_id": self.user_id,
+            "username": self.username,
+            "email": self.email,
+            "roles": self.roles,
+            "groups": self.groups,
+            "permissions": self.permissions,
+            "authentication_method": self.authentication_method,
+            "session_id": self.session_id,
+            "authentication_time": self.authentication_time.isoformat()
+            if self.authentication_time
+            else None,
+            "tailscale_node": self.tailscale_node,
+            "source_ip": self.source_ip,
+            "user_agent": self.user_agent,
+            "risk_profile": self.risk_profile,
+            "attributes": self.attributes,
+        }
 
 
 @dataclass
@@ -263,3 +330,67 @@ class ApprovalChainValidation:
     chain_complete: bool
     timestamp: datetime
     metadata: Dict[str, Any]
+
+
+# Authentication and Session Models
+@dataclass
+class AuthenticationCredentials:
+    """Authentication credentials."""
+
+    username: Optional[str] = None
+    password: Optional[str] = None
+    token: Optional[str] = None
+    oidc_token: Optional[str] = None
+
+
+@dataclass
+class AuthenticationResult:
+    """Result of authentication attempt."""
+
+    success: bool
+    identity: Optional[IdentityContext] = None
+    session_token: Optional[str] = None
+    error_message: Optional[str] = None
+    error_code: Optional[str] = None
+
+
+@dataclass
+class SessionValidationResult:
+    """Result of session validation."""
+
+    valid: bool
+    identity: Optional[IdentityContext] = None
+    expires_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+
+
+@dataclass
+class PermissionSet:
+    """User permissions set."""
+
+    permissions: List[str]
+    roles: List[str]
+    effective_permissions: List[str]
+
+
+@dataclass
+class IdentityEvent:
+    """Identity-related event for auditing."""
+
+    event_type: str
+    identity: IdentityContext
+    event_details: Dict[str, Any]
+
+
+@dataclass
+class SecurityAlert:
+    """Security alert."""
+
+    alert_id: str
+    timestamp: datetime
+    severity: AlertSeverity
+    alert_type: AlertType
+    description: str
+    affected_resources: List[str]
+    implicated_identities: List[str]
+    recommended_actions: List[str]

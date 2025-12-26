@@ -13,33 +13,16 @@
       "url": "https://mcp.context7.com/mcp"
     }
   },
-  "agents": {
-    "security-research": {
-      "description": "Research security vulnerabilities and provide remediation guidance for TailOpsMCP security implementations",
-      "type": "local",
-      "command": [
-        "opencode-agent",
-        "security-research"
-      ],
-      "autoStart": false
-    },
-    "performance-benchmark": {
-      "description": "Run automated performance tests, benchmarks, and regression detection for TailOpsMCP operations",
-      "type": "local",
-      "command": [
-        "opencode-agent",
-        "performance-benchmark"
-      ],
-      "autoStart": false
-    },
-    "beads-backlog-manager": {
-      "description": "Automated backlog management, task tracking, dependency monitoring, and phase completion validation for TailOpsMCP development",
-      "type": "local",
-      "command": [
-        "opencode-agent",
-        "beads-manage"
-      ],
-      "autoStart": false
+  "agent": {
+    "backlog-manager": {
+      "description": "Automated backlog management, task tracking, dependency monitoring, and phase completion validation for project development",
+      "mode": "subagent",
+      "prompt": "You are Backlog Manager, an automated agent that helps manage project backlogs, track tasks, monitor dependencies, and validate phase completions using Beads (bd). Your goal is to ensure the project progresses smoothly by keeping the backlog organized and up-to-date.",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
     }
   }
 }
