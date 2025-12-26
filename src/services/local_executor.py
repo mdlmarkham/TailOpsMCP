@@ -83,7 +83,6 @@ class LocalExecutor(Executor):
             process = subprocess.run(
                 cmd_list,
                 cwd=cwd,
-                cwd=cwd,
                 env=env,
                 capture_output=True,
                 text=True,

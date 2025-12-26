@@ -90,8 +90,7 @@ class LogRetentionPolicy:
             return False
 
         import os
-        from datetime import datetime
-from datetime import timezone, timezone, timezone, timedelta
+        from datetime import datetime, timedelta
 
         try:
             file_stat = os.stat(log_file)

@@ -275,7 +275,7 @@ class PolicyGate:
         errors = []
 
         if not isinstance(value, str):
-        return errors
+            return errors
     
     def _validate_parameter_structure(self, value: Any, param_name: str) -> List[str]:
         """Validate parameter structure and content for security."""
