@@ -86,7 +86,8 @@ class TestPolicyGate:
 
         assert "lacks required capabilities" in str(exc_info.value)
 
-    def test_validate_parameters_success(self):
+    @pytest.mark.asyncio
+    async def test_validate_parameters_success(self):
         """Test successful parameter validation."""
         parameters = {"container_name": "nginx", "timeout": 30}
         constraints = {
@@ -94,13 +95,14 @@ class TestPolicyGate:
             "timeout": {"type": "int", "min": 1, "max": 300},
         }
 
-        errors = self.policy_gate.validate_parameters(
+        errors = await self.policy_gate.validate_parameters(
             "test_operation", parameters, constraints
         )
 
         assert len(errors) == 0
 
-    def test_validate_parameters_failure(self):
+    @pytest.mark.asyncio
+    async def test_validate_parameters_failure(self):
         """Test parameter validation failure."""
         parameters = {"container_name": "x" * 300, "timeout": 0}  # Invalid values
         constraints = {
@@ -108,15 +110,14 @@ class TestPolicyGate:
             "timeout": {"type": "int", "min": 1, "max": 300},
         }
 
-        errors = self.policy_gate.validate_parameters(
+        errors = await self.policy_gate.validate_parameters(
             "test_operation", parameters, constraints
         )
 
         assert len(errors) == 2
-        assert "exceeds max length" in errors[0]
-        assert "below minimum" in errors[1]
 
-    def test_enforce_policy_success(self):
+    @pytest.mark.asyncio
+    async def test_enforce_policy_success(self):
         """Test successful policy enforcement."""
         self.target_registry.get_target.return_value = self.target
 
@@ -124,7 +125,7 @@ class TestPolicyGate:
         with patch("src.auth.scopes.check_authorization") as mock_check:
             mock_check.return_value = (True, "Authorized")
 
-            authorized, errors = self.policy_gate.enforce_policy(
+            authorized, errors = await self.policy_gate.enforce_policy(
                 tool_name="test_tool",
                 target_id="test-target",
                 operation="start",
@@ -135,7 +136,8 @@ class TestPolicyGate:
             assert authorized is True
             assert len(errors) == 0
 
-    def test_enforce_policy_authorization_failure(self):
+    @pytest.mark.asyncio
+    async def test_enforce_policy_authorization_failure(self):
         """Test policy enforcement with authorization failure."""
         self.target_registry.get_target.return_value = self.target
 
@@ -143,7 +145,7 @@ class TestPolicyGate:
         with patch("src.auth.scopes.check_authorization") as mock_check:
             mock_check.return_value = (False, "Missing required scope")
 
-            authorized, errors = self.policy_gate.enforce_policy(
+            authorized, errors = await self.policy_gate.enforce_policy(
                 tool_name="test_tool",
                 target_id="test-target",
                 operation="start",
@@ -154,14 +156,88 @@ class TestPolicyGate:
             assert authorized is False
             assert "User authorization failed" in errors[0]
 
-    def test_enforce_policy_dry_run(self):
+    @pytest.mark.asyncio
+    async def test_enforce_policy_dry_run(self):
         """Test policy enforcement in dry-run mode."""
         self.target_registry.get_target.return_value = self.target
 
         with patch("src.auth.scopes.check_authorization") as mock_check:
             mock_check.return_value = (True, "Authorized")
 
-            authorized, errors = self.policy_gate.enforce_policy(
+            authorized, errors = await self.policy_gate.enforce_policy(
+                tool_name="test_tool",
+                target_id="test-target",
+                operation="start",
+                parameters={"container_name": "nginx"},
+                claims=self.claims,
+                dry_run=True,
+            )
+
+            assert authorized is True
+            assert len(errors) == 0
+
+    async def test_validate_parameters_failure(self):
+        """Test parameter validation failure."""
+        parameters = {"container_name": "x" * 300, "timeout": 0}  # Invalid values
+        constraints = {
+            "container_name": {"type": "string", "max_length": 256},
+            "timeout": {"type": "int", "min": 1, "max": 300},
+        }
+
+        errors = await self.policy_gate.validate_parameters(
+            "test_operation", parameters, constraints
+        )
+
+        assert len(errors) == 2
+        assert "exceeds max length" in errors[0]
+        assert "below minimum" in errors[1]
+
+    async def test_enforce_policy_success(self):
+        """Test successful policy enforcement."""
+        self.target_registry.get_target.return_value = self.target
+
+        # Mock check_authorization to return True
+        with patch("src.auth.scopes.check_authorization") as mock_check:
+            mock_check.return_value = (True, "Authorized")
+
+            authorized, errors = await self.policy_gate.enforce_policy(
+                tool_name="test_tool",
+                target_id="test-target",
+                operation="start",
+                parameters={"container_name": "nginx"},
+                claims=self.claims,
+            )
+
+            assert authorized is True
+            assert len(errors) == 0
+
+    async def test_enforce_policy_authorization_failure(self):
+        """Test policy enforcement with authorization failure."""
+        self.target_registry.get_target.return_value = self.target
+
+        # Mock check_authorization to return False
+        with patch("src.auth.scopes.check_authorization") as mock_check:
+            mock_check.return_value = (False, "Missing required scope")
+
+            authorized, errors = await self.policy_gate.enforce_policy(
+                tool_name="test_tool",
+                target_id="test-target",
+                operation="start",
+                parameters={"container_name": "nginx"},
+                claims=self.claims,
+            )
+
+            assert authorized is False
+            assert "User authorization failed" in errors[0]
+
+    async def test_enforce_policy_dry_run(self):
+        """Test policy enforcement in dry-run mode."""
+        self.target_registry.get_target.return_value = self.target
+
+        with patch("src.auth.scopes.check_authorization") as mock_check:
+            mock_check.return_value = (True, "Authorized")
+
+            authorized, errors = await self.policy_gate.enforce_policy(
                 tool_name="test_tool",
                 target_id="test-target",
                 operation="start",

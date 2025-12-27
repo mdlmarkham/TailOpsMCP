@@ -116,24 +116,31 @@ targets:
     def test_get_target_by_type(self):
         """Test filtering targets by type."""
         config = """
-version: "1.0"
-targets:
-  local:
-    id: "local"
-    type: "local"
-    executor: "local"
-    capabilities: ["system:read"]
-    constraints: {timeout: 30, concurrency: 5}
-    metadata: {hostname: "local-host"}
+ version: "1.0"
+ targets:
+   local:
+     id: "local"
+     type: "local"
+     executor: "local"
+     connection:
+       executor: "local"
+     capabilities: ["system:read"]
+     constraints: {timeout: 30, concurrency: 5}
+     metadata: {hostname: "local-host"}
 
-  remote-ssh:
-    id: "remote-ssh"
-    type: "remote"
-    executor: "ssh"
-    capabilities: ["system:read"]
-    constraints: {timeout: 60, concurrency: 2}
-    metadata: {hostname: "remote-host"}
-"""
+   remote-ssh:
+     id: "remote-ssh"
+     type: "remote"
+     executor: "ssh"
+     connection:
+       executor: "ssh"
+       host: "remote-host"
+       username: "test-user"
+       key_path: "/tmp/test-key"
+     capabilities: ["system:read"]
+     constraints: {timeout: 60, concurrency: 2}
+     metadata: {hostname: "remote-host"}
+ """
         self.create_test_config(config)
 
         registry = TargetRegistry(self.config_path)
@@ -150,24 +157,29 @@ targets:
     def test_get_target_by_executor(self):
         """Test filtering targets by executor."""
         config = """
-version: "1.0"
-targets:
-  local:
-    id: "local"
-    type: "local"
-    executor: "local"
-    capabilities: ["system:read"]
-    constraints: {timeout: 30, concurrency: 5}
-    metadata: {hostname: "local-host"}
+ version: "1.0"
+ targets:
+   local:
+     id: "local"
+     type: "local"
+     executor: "local"
+     connection:
+       executor: "local"
+     capabilities: ["system:read"]
+     constraints: {timeout: 30, concurrency: 5}
+     metadata: {hostname: "local-host"}
 
-  docker-target:
-    id: "docker-target"
-    type: "remote"
-    executor: "docker"
-    capabilities: ["container:read"]
-    constraints: {timeout: 90, concurrency: 3}
-    metadata: {hostname: "docker-host"}
-"""
+   docker-target:
+     id: "docker-target"
+     type: "remote"
+     executor: "docker"
+     connection:
+       executor: "docker"
+       socket_path: "/var/run/docker.sock"
+     capabilities: ["container:read"]
+     constraints: {timeout: 90, concurrency: 3}
+     metadata: {hostname: "docker-host"}
+ """
         self.create_test_config(config)
 
         registry = TargetRegistry(self.config_path)
