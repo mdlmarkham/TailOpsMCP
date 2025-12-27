@@ -20,7 +20,7 @@ class TokenClaims(BaseModel):
     agent: Optional[str]
     scopes: List[str]
     host_tags: Optional[List[str]] = None
-    expiry: Optional[datetime.datetime]
+    expiry: Optional[datetime.datetime] = None
 
     def __init__(self, **data):
         if "host_tags" not in data:
