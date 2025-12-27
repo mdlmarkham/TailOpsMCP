@@ -110,26 +110,52 @@ class TestComplianceFrameworks:
     @pytest.mark.asyncio
     async def test_gdpr_compliance(self):
         """Test GDPR compliance features."""
-        from src.security.compliance import ComplianceChecker
+        from src.security.compliance import ComplianceChecker, ComplianceCategory
+        import tempfile
+        import os
 
         checker = ComplianceChecker()
 
-        # Test GDPR principles coverage
-        gdpr_principles = {
-            "lawfulness": "Data processing must be lawful",
-            "fairness": "Data processing must be fair",
-            "transparency": "Data processing must be transparent",
-            "purpose": "Specify purpose of processing",
-            "accuracy": "Keep data accurate",
-            "storage_limitation": "Don't keep data longer than necessary",
-            "integrity": "Keep data secure",
-            "accountability": "Be accountable for compliance",
-        }
+        # Create a temporary directory with GDPR-related test files
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create test files
+            data_dir = os.path.join(tmpdir, "data")
+            os.makedirs(data_dir, exist_ok=True)
 
-        for principle, description in gdpr_principles.items():
-            if hasattr(checker, "check_gdpr_principle"):
-                result = await checker.check_gdpr_principle(principle)
-                assert isinstance(result, (bool, dict, type(None)))
+            # Create a data handling config file
+            config_file = os.path.join(data_dir, "data_policy.json")
+            with open(config_file, "w") as f:
+                json.dump(
+                    {
+                        "gdpr_principles": [
+                            "lawfulness",
+                            "fairness",
+                            "transparency",
+                            "purpose",
+                            "accuracy",
+                            "storage_limitation",
+                            "integrity",
+                            "accountability",
+                        ]
+                    },
+                    f,
+                )
+
+            # Run compliance checks for data protection
+            results = checker.check_compliance(
+                target_path=tmpdir,
+                framework="GDPR",
+                categories={ComplianceCategory.DATA_PROTECTION},
+            )
+
+            # Verify we get results
+            assert isinstance(results, list)
+
+            # Each result should have proper structure
+            for result in results:
+                assert hasattr(result, "check_id")
+                assert hasattr(result, "status")
+                assert hasattr(result, "passed")
 
     @pytest.mark.compliance
     @pytest.mark.asyncio
