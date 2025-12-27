@@ -917,3 +917,41 @@ __all__ = [
     "check_owasp_compliance",
     "check_nist_compliance",
 ]
+from dataclasses import dataclass, field
+
+@dataclass
+class ComplianceCheck:
+    """Individual compliance check definition."""
+
+    # Identification
+    check_id: str
+    name: str
+    description: str
+    category: ComplianceCategory
+    framework: ComplianceFramework
+
+    # Requirements
+    requirement: str
+    compliance_level: ComplianceLevel
+    severity: ComplianceSeverity
+
+    # Implementation details
+    check_type: str = field(default="config")  # config, file, process, network, etc.
+    target_patterns: List[str] = field(default_factory=list)
+    forbidden_patterns: List[str] = field(default_factory=list)
+    required_values: Dict[str, Any] = field(default_factory=dict)
+    forbidden_values: Dict[str, Any] = field(default_factory=dict)
+
+    # Remediation
+    remediation_guide: str = field(default="")
+    remediation_commands: List[str] = field(default_factory=list)
+    remediation_files: List[str] = field(default_factory=list)
+
+    # Dependencies
+    prerequisites: List[str] = field(default_factory=list)
+    related_checks: List[str] = field(default_factory=list)
+
+    # Metadata
+    version: str = field(default="1.0")
+    last_updated: datetime = field(default_factory=datetime.now)
+    tags: Set[str] = field(default_factory=set)
