@@ -8,6 +8,7 @@ import subprocess
 import shutil
 import logging
 import re
+import tempfile
 from typing import Dict, Optional
 from pathlib import Path
 from urllib.parse import urlparse
@@ -25,7 +26,18 @@ class ComposeStackManager:
         self.stacks_dir = (
             Path(stacks_dir) if stacks_dir else PathConfig.get_stacks_dir()
         )
-        self.stacks_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            self.stacks_dir.mkdir(parents=True, exist_ok=True)
+        except (PermissionError, OSError) as e:
+            logger.warning(
+                f"Cannot create stacks directory at {self.stacks_dir}: {e}. "
+                "Falling back to user-writable location."
+            )
+            self.stacks_dir = Path(tempfile.gettempdir()) / "systemmanager_stacks"
+            self.stacks_dir.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Using stacks directory: {self.stacks_dir}")
+
         self._validated_commands = self._validate_system_commands()
 
     def _validate_system_commands(self) -> Dict[str, str]:

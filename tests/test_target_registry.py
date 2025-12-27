@@ -36,21 +36,23 @@ class TestTargetRegistry:
     def test_load_valid_config(self):
         """Test loading valid configuration."""
         config = """
-version: "1.0"
-targets:
-  local:
-    id: "local"
-    type: "local"
-    executor: "local"
-    capabilities: ["system:read", "container:read"]
-    constraints:
-      timeout: 30
-      concurrency: 5
-      sudo_policy: "none"
-    metadata:
-      hostname: "test-host"
-      platform: "test-platform"
-"""
+ version: "1.0"
+ targets:
+   local:
+     id: "local"
+     type: "local"
+     executor: "local"
+     connection:
+       executor: "local"
+     capabilities: ["system:read", "container:read"]
+     constraints:
+       timeout: 30
+       concurrency: 5
+       sudo_policy: "none"
+     metadata:
+       hostname: "test-host"
+       platform: "test-platform"
+ """
         self.create_test_config(config)
 
         registry = TargetRegistry(self.config_path)

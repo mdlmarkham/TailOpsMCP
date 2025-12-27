@@ -10,8 +10,6 @@ from dataclasses import dataclass
 from typing import List, Optional, Dict, Any
 import logging
 
-from src.utils.path_config import PathConfig
-
 logger = logging.getLogger(__name__)
 
 
@@ -32,188 +30,142 @@ class DetectedApp:
 class ApplicationScanner:
     """Scan system for installed applications."""
 
-    def __init__(self):
-        """Initialize scanner with hybrid path support."""
-        # Load static detection rules and apply path customization
-        self.detection_rules = self._get_dynamic_detection_rules()
-
-    def _get_base_detection_rules(self) -> Dict[str, Dict[str, Any]]:
-        """Base detection rules with default paths - will be dynamically hybridized."""
-        # Simplified for critical implementation - extends later
-        return {
-            "jellyfin": {
-                "service": "jellyfin",
-                "process": "jellyfin",
-                "port": 8096,
-                "config": "/etc/jellyfin",
-                "data": "/var/lib/jellyfin",
-                "version_cmd": "jellyfin --version",
-            },
-            "pihole": {
-                "service": "pihole-FTL",
-                "process": "pihole-FTL",
-                "port": 80,
-                "config": "/etc/pihole",
-                "data": "/etc/pihole",
-                "check_file": "/usr/local/bin/pihole",
-            },
-            "ollama": {
-                "service": "ollama",
-                "process": "ollama",
-                "port": 11434,
-                "config": "/etc/ollama",
-                "data": "/usr/share/ollama",
-                "version_cmd": "ollama --version",
-            },
-            "postgresql": {
-                "service": "postgresql",
-                "process": "postgres",
-                "port": 5432,
-                "config": "/etc/postgresql",
-                "data": "/var/lib/postgresql",
-                "version_cmd": "psql --version",
-            },
-            "nginx": {
-                "service": "nginx",
-                "process": "nginx",
-                "port": 80,
-                "config": "/etc/nginx",
-                "data": "/var/www",
-                "version_cmd": "nginx -v",
-            },
-            "redis": {
-                "service": "redis-server",
-                "process": "redis-server",
-                "port": 6379,
-                "config": "/etc/redis",
-                "data": "/var/lib/redis",
-                "version_cmd": "redis-server --version",
-            },
-            "home-assistant": {
-                "service": "home-assistant",
-                "process": "hass",
-                "port": 8123,
-                "config": "/home/homeassistant/.homeassistant",
-                "data": "/home/homeassistant/.homeassistant",
-            },
-        }
-
-    def __init__(self):
-        """Initialize scanner with hybrid path support."""
-        self.detected_apps: List[DetectedApp] = []
-        self._validated_commands = self._validate_system_commands()
-        # Load dynamic detection rules
-        self.detection_rules = self._get_dynamic_detection_rules()
-            "postgresql": {
-                "service": "postgresql",
-                "process": "postgres",
-                "port": 5432,
-                "config": "/etc/postgresql",
-                "data": "/var/lib/postgresql",
-                "version_cmd": "psql --version",
-            },
-            "mysql": {
-                "service": "mysql",
-                "process": "mysqld",
-                "port": 3306,
-                "config": "/etc/mysql",
-                "data": "/var/lib/mysql",
-                "version_cmd": "mysql --version",
-            },
-            "mariadb": {
-                "service": "mariadb",
-                "process": "mariadbd",
-                "port": 3306,
-                "config": "/etc/mysql",
-                "data": "/var/lib/mysql",
-                "version_cmd": "mariadb --version",
-            },
-            "nginx": {
-                "service": "nginx",
-                "process": "nginx",
-                "port": 80,
-                "config": "/etc/nginx",
-                "data": "/var/www",
-                "version_cmd": "nginx -v",
-            },
-            "apache": {
-                "service": "apache2",
-                "process": "apache2",
-                "port": 80,
-                "config": "/etc/apache2",
-                "data": "/var/www",
-                "version_cmd": "apache2 -v",
-            },
-            "redis": {
-                "service": "redis-server",
-                "process": "redis-server",
-                "port": 6379,
-                "config": "/etc/redis",
-                "data": "/var/lib/redis",
-                "version_cmd": "redis-server --version",
-            },
-            "mongodb": {
-                "service": "mongod",
-                "process": "mongod",
-                "port": 27017,
-                "config": "/etc/mongod.conf",
-                "data": "/var/lib/mongodb",
-                "version_cmd": "mongod --version",
-            },
-            "home-assistant": {
-                "service": "home-assistant",
-                "process": "hass",
-                "port": 8123,
-                "config": "/home/homeassistant/.homeassistant",
-                "data": "/home/homeassistant/.homeassistant",
-            },
-            "plex": {
-                "service": "plexmediaserver",
-                "process": "Plex Media Server",
-                "port": 32400,
-                "config": "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server",
-                "data": "/var/lib/plexmediaserver",
-            },
-            "portainer": {
-                "service": "portainer",
-                "process": "portainer",
-                "port": 9000,
-                "data": "/var/lib/portainer",
-            },
-            "nextcloud": {
-                "service": "apache2",  # Usually runs under Apache/Nginx
-                "port": 80,
-                "check_file": "/var/www/nextcloud/occ",
-                "config": "/var/www/nextcloud/config",
-                "data": "/var/www/nextcloud/data",
-            },
-            "wireguard": {
-                "service": "wg-quick@wg0",
-                "check_file": "/etc/wireguard/wg0.conf",
-                "config": "/etc/wireguard",
-            },
-            "adguard": {
-                "service": "AdGuardHome",
-                "process": "AdGuardHome",
-                "port": 3000,
-                "config": "/opt/AdGuardHome",
-                "data": "/opt/AdGuardHome/data",
-            },
-            "prometheus": {
-                "service": "prometheus",
-                "process": "prometheus",
-                "port": 9090,
-                "config": "/etc/prometheus",
-                "data": "/var/lib/prometheus",
-            },
-            "grafana": {
-                "service": "grafana-server",
-                "process": "grafana-server",
-                "port": 3000,
-                "config": "/etc/grafana",
-                "data": "/var/lib/grafana",
-            },
-        }
+    # Application detection patterns
+    DETECTION_RULES = {
+        "jellyfin": {
+            "service": "jellyfin",
+            "process": "jellyfin",
+            "port": 8096,
+            "config": "/etc/jellyfin",
+            "data": "/var/lib/jellyfin",
+            "version_cmd": "jellyfin --version",
+        },
+        "pihole": {
+            "service": "pihole-FTL",
+            "process": "pihole-FTL",
+            "port": 80,
+            "config": "/etc/pihole",
+            "data": "/etc/pihole",
+            "check_file": "/usr/local/bin/pihole",
+        },
+        "ollama": {
+            "service": "ollama",
+            "process": "ollama",
+            "port": 11434,
+            "config": "/etc/ollama",
+            "data": "/usr/share/ollama",
+            "version_cmd": "ollama --version",
+        },
+        "postgresql": {
+            "service": "postgresql",
+            "process": "postgres",
+            "port": 5432,
+            "config": "/etc/postgresql",
+            "data": "/var/lib/postgresql",
+            "version_cmd": "psql --version",
+        },
+        "mysql": {
+            "service": "mysql",
+            "process": "mysqld",
+            "port": 3306,
+            "config": "/etc/mysql",
+            "data": "/var/lib/mysql",
+            "version_cmd": "mysql --version",
+        },
+        "mariadb": {
+            "service": "mariadb",
+            "process": "mariadbd",
+            "port": 3306,
+            "config": "/etc/mysql",
+            "data": "/var/lib/mysql",
+            "version_cmd": "mariadb --version",
+        },
+        "nginx": {
+            "service": "nginx",
+            "process": "nginx",
+            "port": 80,
+            "config": "/etc/nginx",
+            "data": "/var/www",
+            "version_cmd": "nginx -v",
+        },
+        "apache": {
+            "service": "apache2",
+            "process": "apache2",
+            "port": 80,
+            "config": "/etc/apache2",
+            "data": "/var/www",
+            "version_cmd": "apache2 -v",
+        },
+        "redis": {
+            "service": "redis-server",
+            "process": "redis-server",
+            "port": 6379,
+            "config": "/etc/redis",
+            "data": "/var/lib/redis",
+            "version_cmd": "redis-server --version",
+        },
+        "mongodb": {
+            "service": "mongod",
+            "process": "mongod",
+            "port": 27017,
+            "config": "/etc/mongod.conf",
+            "data": "/var/lib/mongodb",
+            "version_cmd": "mongod --version",
+        },
+        "home-assistant": {
+            "service": "home-assistant",
+            "process": "hass",
+            "port": 8123,
+            "config": "/home/homeassistant/.homeassistant",
+            "data": "/home/homeassistant/.homeassistant",
+        },
+        "plex": {
+            "service": "plexmediaserver",
+            "process": "Plex Media Server",
+            "port": 32400,
+            "config": "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server",
+            "data": "/var/lib/plexmediaserver",
+        },
+        "portainer": {
+            "service": "portainer",
+            "process": "portainer",
+            "port": 9000,
+            "data": "/var/lib/portainer",
+        },
+        "nextcloud": {
+            "service": "apache2",  # Usually runs under Apache/Nginx
+            "port": 80,
+            "check_file": "/var/www/nextcloud/occ",
+            "config": "/var/www/nextcloud/config",
+            "data": "/var/www/nextcloud/data",
+        },
+        "wireguard": {
+            "service": "wg-quick@wg0",
+            "check_file": "/etc/wireguard/wg0.conf",
+            "config": "/etc/wireguard",
+        },
+        "adguard": {
+            "service": "AdGuardHome",
+            "process": "AdGuardHome",
+            "port": 3000,
+            "config": "/opt/AdGuardHome",
+            "data": "/opt/AdGuardHome/data",
+        },
+        "prometheus": {
+            "service": "prometheus",
+            "process": "prometheus",
+            "port": 9090,
+            "config": "/etc/prometheus",
+            "data": "/var/lib/prometheus",
+        },
+        "grafana": {
+            "service": "grafana-server",
+            "process": "grafana-server",
+            "port": 3000,
+            "config": "/etc/grafana",
+            "data": "/var/lib/grafana",
+        },
+    }
 
     def __init__(self):
         self.detected_apps: List[DetectedApp] = []
@@ -251,7 +203,7 @@ class ApplicationScanner:
         ports = self._get_listening_ports()
 
         # Check each detection rule
-        for app_type, rules in self.detection_rules.items():
+        for app_type, rules in self.DETECTION_RULES.items():
             detected = self._check_application(
                 app_type, rules, services, processes, ports
             )

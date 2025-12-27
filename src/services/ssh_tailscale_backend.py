@@ -191,66 +191,68 @@ class SSHTailscaleBackend(RemoteExecutionBackend):
         try:
             # For Tailscale connections, verify the host key matches Tailscale identity
             # This is critical security for Tailscale gateway-to-target connections
-            
+
             # Method 1: Use Tailscale status to verify host is legitimate
             tailscale_cmd = f"tailscale status {target_host}"
             try:
                 result = subprocess.run(
-                    tailscale_cmd.split(), 
-                    capture_output=True, 
-                    text=True, 
-                    timeout=10
+                    tailscale_cmd.split(), capture_output=True, text=True, timeout=10
                 )
-                
+
                 # If tailscale status fails, log and reject
                 if result.returncode != 0:
-                    logger.error(f"Tailscale host verification failed for {target_host}: {result.stderr}")
+                    logger.error(
+                        f"Tailscale host verification failed for {target_host}: {result.stderr}"
+                    )
                     return False
-                    
+
                 # Parse tailscale status to ensure host is legitimate
-                status_lines = result.stdout.strip().split('\n')
+                status_lines = result.stdout.strip().split("\n")
                 for line in status_lines:
-                    if target_host in line and 'online' in line.lower():
+                    if target_host in line and "online" in line.lower():
                         logger.info(f"Tailscale host {target_host} verified online")
                         return True
-                        
+
                 logger.warning(f"Host {target_host} not found in tailscale status")
                 return False
-                
+
             except subprocess.TimeoutExpired:
                 logger.error(f"Tailscale status command timed out for {target_host}")
                 return False
             except Exception as e:
                 logger.error(f"Error checking tailscale status for {target_host}: {e}")
                 return False
-                
+
         except Exception as e:
             logger.error(f"Tailscale host identity verification failed: {e}")
             return False
-    
+
     def _create_custom_host_key_policy(self) -> paramiko.MissingHostKeyPolicy:
         """Create custom host key policy with Tailscale security."""
+
         class TailscaleHostKeyPolicy(paramiko.MissingHostKeyPolicy):
             """Custom host key policy that validates Tailscale hosts securely."""
-            
+
             def __init__(self, backend_instance):
                 self.backend = backend_instance
                 self.verified_hosts = set()
-                
+
             def missing_host_key(self, client, hostname, key):
                 # For Tailscale hosts, perform additional verification
                 if self.backend.use_tailscale:
- if not self.backend._verify_tailscale_host_identity(hostname):
+                    if not self.backend._verify_tailscale_host_identity(hostname):
                         # SECURITY: Reject connection if Tailscale verification fails
                         raise paramiko.SSHException(
                             f"Cannot verify Tailscale host identity for {hostname} "
                             "- potential MITM attack!"
                         )
-                
+
                 # If verification passes, add to known hosts temporarily
-                logger.warning(f"Adding new host key for {hostname} (Tailscale verified)")
+                logger.warning(
+                    f"Adding new host key for {hostname} (Tailscale verified)"
+                )
                 client.get_transport().get_server_host_key()
-                
+
         return TailscaleHostKeyPolicy(self)
 
     async def disconnect(self):
