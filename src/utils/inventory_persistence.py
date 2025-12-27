@@ -13,12 +13,12 @@ from __future__ import annotations
 
 import json
 import os
-import sqlite3
+import aiosqlite
 import gzip
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from datetime import datetime
 from datetime import timezone, timezone, timezone, timedelta
-from typing import Dict, List, Optional, Any, Iterator
+from typing import Dict, List, Optional, Any, AsyncIterator
 
 from src.models.enhanced_fleet_inventory import (
     EnhancedFleetInventory,
@@ -61,14 +61,32 @@ class EnhancedInventoryPersistence:
         self.archive_dir = os.path.join(os.path.dirname(db_path), "archive")
         os.makedirs(self.archive_dir, exist_ok=True)
 
-        if self.use_sqlite:
-            self._init_enhanced_schema()
+        # Note: Schema initialization must be done explicitly via async_init()
+        # This is because __init__ cannot be async
+        self._schema_initialized = False
+        self._init_lock = None  # Will be set to asyncio.Lock in _get_lock
 
-    def _init_enhanced_schema(self) -> None:
+    def _get_lock(self) -> Any:
+        """Lazy load asyncio lock."""
+        if self._init_lock is None:
+            import asyncio
+
+            self._init_lock = asyncio.Lock()
+        return self._init_lock
+
+    async def _ensure_initialized(self) -> None:
+        """Ensure schema is initialized."""
+        if self.use_sqlite and not self._schema_initialized:
+            async with self._get_lock():
+                if not self._schema_initialized:
+                    await self._init_enhanced_schema()
+                    self._schema_initialized = True
+
+    async def _init_enhanced_schema(self) -> None:
         """Initialize enhanced SQLite database schema."""
-        with self._get_connection() as conn:
+        async with self._get_connection() as conn:
             # Enhanced targets table
-            conn.execute("""
+            await conn.execute("""
                 CREATE TABLE IF NOT EXISTS enhanced_targets (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -105,7 +123,7 @@ class EnhancedInventoryPersistence:
             """)
 
             # Enhanced services table
-            conn.execute("""
+            await conn.execute("""
                 CREATE TABLE IF NOT EXISTS enhanced_services (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -146,7 +164,7 @@ class EnhancedInventoryPersistence:
             """)
 
             # Enhanced stacks table
-            conn.execute("""
+            await conn.execute("""
                 CREATE TABLE IF NOT EXISTS enhanced_stacks (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -177,7 +195,7 @@ class EnhancedInventoryPersistence:
             """)
 
             # Enhanced snapshots table
-            conn.execute("""
+            await conn.execute("""
                 CREATE TABLE IF NOT EXISTS enhanced_snapshots (
                     id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -201,85 +219,87 @@ class EnhancedInventoryPersistence:
             """)
 
             # Create indexes for efficient querying
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_targets_host_id ON enhanced_targets(host_id)"
             )
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_targets_role ON enhanced_targets(role)"
             )
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_targets_status ON enhanced_targets(status)"
             )
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_targets_last_seen ON enhanced_targets(last_seen)"
             )
 
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_services_target_id ON enhanced_services(target_id)"
             )
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_services_stack_name ON enhanced_services(stack_name)"
             )
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_services_status ON enhanced_services(status)"
             )
 
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_stacks_status ON enhanced_stacks(stack_status)"
             )
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_stacks_last_deployed ON enhanced_stacks(last_deployed)"
             )
 
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_snapshots_type ON enhanced_snapshots(snapshot_type)"
             )
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_snapshots_created_at ON enhanced_snapshots(created_at)"
             )
-            conn.execute(
+            await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_enhanced_snapshots_expires_at ON enhanced_snapshots(expires_at)"
             )
 
-    @contextmanager
-    def _get_connection(self) -> Iterator[sqlite3.Connection]:
-        """Get SQLite connection with context management."""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
+    @asynccontextmanager
+    async def _get_connection(self) -> AsyncIterator[aiosqlite.Connection]:
+        """Get SQLite connection with async context management."""
+        conn = await aiosqlite.connect(self.db_path)
+        conn.row_factory = aiosqlite.Row
         try:
             yield conn
-            conn.commit()
+            await conn.commit()
         except Exception:
-            conn.rollback()
+            await conn.rollback()
             raise
         finally:
-            conn.close()
+            await conn.close()
 
-    def save_inventory(self, inventory: EnhancedFleetInventory) -> None:
+    async def save_inventory(self, inventory: EnhancedFleetInventory) -> None:
         """Save enhanced fleet inventory."""
+        await self._ensure_initialized()
         if self.use_sqlite:
-            self._save_inventory_sqlite(inventory)
+            await self._save_inventory_sqlite(inventory)
         else:
             self._save_inventory_json(inventory)
 
-    def load_inventory(self) -> EnhancedFleetInventory:
+    async def load_inventory(self) -> EnhancedFleetInventory:
         """Load enhanced fleet inventory."""
+        await self._ensure_initialized()
         if self.use_sqlite:
-            return self._load_inventory_sqlite()
+            return await self._load_inventory_sqlite()
         else:
             return self._load_inventory_json()
 
-    def _save_inventory_sqlite(self, inventory: EnhancedFleetInventory) -> None:
+    async def _save_inventory_sqlite(self, inventory: EnhancedFleetInventory) -> None:
         """Save inventory to SQLite database."""
-        with self._get_connection() as conn:
+        async with self._get_connection() as conn:
             # Clear existing data
-            conn.execute("DELETE FROM enhanced_services")
-            conn.execute("DELETE FROM enhanced_targets")
-            conn.execute("DELETE FROM enhanced_stacks")
+            await conn.execute("DELETE FROM enhanced_services")
+            await conn.execute("DELETE FROM enhanced_targets")
+            await conn.execute("DELETE FROM enhanced_stacks")
 
             # Save targets
             for target in inventory.targets.values():
-                conn.execute(
+                await conn.execute(
                     """
                     INSERT OR REPLACE INTO enhanced_targets (
                         id, name, node_type, host_id, vmid, status, cpu_cores,
@@ -327,7 +347,61 @@ class EnhancedInventoryPersistence:
 
             # Save services
             for service in inventory.services.values():
-                conn.execute(
+                await conn.execute(
+                    """
+                    INSERT OR REPLACE INTO enhanced_services (
+                        id, name, target_id, service_type, status, version, port,
+                        protocol, config_path, data_path, health_endpoint,
+                        stack_name, depends_on, environment, cpu_limit,
+                        memory_limit, restart_policy, health_check_enabled,
+                        health_check_interval, health_check_timeout,
+                        health_check_retries, last_health_check, health_status,
+                        tls_enabled, tls_port, exposed_ports, security_context,
+                        created_at, last_checked, last_updated, is_monitored,
+                        is_managed, tags, custom_attributes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        service.id,
+                        service.name,
+                        service.target_id,
+                        service.service_type,
+                        service.status.value,
+                        service.version,
+                        service.port,
+                        service.protocol,
+                        service.config_path,
+                        service.data_path,
+                        service.health_endpoint,
+                        service.stack_name,
+                        json.dumps(service.depends_on),
+                        json.dumps(service.environment),
+                        service.cpu_limit,
+                        service.memory_limit,
+                        service.restart_policy,
+                        service.health_check_enabled,
+                        service.health_check_interval,
+                        service.health_check_timeout,
+                        service.health_check_retries,
+                        service.last_health_check,
+                        service.health_status,
+                        service.tls_enabled,
+                        service.tls_port,
+                        json.dumps(service.exposed_ports),
+                        json.dumps(service.security_context),
+                        service.created_at,
+                        service.last_checked,
+                        service.last_updated,
+                        service.is_monitored,
+                        service.is_managed,
+                        json.dumps(service.tags),
+                        json.dumps(service.custom_attributes),
+                    ),
+                )
+
+            # Save stacks
+            for stack in inventory.stacks.values():
+                await conn.execute(
                     """
                     INSERT OR REPLACE INTO enhanced_services (
                         id, name, target_id, service_type, status, version, port,
@@ -420,13 +494,13 @@ class EnhancedInventoryPersistence:
                     ),
                 )
 
-    def _load_inventory_sqlite(self) -> EnhancedFleetInventory:
+    async def _load_inventory_sqlite(self) -> EnhancedFleetInventory:
         """Load inventory from SQLite database."""
         inventory = EnhancedFleetInventory()
 
-        with self._get_connection() as conn:
+        async with self._get_connection() as conn:
             # Load targets
-            cursor = conn.execute("SELECT * FROM enhanced_targets")
+            cursor = await conn.execute("SELECT * FROM enhanced_targets")
             for row in cursor:
                 from src.models.fleet_inventory import (
                     NodeType,
@@ -481,7 +555,7 @@ class EnhancedInventoryPersistence:
                 inventory.add_target(target)
 
             # Load services
-            cursor = conn.execute("SELECT * FROM enhanced_services")
+            cursor = await conn.execute("SELECT * FROM enhanced_services")
             for row in cursor:
                 from src.models.fleet_inventory import ServiceStatus
 
@@ -525,7 +599,7 @@ class EnhancedInventoryPersistence:
                 inventory.add_service(service)
 
             # Load stacks
-            cursor = conn.execute("SELECT * FROM enhanced_stacks")
+            cursor = await conn.execute("SELECT * FROM enhanced_stacks")
             for row in cursor:
                 stack = EnhancedStack(
                     id=row["id"],
@@ -578,31 +652,31 @@ class EnhancedInventoryPersistence:
         return EnhancedFleetInventory.from_dict(data)
 
     # Snapshot management methods
-    def save_snapshot(self, snapshot: InventorySnapshot) -> None:
+    async def save_snapshot(self, snapshot: InventorySnapshot) -> None:
         """Save a snapshot."""
         if self.use_sqlite:
-            self._save_snapshot_sqlite(snapshot)
+            await self._save_snapshot_sqlite(snapshot)
         else:
             self._save_snapshot_json(snapshot)
 
-    def load_snapshot(self, snapshot_id: str) -> Optional[InventorySnapshot]:
+    async def load_snapshot(self, snapshot_id: str) -> Optional[InventorySnapshot]:
         """Load a snapshot by ID."""
         if self.use_sqlite:
-            return self._load_snapshot_sqlite(snapshot_id)
+            return await self._load_snapshot_sqlite(snapshot_id)
         else:
             return self._load_snapshot_json(snapshot_id)
 
-    def delete_snapshot(self, snapshot_id: str) -> bool:
+    async def delete_snapshot(self, snapshot_id: str) -> bool:
         """Delete a snapshot."""
         if self.use_sqlite:
-            return self._delete_snapshot_sqlite(snapshot_id)
+            return await self._delete_snapshot_sqlite(snapshot_id)
         else:
             return self._delete_snapshot_json(snapshot_id)
 
-    def _save_snapshot_sqlite(self, snapshot: InventorySnapshot) -> None:
+    async def _save_snapshot_sqlite(self, snapshot: InventorySnapshot) -> None:
         """Save snapshot to SQLite."""
-        with self._get_connection() as conn:
-            conn.execute(
+        async with self._get_connection() as conn:
+            await conn.execute(
                 """
                 INSERT OR REPLACE INTO enhanced_snapshots (
                     id, name, description, snapshot_type, created_at, created_by,
@@ -632,13 +706,15 @@ class EnhancedInventoryPersistence:
                 ),
             )
 
-    def _load_snapshot_sqlite(self, snapshot_id: str) -> Optional[InventorySnapshot]:
+    async def _load_snapshot_sqlite(
+        self, snapshot_id: str
+    ) -> Optional[InventorySnapshot]:
         """Load snapshot from SQLite."""
-        with self._get_connection() as conn:
-            cursor = conn.execute(
+        async with self._get_connection() as conn:
+            cursor = await conn.execute(
                 "SELECT * FROM enhanced_snapshots WHERE id = ?", (snapshot_id,)
             )
-            row = cursor.fetchone()
+            row = await cursor.fetchone()
 
             if row:
                 return InventorySnapshot(
@@ -663,10 +739,10 @@ class EnhancedInventoryPersistence:
 
         return None
 
-    def _delete_snapshot_sqlite(self, snapshot_id: str) -> bool:
+    async def _delete_snapshot_sqlite(self, snapshot_id: str) -> bool:
         """Delete snapshot from SQLite."""
-        with self._get_connection() as conn:
-            cursor = conn.execute(
+        async with self._get_connection() as conn:
+            cursor = await conn.execute(
                 "DELETE FROM enhanced_snapshots WHERE id = ?", (snapshot_id,)
             )
             return cursor.rowcount > 0
@@ -695,91 +771,93 @@ class EnhancedInventoryPersistence:
         return False
 
     # Advanced query methods
-    def get_targets_by_role(self, role: NodeRole) -> List[EnhancedTarget]:
+    async def get_targets_by_role(self, role: NodeRole) -> List[EnhancedTarget]:
         """Get targets by role."""
         if self.use_sqlite:
-            with self._get_connection() as conn:
-                cursor = conn.execute(
+            async with self._get_connection() as conn:
+                cursor = await conn.execute(
                     "SELECT * FROM enhanced_targets WHERE role = ?", (role.value,)
                 )
                 return [self._row_to_target(row) for row in cursor]
         else:
-            inventory = self.load_inventory()
+            inventory = await self.load_inventory()
             return [
                 target for target in inventory.targets.values() if target.role == role
             ]
 
-    def get_targets_by_status(self, status: str) -> List[EnhancedTarget]:
+    async def get_targets_by_status(self, status: str) -> List[EnhancedTarget]:
         """Get targets by status."""
         if self.use_sqlite:
-            with self._get_connection() as conn:
-                cursor = conn.execute(
+            async with self._get_connection() as conn:
+                cursor = await conn.execute(
                     "SELECT * FROM enhanced_targets WHERE status = ?", (status,)
                 )
                 return [self._row_to_target(row) for row in cursor]
         else:
-            inventory = self.load_inventory()
+            inventory = await self.load_inventory()
             return [
                 target
                 for target in inventory.targets.values()
                 if target.status == status
             ]
 
-    def get_unhealthy_targets(self, threshold: float = 0.7) -> List[EnhancedTarget]:
+    async def get_unhealthy_targets(
+        self, threshold: float = 0.7
+    ) -> List[EnhancedTarget]:
         """Get targets with health score below threshold."""
         if self.use_sqlite:
-            with self._get_connection() as conn:
-                cursor = conn.execute(
+            async with self._get_connection() as conn:
+                cursor = await conn.execute(
                     "SELECT * FROM enhanced_targets WHERE health_score < ?",
                     (threshold,),
                 )
                 return [self._row_to_target(row) for row in cursor]
         else:
-            inventory = self.load_inventory()
+            inventory = await self.load_inventory()
             return [
                 target
                 for target in inventory.targets.values()
                 if target.health_score < threshold
             ]
 
-    def get_stale_targets(self, hours: int = 24) -> List[EnhancedTarget]:
+    async def get_stale_targets(self, hours: int = 24) -> List[EnhancedTarget]:
         """Get targets not seen within specified hours."""
 
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
 
         if self.use_sqlite:
-            with self._get_connection() as conn:
-                cursor = conn.execute(
+            async with self._get_connection() as conn:
+                cursor = await conn.execute(
                     "SELECT * FROM enhanced_targets WHERE last_seen < ?",
                     (cutoff.isoformat(),),
                 )
                 return [self._row_to_target(row) for row in cursor]
         else:
-            inventory = self.load_inventory()
+            inventory = await self.load_inventory()
             return inventory.get_stale_targets(hours)
 
-    def get_services_by_stack(self, stack_name: str) -> List[EnhancedService]:
+    async def get_services_by_stack(self, stack_name: str) -> List[EnhancedService]:
         """Get services by stack name."""
         if self.use_sqlite:
-            with self._get_connection() as conn:
-                cursor = conn.execute(
+            async with self._get_connection() as conn:
+                cursor = await conn.execute(
                     "SELECT * FROM enhanced_services WHERE stack_name = ?",
                     (stack_name,),
                 )
                 return [self._row_to_service(row) for row in cursor]
         else:
-            inventory = self.load_inventory()
+            inventory = await self.load_inventory()
             return [
                 service
                 for service in inventory.services.values()
                 if service.stack_name == stack_name
             ]
 
-    def search_targets(self, query: str) -> List[EnhancedTarget]:
+    async def search_targets(self, query: str) -> List[EnhancedTarget]:
         """Search targets by name or tags."""
         if self.use_sqlite:
-            with self._get_connection() as conn:
-                cursor = conn.execute(
+            async with self._get_connection() as conn:
+                cursor = await conn.execute(
                     """
                     SELECT * FROM enhanced_targets
                     WHERE name LIKE ? OR
@@ -793,7 +871,7 @@ class EnhancedInventoryPersistence:
                 )
                 return [self._row_to_target(row) for row in cursor]
         else:
-            inventory = self.load_inventory()
+            inventory = await self.load_inventory()
             results = []
             for target in inventory.targets.values():
                 if (
@@ -902,21 +980,21 @@ class EnhancedInventoryPersistence:
         )
 
     # Archive and maintenance methods
-    def archive_old_snapshots(self, days: int = 30) -> int:
+    async def archive_old_snapshots(self, days: int = 30) -> int:
         """Archive snapshots older than specified days."""
 
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         archived_count = 0
 
-        with self._get_connection() as conn:
-            cursor = conn.execute(
+        async with self._get_connection() as conn:
+            cursor = await conn.execute(
                 "SELECT id FROM enhanced_snapshots WHERE created_at < ? AND is_archived = FALSE",
                 (cutoff.isoformat(),),
             )
 
             for row in cursor:
                 snapshot_id = row["id"]
-                snapshot = self.load_snapshot(snapshot_id)
+                snapshot = await self.load_snapshot(snapshot_id)
                 if snapshot:
                     # Archive to compressed file
                     archive_file = os.path.join(
@@ -926,7 +1004,7 @@ class EnhancedInventoryPersistence:
                         json.dump(snapshot.to_dict(), f, indent=2)
 
                     # Mark as archived in database
-                    conn.execute(
+                    await conn.execute(
                         "UPDATE enhanced_snapshots SET is_archived = TRUE WHERE id = ?",
                         (snapshot_id,),
                     )
@@ -934,26 +1012,26 @@ class EnhancedInventoryPersistence:
 
         return archived_count
 
-    def cleanup_expired_snapshots(self) -> int:
+    async def cleanup_expired_snapshots(self) -> int:
         """Remove expired snapshots."""
 
         now = datetime.now(timezone.utc)
         cleaned_count = 0
 
-        with self._get_connection() as conn:
-            cursor = conn.execute(
+        async with self._get_connection() as conn:
+            cursor = await conn.execute(
                 "SELECT id FROM enhanced_snapshots WHERE expires_at IS NOT NULL AND expires_at < ?",
                 (now.isoformat(),),
             )
 
             for row in cursor:
                 snapshot_id = row["id"]
-                if self.delete_snapshot(snapshot_id):
+                if await self.delete_snapshot(snapshot_id):
                     cleaned_count += 1
 
         return cleaned_count
 
-    def get_storage_stats(self) -> Dict[str, Any]:
+    async def get_storage_stats(self) -> Dict[str, Any]:
         """Get storage statistics."""
         stats = {
             "database_size_bytes": 0,
@@ -970,27 +1048,33 @@ class EnhancedInventoryPersistence:
 
         # Snapshot counts
         if self.use_sqlite:
-            with self._get_connection() as conn:
+            async with self._get_connection() as conn:
                 # Total snapshots
-                cursor = conn.execute(
+                cursor = await conn.execute(
                     "SELECT COUNT(*) as count FROM enhanced_snapshots"
                 )
-                stats["snapshot_count"] = cursor.fetchone()["count"]
+                stats["snapshot_count"] = (await cursor.fetchone())["count"]
 
                 # Archived snapshots
-                cursor = conn.execute(
+                cursor = await conn.execute(
                     "SELECT COUNT(*) as count FROM enhanced_snapshots WHERE is_archived = TRUE"
                 )
-                stats["archived_snapshot_count"] = cursor.fetchone()["count"]
+                stats["archived_snapshot_count"] = (await cursor.fetchone())["count"]
 
                 # Entity counts
-                cursor = conn.execute("SELECT COUNT(*) as count FROM enhanced_targets")
-                stats["total_targets"] = cursor.fetchone()["count"]
+                cursor = await conn.execute(
+                    "SELECT COUNT(*) as count FROM enhanced_targets"
+                )
+                stats["total_targets"] = (await cursor.fetchone())["count"]
 
-                cursor = conn.execute("SELECT COUNT(*) as count FROM enhanced_services")
-                stats["total_services"] = cursor.fetchone()["count"]
+                cursor = await conn.execute(
+                    "SELECT COUNT(*) as count FROM enhanced_services"
+                )
+                stats["total_services"] = (await cursor.fetchone())["count"]
 
-                cursor = conn.execute("SELECT COUNT(*) as count FROM enhanced_stacks")
-                stats["total_stacks"] = cursor.fetchone()["count"]
+                cursor = await conn.execute(
+                    "SELECT COUNT(*) as count FROM enhanced_stacks"
+                )
+                stats["total_stacks"] = (await cursor.fetchone())["count"]
 
         return stats

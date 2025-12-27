@@ -8,7 +8,8 @@ from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timedelta
 from pydantic import ValidationError
 
-from src.models.target_registry import Target, ConnectionMethod, Runtime
+from src.models.target_registry import TargetMetadata, ExecutorType, TargetConnection
+from src.models.fleet_inventory import Runtime
 from src.models.execution import ExecutionResult, CommandContext, ExecutionStatus
 from src.services.discovery_tools import DiscoveryTools
 from src.services.docker_manager import DockerManager

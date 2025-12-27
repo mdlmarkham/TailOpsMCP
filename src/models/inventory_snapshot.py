@@ -49,7 +49,9 @@ class EntityChange(BaseModel):
     field_changes: Dict[str, Any] = Field(default_factory=dict)
     old_value: Optional[Any] = None
     new_value: Optional[Any] = None
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z"
+    )
 
 
 class SnapshotDiff(BaseModel):
@@ -57,7 +59,9 @@ class SnapshotDiff(BaseModel):
 
     snapshot_a_id: str
     snapshot_b_id: str
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z"
+    )
 
     # Change summaries
     target_changes: List[EntityChange] = Field(default_factory=list)
@@ -145,7 +149,9 @@ class InventorySnapshot:
     snapshot_type: SnapshotType = SnapshotType.MANUAL
 
     # Snapshot metadata
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z")
+    created_at: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat() + "Z"
+    )
     created_by: Optional[str] = None
     tags: List[str] = field(default_factory=list)
 
@@ -250,7 +256,7 @@ class SnapshotManager:
         self.persistence_manager = persistence_manager
         self.snapshots: Dict[str, InventorySnapshot] = {}
 
-    def create_snapshot(
+    async def create_snapshot(
         self,
         inventory: EnhancedFleetInventory,
         name: str,
@@ -290,7 +296,7 @@ class SnapshotManager:
 
         # Persist if manager available
         if self.persistence_manager:
-            self.persistence_manager.save_snapshot(snapshot)
+            await self.persistence_manager.save_snapshot(snapshot)
 
         return snapshot
 
@@ -545,7 +551,7 @@ class SnapshotManager:
 
         return snapshots
 
-    def delete_snapshot(self, snapshot_id: str) -> bool:
+    async def delete_snapshot(self, snapshot_id: str) -> bool:
         """Delete a snapshot.
 
         Args:
@@ -559,19 +565,18 @@ class SnapshotManager:
 
             # Remove from persistence if available
             if self.persistence_manager:
-                self.persistence_manager.delete_snapshot(snapshot_id)
+                await self.persistence_manager.delete_snapshot(snapshot_id)
 
             return True
         return False
 
-    def cleanup_expired_snapshots(self) -> int:
+    async def cleanup_expired_snapshots(self) -> int:
         """Remove expired snapshots.
 
         Returns:
             Number of snapshots cleaned up
         """
-        from datetime import datetime
-from datetime import timezone, timezone
+        from datetime import datetime, timezone
 
         now = datetime.now(timezone.utc)
         expired_ids = []
@@ -586,6 +591,6 @@ from datetime import timezone, timezone
 
         # Remove expired snapshots
         for snapshot_id in expired_ids:
-            self.delete_snapshot(snapshot_id)
+            await self.delete_snapshot(snapshot_id)
 
         return len(expired_ids)

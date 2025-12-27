@@ -224,6 +224,62 @@ class PolicyGate:
                 category=ErrorCategory.FORBIDDEN,
             )
 
+    def _get_parameter_type_mapping(self, operation: str) -> Dict[str, str]:
+        """Map parameter names to validation types for an operation.
+
+        This method returns a mapping of parameter names to ParameterType enum values
+        for use with the input validator.
+
+        Args:
+            operation: Operation name (currently unused but kept for future use)
+
+        Returns:
+            Dictionary mapping parameter names to ParameterType values
+        """
+        from src.services.input_validator import ParameterType
+
+        # Common parameter type mappings
+        common_mappings = {
+            "service_name": ParameterType.SERVICE_NAME,
+            "container_name": ParameterType.CONTAINER_NAME,
+            "stack_name": ParameterType.STACK_NAME,
+            "file_path": ParameterType.FILE_PATH,
+            "port_number": ParameterType.PORT_NUMBER,
+            "timeout": ParameterType.TIMEOUT,
+            "output_limit": ParameterType.OUTPUT_LIMIT,
+            "hostname": ParameterType.HOSTNAME,
+        }
+
+        return common_mappings
+
+    def _get_parameter_type_mapping(self, operation: str) -> Dict[str, str]:
+        """Map parameter names to validation types for an operation.
+
+        This method returns a mapping of parameter names to ParameterType enum values
+        for use with the input validator.
+
+        Args:
+            operation: Operation name (currently unused but kept for future use)
+
+        Returns:
+            Dictionary mapping parameter names to ParameterType values
+        """
+        from src.services.input_validator import ParameterType
+
+        # Common parameter type mappings
+        common_mappings = {
+            "service_name": ParameterType.SERVICE_NAME,
+            "container_name": ParameterType.CONTAINER_NAME,
+            "stack_name": ParameterType.STACK_NAME,
+            "file_path": ParameterType.FILE_PATH,
+            "port_number": ParameterType.PORT_NUMBER,
+            "timeout": ParameterType.TIMEOUT,
+            "output_limit": ParameterType.OUTPUT_LIMIT,
+            "hostname": ParameterType.HOSTNAME,
+        }
+
+        return common_mappings
+
     async def validate_parameters(
         self,
         operation: str,
@@ -276,30 +332,34 @@ class PolicyGate:
 
         if not isinstance(value, str):
             return errors
-    
+
     def _validate_parameter_structure(self, value: Any, param_name: str) -> List[str]:
         """Validate parameter structure and content for security."""
         errors = []
-        
+
         if isinstance(value, list):
             # Validate list items recursively
             for i, item in enumerate(value):
                 item_errors = self._validate_input_security(item, f"{param_name}[{i}]")
-                item_errors.extend(self._validate_parameter_structure(item, f"{param_name}[{i}]"))
+                item_errors.extend(
+                    self._validate_parameter_structure(item, f"{param_name}[{i}]")
+                )
                 errors.extend(item_errors)
-                
+
         elif isinstance(value, dict):
             # Validate dict values recursively
             for key, val in value.items():
                 key_errors = self._validate_input_security(key, f"{param_name}.{key}")
                 val_errors = self._validate_input_security(val, f"{param_name}.{key}")
-                val_errors.extend(self._validate_parameter_structure(val, f"{param_name}.{key}"))
+                val_errors.extend(
+                    self._validate_parameter_structure(val, f"{param_name}.{key}")
+                )
                 errors.extend(key_errors)
                 errors.extend(val_errors)
-                
+
         else:
             errors.extend(self._validate_input_security(value, param_name))
-            
+
         return errors
 
     def _safe_regex_compile(self, pattern: str) -> Optional[re.Pattern]:
@@ -308,12 +368,12 @@ class PolicyGate:
         if len(pattern) > 1000:  # Prevent excessively long patterns
             logger.warning(f"Regex pattern too long: {len(pattern)} characters")
             return None
-        
+
         # Check for nested quantifiers that can cause ReDoS
-        if re.search(r'\*.*\*|\+.*\+|\{.*\}.*[\*\+\{]', pattern):
+        if re.search(r"\*.*\*|\+.*\+|\{.*\}.*[\*\+\{]", pattern):
             logger.warning(f"Potentially dangerous regex pattern: {pattern}")
             return None
-        
+
         try:
             compiled_pattern = re.compile(pattern)
             return compiled_pattern
@@ -324,24 +384,24 @@ class PolicyGate:
     def _validate_input_security(self, value: Any, param_name: str) -> List[str]:
         """Comprehensive input validation with extensive security checks."""
         errors = []
-        
+
         if not isinstance(value, str):
             return errors
-            
+
         # Enhanced injection detection patterns
         dangerous_patterns = [
-            (r';.*\b', 'Command injection detected'), 
-            (r'\$\(', 'Command substitution detected'),
-            (r'(?:\.\.[\\/]|[\\/]\.\.[\\/]|[\\/]\.\.)', 'Path traversal detected'),
-            (r'<script.*?>.*?</script>', 'XSS attempt detected'),
-            (r'&&', 'Command chaining detected'),
-            (r'\|\|', 'Command chaining detected'),
-            (r'`[^`]*`', 'Backtick execution detected'),
-            (r'\$\{[^}]*\}', 'Parameter expansion detected'),
-            (r'\x00', 'Null byte injection detected'),
-            (r'[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]', 'Control character detected'),
+            (r";.*\b", "Command injection detected"),
+            (r"\$\(", "Command substitution detected"),
+            (r"(?:\.\.[\\/]|[\\/]\.\.[\\/]|[\\/]\.\.)", "Path traversal detected"),
+            (r"<script.*?>.*?</script>", "XSS attempt detected"),
+            (r"&&", "Command chaining detected"),
+            (r"\|\|", "Command chaining detected"),
+            (r"`[^`]*`", "Backtick execution detected"),
+            (r"\$\{[^}]*\}", "Parameter expansion detected"),
+            (r"\x00", "Null byte injection detected"),
+            (r"[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]", "Control character detected"),
         ]
-        
+
         for pattern, description in dangerous_patterns:
             if re.search(pattern, value, re.IGNORECASE | re.DOTALL):
                 errors.append(f"{description} in {param_name}")
@@ -352,26 +412,30 @@ class PolicyGate:
     def _validate_parameter_structure(self, value: Any, param_name: str) -> List[str]:
         """Validate parameter structure and content for security."""
         errors = []
-        
+
         if isinstance(value, list):
             # Validate list items recursively
             for i, item in enumerate(value):
                 item_errors = self._validate_input_security(item, f"{param_name}[{i}]")
-                item_errors.extend(self._validate_parameter_structure(item, f"{param_name}[{i}]"))
+                item_errors.extend(
+                    self._validate_parameter_structure(item, f"{param_name}[{i}]")
+                )
                 errors.extend(item_errors)
-                
+
         elif isinstance(value, dict):
             # Validate dict values recursively
             for key, val in value.items():
                 key_errors = self._validate_input_security(key, f"{param_name}.{key}")
                 val_errors = self._validate_input_security(val, f"{param_name}.{key}")
-                val_errors.extend(self._validate_parameter_structure(val, f"{param_name}.{key}"))
+                val_errors.extend(
+                    self._validate_parameter_structure(val, f"{param_name}.{key}")
+                )
                 errors.extend(key_errors)
                 errors.extend(val_errors)
-                
+
         else:
             errors.extend(self._validate_input_security(value, param_name))
-            
+
         return errors
 
     def _basic_parameter_validation(

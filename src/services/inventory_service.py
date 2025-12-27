@@ -65,8 +65,9 @@ class InventoryService:
         # Secure logging
         self.logger = SecureLogger("inventory_service")
 
-        # Current inventory
-        self.current_inventory = self.persistence.load_inventory()
+        # Current inventory (will be loaded asynchronously)
+        self.current_inventory = None
+        self._initialized = False
 
         # Health monitoring
         self.health_check_interval = self.config.get(
@@ -85,6 +86,17 @@ class InventoryService:
             "queries": 0,
             "health_checks": 0,
         }
+
+    async def async_init(self) -> None:
+        """Async initialization - must be called after __init__."""
+        if not self._initialized:
+            self.current_inventory = await self.persistence.load_inventory()
+            self._initialized = True
+
+    async def _ensure_initialized(self) -> None:
+        """Ensure service is initialized."""
+        if not self._initialized:
+            await self.async_init()
 
     async def run_full_discovery(self) -> EnhancedFleetInventory:
         """Run complete discovery cycle and update inventory.
@@ -110,7 +122,7 @@ class InventoryService:
             await self._update_health_metrics(enhanced_inventory)
 
             # Save updated inventory
-            self.persistence.save_inventory(enhanced_inventory)
+            await self.persistence.save_inventory(enhanced_inventory)
             self.current_inventory = enhanced_inventory
 
             # Auto-create snapshot if enabled
@@ -230,7 +242,9 @@ class InventoryService:
                 else:
                     target.resource_usage.status = ResourceStatus.HEALTHY
 
-                target.resource_usage.measured_at = datetime.now(timezone.utc).isoformat() + "Z"
+                target.resource_usage.measured_at = (
+                    datetime.now(timezone.utc).isoformat() + "Z"
+                )
 
         except Exception as e:
             self.logger.warning(f"Resource usage update failed for {target.name}: {e}")
@@ -460,7 +474,9 @@ class InventoryService:
         # Deduct for stale data
         if target.last_seen:
             last_seen = datetime.fromisoformat(target.last_seen.replace("Z", "+00:00"))
-            hours_since_seen = (datetime.now(timezone.utc) - last_seen).total_seconds() / 3600
+            hours_since_seen = (
+                datetime.now(timezone.utc) - last_seen
+            ).total_seconds() / 3600
             if hours_since_seen > 24:
                 score -= 0.5
             elif hours_since_seen > 12:
@@ -492,29 +508,31 @@ class InventoryService:
             self.logger.warning(f"Auto snapshot creation failed: {e}")
 
     # Query and filter methods
-    def get_targets_by_role(self, role: NodeRole) -> List[EnhancedTarget]:
+    async def get_targets_by_role(self, role: NodeRole) -> List[EnhancedTarget]:
         """Get targets by role."""
-        return self.persistence.get_targets_by_role(role)
+        return await self.persistence.get_targets_by_role(role)
 
-    def get_targets_by_status(self, status: str) -> List[EnhancedTarget]:
+    async def get_targets_by_status(self, status: str) -> List[EnhancedTarget]:
         """Get targets by status."""
-        return self.persistence.get_targets_by_status(status)
+        return await self.persistence.get_targets_by_status(status)
 
-    def get_unhealthy_targets(self, threshold: float = 0.7) -> List[EnhancedTarget]:
+    async def get_unhealthy_targets(
+        self, threshold: float = 0.7
+    ) -> List[EnhancedTarget]:
         """Get unhealthy targets."""
-        return self.persistence.get_unhealthy_targets(threshold)
+        return await self.persistence.get_unhealthy_targets(threshold)
 
-    def get_stale_targets(self, hours: int = 24) -> List[EnhancedTarget]:
+    async def get_stale_targets(self, hours: int = 24) -> List[EnhancedTarget]:
         """Get stale targets."""
-        return self.persistence.get_stale_targets(hours)
+        return await self.persistence.get_stale_targets(hours)
 
-    def search_targets(self, query: str) -> List[EnhancedTarget]:
+    async def search_targets(self, query: str) -> List[EnhancedTarget]:
         """Search targets by name, description, or tags."""
-        return self.persistence.search_targets(query)
+        return await self.persistence.search_targets(query)
 
-    def get_services_by_stack(self, stack_name: str) -> List[EnhancedService]:
+    async def get_services_by_stack(self, stack_name: str) -> List[EnhancedService]:
         """Get services by stack name."""
-        return self.persistence.get_services_by_stack(stack_name)
+        return await self.persistence.get_services_by_stack(stack_name)
 
     # Snapshot management methods
     async def create_snapshot(
@@ -634,14 +652,14 @@ class InventoryService:
 
     async def archive_old_snapshots(self, days: int = 30) -> int:
         """Archive old snapshots."""
-        archived_count = self.persistence.archive_old_snapshots(days)
+        archived_count = await self.persistence.archive_old_snapshots(days)
         if archived_count > 0:
             self.logger.info(f"Archived {archived_count} old snapshots")
         return archived_count
 
-    def get_storage_stats(self) -> Dict[str, Any]:
+    async def get_storage_stats(self) -> Dict[str, Any]:
         """Get storage statistics."""
-        return self.persistence.get_storage_stats()
+        return await self.persistence.get_storage_stats()
 
     def get_service_status(self) -> Dict[str, Any]:
         """Get service status and metrics."""

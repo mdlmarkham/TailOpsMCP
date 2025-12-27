@@ -2,6 +2,7 @@
 SSH executor implementation for remote target operations with security hardening.
 """
 
+import asyncio
 import logging
 import os
 import socket
@@ -63,7 +64,7 @@ class SSHExecutor(Executor):
             return False
         return True
 
-    def connect(self) -> bool:
+    async def connect(self) -> bool:
         """Establish secure SSH connection to target with strict host key verification.
 
         Returns:
