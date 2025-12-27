@@ -158,35 +158,12 @@ class ComplianceChecker:
 
     def _initialize_frameworks(self) -> None:
         """Initialize compliance frameworks."""
-        frameworks = [
-            ComplianceFramework(
-                name="CIS_Benchmarks",
-                version="1.0",
-                description="Center for Internet Security Benchmarks",
-                categories=list(ComplianceCategory),
-            ),
-            ComplianceFramework(
-                name="NIST_CSF",
-                version="1.1",
-                description="NIST Cybersecurity Framework",
-                categories=list(ComplianceCategory),
-            ),
-            ComplianceFramework(
-                name="OWASP_Top10",
-                version="2021",
-                description="OWASP Top 10 Security Risks",
-                categories={
-                    ComplianceCategory.AUTHENTICATION,
-                    ComplianceCategory.AUTHORIZATION,
-                    ComplianceCategory.DATA_PROTECTION,
-                    ComplianceCategory.VULNERABILITY_MANAGEMENT,
-                },
-            ),
-        ]
-
-        for framework in frameworks:
-            self._frameworks[framework.name] = framework
-
+        # Frameworks are defined as enum values in security_models.py
+        self._frameworks = {
+            "CIS_Benchmarks": ComplianceFramework.CIS_BENCHMARKS,
+            "NIST_CSF": ComplianceFramework.NIST_CSF,
+            "OWASP_Top10": ComplianceFramework.OWASP,
+        }
     def _initialize_cis_benchmarks(self) -> None:
         """Initialize CIS benchmark compliance checks."""
         cis_checks = [

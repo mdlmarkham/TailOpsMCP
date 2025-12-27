@@ -394,3 +394,70 @@ class SecurityAlert:
     affected_resources: List[str]
     implicated_identities: List[str]
     recommended_actions: List[str]
+
+
+# Security classes for RBAC (access_control.py compatibility)
+@dataclass
+class SecurityPermission:
+    """Security permission for RBAC."""
+
+    permission_id: str
+    permission_type: str
+    resource_type: str
+    description: str
+    granted: bool = True
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    expires_at: Optional[datetime] = None
+
+
+@dataclass
+class SecurityRole:
+    """Security role with associated permissions."""
+
+    role_id: str
+    role_name: str
+    description: str
+    permissions: List[SecurityPermission] = field(default_factory=list)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    expires_at: Optional[datetime] = None
+
+
+@dataclass
+class SecurityPolicy:
+    """Security policy definition."""
+
+    policy_id: str
+    policy_name: str
+    description: str
+    rules: Dict[str, Any] = field(default_factory=dict)
+    enabled: bool = True
+    priority: int = 0
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    expires_at: Optional[datetime] = None
+
+
+# Compliance status and framework classes
+class ComplianceStatus(str, Enum):
+    """Compliance check result status."""
+
+    UNKNOWN = "unknown"
+    PASS = "pass"
+    FAIL = "fail"
+    ERROR = "error"
+    WARNING = "warning"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class ComplianceFramework(str, Enum):
+    """Supported compliance frameworks."""
+
+    CIS_BENCHMARKS = "cis_benchmarks"
+    NIST_CSF = "nist_csf"
+    NIST_SP = "nist_sp"
+    ISO_27001 = "iso_27001"
+    PCI_DSS = "pci_dss"
+    GDPR = "gdpr"
+    SOX = "sox"
+    HIPAA = "hipaa"
+    OWASP = "owasp"
+    CUSTOM = "custom"
