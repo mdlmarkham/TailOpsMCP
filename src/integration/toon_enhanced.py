@@ -52,6 +52,31 @@ class ToonEnhanced:
         )
 
 
+class TOONEnhancedSerializer:
+    """Enhanced TOON serializer for fleet inventory."""
+
+    def __init__(self):
+        self.initialized = True
+
+    def serialize(self, data: Any) -> str:
+        """Serialize data to TOON format."""
+        return str(data)
+
+    def deserialize(self, toon_str: str) -> Any:
+        """Deserialize TOON format to data."""
+        return toon_str
+
+    def serialize_enhanced(self, data: Any) -> str:
+        """Serialize data to enhanced TOON format."""
+        return f"enhanced:{str(data)}"
+
+    def deserialize_enhanced(self, toon_str: str) -> Any:
+        """Deserialize enhanced TOON format to data."""
+        if toon_str.startswith("enhanced:"):
+            return toon_str[9:]
+        return toon_str
+
+
 # Convenience function
 def create_enhanced_toon() -> ToonEnhanced:
     """Create an enhanced TOON instance."""

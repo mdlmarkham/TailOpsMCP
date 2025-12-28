@@ -11,7 +11,8 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, AsyncMock
 
 from src.services.policy_engine import PolicyEngine, PolicyEvaluationContext
-from src.services.capability_executor import CapabilityExecutor, ExecutionRequest
+from src.services.capability_executor import CapabilityExecutor
+from src.models.execution import ExecutionRequest
 from src.models.policy_models import (
     PolicyConfig,
     PolicyRule,

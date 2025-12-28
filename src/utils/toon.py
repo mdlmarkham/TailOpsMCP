@@ -56,3 +56,13 @@ def directory_to_toon(directory_path: str) -> str:
         return f"directory:{directory_path}"
     except Exception as e:
         return f"error:{str(e)}"
+
+
+def network_to_toon(network: Any) -> str:
+    """Convert network to TOON format."""
+    # Convert network to TOON format
+    try:
+        # This is a placeholder implementation
+        return f"network:{str(network)}"
+    except Exception as e:
+        return f"error:{str(e)}"
