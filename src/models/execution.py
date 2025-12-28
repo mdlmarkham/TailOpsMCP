@@ -48,7 +48,8 @@ class StructuredError(BaseModel):
         None, description="Error context information"
     )
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), description="Error timestamp"
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Error timestamp",
     )
 
     class Config:
@@ -76,7 +77,8 @@ class ExecutionResult(BaseModel):
 
     # Timing and identification
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), description="Execution timestamp"
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Execution timestamp",
     )
     correlation_id: str = Field(
         default_factory=lambda: str(uuid.uuid4()),
@@ -140,10 +142,14 @@ class CapabilityExecution:
     def __init__(self, capability: str, result: OperationResult):
         self.capability = capability
         self.result = result
+        self.audit_trail: List[Dict[str, Any]] = []
+        self.metrics: Dict[str, Union[int, float, str]] = {}
 
     def add_audit_entry(self, entry: Dict[str, Any]) -> None:
         """Add an entry to the audit trail."""
-        self.audit_trail.append({"timestamp": datetime.now(timezone.utc).isoformat(), **entry})
+        self.audit_trail.append(
+            {"timestamp": datetime.now(timezone.utc).isoformat(), **entry}
+        )
 
     def add_metric(self, key: str, value: Union[int, float, str]) -> None:
         """Add a metric to the execution result."""
@@ -210,7 +216,8 @@ class ExecutionBatchResult(BaseModel):
     success_count: int = Field(..., description="Number of successful executions")
     failure_count: int = Field(..., description="Number of failed executions")
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), description="Batch execution timestamp"
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Batch execution timestamp",
     )
 
     # Batch-level metrics
@@ -239,11 +246,23 @@ class ExecutionBatchResult(BaseModel):
         }
 
 
+class CommandContext(BaseModel):
+    """Context for command execution."""
+
+    command: str = Field(..., description="Command to execute")
+    working_directory: Optional[str] = Field(None, description="Working directory")
+    environment: Optional[Dict[str, str]] = Field(
+        None, description="Environment variables"
+    )
+    timeout: Optional[int] = Field(None, description="Timeout in seconds")
+
+
 class AuditLogEntry(BaseModel):
     """Standardized audit log entry model."""
 
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), description="Event timestamp"
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Event timestamp",
     )
     correlation_id: str = Field(..., description="Correlation ID for traceability")
     operation: str = Field(..., description="Operation name")
