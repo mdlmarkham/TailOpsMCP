@@ -9,8 +9,8 @@ import smtplib
 import os
 from datetime import datetime
 from datetime import timezone, timezone, timezone, timedelta
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 from enum import Enum
@@ -216,7 +216,9 @@ class Alert:
     def suppress(self, duration_minutes: int, reason: str) -> None:
         """Suppress the alert."""
         self.status = AlertStatus.SUPPRESSED
-        self.suppressed_until = datetime.now(timezone.utc) + timedelta(minutes=duration_minutes)
+        self.suppressed_until = datetime.now(timezone.utc) + timedelta(
+            minutes=duration_minutes
+        )
         self.suppression_reason = reason
         self.updated_at = datetime.now(timezone.utc)
 
@@ -242,7 +244,9 @@ class Alert:
 
     def is_expired(self) -> bool:
         """Check if alert is expired."""
-        return self.suppressed_until and datetime.now(timezone.utc) > self.suppressed_until
+        return (
+            self.suppressed_until and datetime.now(timezone.utc) > self.suppressed_until
+        )
 
     def needs_escalation(self) -> bool:
         """Check if alert needs escalation."""
@@ -321,14 +325,14 @@ class NotificationService:
 
         try:
             # Create email message
-            msg = MimeMultipart()
+            msg = MIMEMultipart()
             msg["From"] = self.config.smtp_username
             msg["To"] = ", ".join(recipients)
             msg["Subject"] = f"[{alert.severity.value.upper()}] {alert.title}"
 
             # Email body
             body = self._format_alert_message(alert)
-            msg.attach(MimeText(body, "plain"))
+            msg.attach(MIMEText(body, "plain"))
 
             # Send email
             with smtplib.SMTP(self.config.smtp_host, self.config.smtp_port) as server:
@@ -659,10 +663,9 @@ class EventAlerting:
     async def _check_escalation(self, alert: Alert, rule: AlertRule) -> None:
         """Check if alert needs escalation."""
         for escalation_rule in rule.escalation_rules:
-            if (
-                alert.created_at + timedelta(minutes=escalation_rule.delay_minutes)
-                <= datetime.now(timezone.utc)
-            ):
+            if alert.created_at + timedelta(
+                minutes=escalation_rule.delay_minutes
+            ) <= datetime.now(timezone.utc):
                 # Time to escalate
                 alert.escalate(
                     escalation_rule.new_severity,
